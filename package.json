@@ -1,0 +1,26 @@
+{
+  "name": "sciss-barber",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000S\u0000c\u0000i\u0000s\u0000s\u0000-\u0000B\u0000a\u0000r\u0000b\u0000e\u0000r\u0000\r\u0000 \u0000",
+  "keywords": [],
+  "homepage": "https://github.com/Lashin777/Sciss-Barber#readme",
+  "bugs": {
+    "url": "https://github.com/Lashin777/Sciss-Barber/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lashin777/Sciss-Barber.git"
+  },
+  "license": "ISC",
+  "author": "Lashin",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "env": "^0.0.2",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14"
+  }
+}
