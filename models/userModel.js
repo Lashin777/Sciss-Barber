@@ -17,5 +17,31 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    role: {
+        type: String,
+        enum: ['CUSTOMER', 'ADMIN'],
+        default: 'CUSTOMER'
+    },
+    status: {
+        type: String,
+        enum: ['ACTIVE', 'BLOCKED'],
+        default: 'ACTIVE'
+    },
+    phone: {
+        type: String,
+        trim: true
+    },
+    profileImage: {
+        type: String,
+        default: ''
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
+
+const User = mongoose.model('User', userSchema);
+
+export default User;
