@@ -1,5 +1,5 @@
 import UsersignUp from '../services/UserService.js';
-import { verifyOtp } from '../services/otpService.js';
+import { verifyOtp, resendOtp } from '../services/otpService.js';
 
 const UsersignUpController = async (req, res) => {
     try {
@@ -21,4 +21,13 @@ const verifyOtpController = async (req, res) => {
         res.status(400).json({ message: error.message })
     }
 }
-export { UsersignUpController, verifyOtpController }
+
+const resendOtpController = async (req, res) => {
+    try {
+        await resendOtp(req.body.email, req.body.purpose);
+        res.status(200).json({ message: "OTP have been send" });
+    } catch (error) {
+        res.status(400).json({ message: error.message })
+    }
+}
+export { UsersignUpController, verifyOtpController, resendOtpController }

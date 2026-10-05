@@ -48,4 +48,9 @@ const verifyOtp = async (email, otp, purpose) => {
 
 }
 
-export { generateOtp, verifyOtp };
+const resendOtp = async (email, purpose) => {
+    await Otp.deleteMany({ email, purpose, isUsed: false });
+    return await generateOtp(email, purpose);
+}
+
+export { generateOtp, verifyOtp, resendOtp };
