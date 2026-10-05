@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Otp from '../models/otpmodel.js';
 import nodemailer from 'nodemailer';
+import User from '../models/userModel.js'
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -27,4 +28,24 @@ const generateOtp = async (email, purpose) => {
     return otp;
 }
 
-export default generateOtp;
+const verifyOtp = async (email, otp, purpose) => {
+    const record = await Otp.findOne({ email, otp, purpose });
+
+    if (!record) {
+        throw new Error("invalid OTP");
+    }
+    if (record.expiresAt < Date.now()) {
+        throw new Error("OTP had expired")
+    }
+    if (record.isUsed) {
+        throw Error('OTP already Used')
+    }
+
+    record.isUsed = true;
+    await record.save();
+
+    await User.updateOne({ email }, { isEmailVerified: true });
+
+}
+
+export { generateOtp, verifyOtp };

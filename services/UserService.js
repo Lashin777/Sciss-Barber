@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import User from '../models/userModel.js';
-import generateOtp from './otpService.js';
+import { generateOtp } from './otpService.js';
 
 
 

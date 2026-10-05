@@ -1,0 +1,51 @@
+extends ../layouts/minimal
+
+block content
+  - const label = "block font-mono text-[11px] tracking-[0.2em] text-neutral-500"
+  - const hint = "text-xs text-neutral-400"
+  - const input = "w-full border-0 border-b border-neutral-300 bg-transparent pb-2.5 pt-3 text-[17px] font-medium outline-none focus:border-neutral-950"
+
+  section(class="w-full max-w-sm")
+    p(class="mb-3.5 font-mono text-[11px] tracking-[0.3em] text-neutral-400") NEW MEMBER
+    h1(class="mb-12 text-[clamp(2.5rem,7vw,3.5rem)] font-bold leading-[0.95] tracking-[-0.05em]")
+      | JOIN SCISS
+      br
+      | BARBER.
+
+    form(method="POST", action="/api/auth/signup")
+      if error
+        p(class="mb-5 text-sm text-red-600")= error
+
+      div(class="mb-4")
+        label(for="name", class=label) FULL NAME
+        input#name(type="text", name="name", autocomplete="name", required, class=input)
+
+      div(class="mb-4")
+        label(for="email", class=label) EMAIL ADDRESS
+        input#email(type="email", name="email", autocomplete="email", required, class=input)
+
+      div(class="mb-4")
+        label(for="phone", class=label) PHONE NUMBER
+        input#phone(type="tel", name="phone", autocomplete="tel", required, class=input)
+
+      div(class="mb-4")
+        div(class="flex items-baseline justify-between")
+          label(for="referralCode", class=label) REFERRAL CODE
+          span(class=hint) Optional
+        input#referralCode(type="text", name="referralCode", class=input)
+
+      div(class="mb-4")
+        div(class="flex items-baseline justify-between")
+          label(for="password", class=label) PASSWORD
+          span(class=hint) At least 8 characters
+        input#password(type="password", name="password", minlength="8", autocomplete="new-password", required, class=input)
+
+      label(class="mb-7 flex items-start gap-2.5 text-[13px] leading-snug text-neutral-400")
+        input(type="checkbox", name="consent", required, class="mt-0.5 accent-neutral-950")
+        span I agree to the Terms of Service and to receive SMS appointment updates.
+
+      button(type="submit", class="h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") CREATE ACCOUNT →
+
+    div(class="mt-9 flex justify-between border-t border-neutral-100 pt-4 text-sm text-neutral-400")
+      span Already a member?
+      a(href="/login", class="font-bold text-neutral-950") Log in
