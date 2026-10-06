@@ -3,7 +3,6 @@ import User from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 
 
-
 const adminLogin = async (email, password) => {
     const user = await User.findOne({ email });
 
@@ -14,7 +13,7 @@ const adminLogin = async (email, password) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-        throw new Error("invalid Admin credentials");
+        throw new Error("Invalid admin credentials");
     }
 
     const token = jwt.sign(
