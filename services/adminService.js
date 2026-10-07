@@ -31,5 +31,27 @@ const adminLogin = async (email, password) => {
     };
 }
 
+const blockUser = async (userId) => {
+    const blockedUser = await User.findByIdAndUpdate(userId, { status: 'BLOCKED' });
+    return blockedUser
+}
 
-export { adminLogin }
+const UnblockUser = async (userId) => {
+    const unblockedUser = await User.findByIdAndUpdate(userId, { status: 'ACTIVE' });
+    return unblockedUser
+}
+
+const getAllUser = async (search, page, list) => {
+    let filter = {}
+
+    if (search) {
+        filter.name = ({ $regex: search, $options: 'i' });
+    }
+    const currentPage = page || 1;
+    const perPage = list || 10;
+
+    const users = await User.find(filter).select('-password').sort({ createdAt: -1 }).skip((currentPage - 1) * perPage).limit(perPage);
+    return users
+}
+
+export { adminLogin, blockUser, UnblockUser, getAllUser }
