@@ -54,4 +54,4 @@ const getAllUser = async (search, page, list) => {
     return users
 }
 
-export { adminLogin, blockUser, UnblockUser, getAllUser }
+export { adminLogin, blockUser, UnblockUser, getAllUser } 

@@ -1,4 +1,4 @@
-import { UsersignUp, forgetPassword, resetPassword } from '../services/UserService.js';
+import { UsersignUp, forgetPassword, resetPassword, userLogin } from '../services/UserService.js';
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 
 const UsersignUpController = async (req, res) => {
@@ -48,4 +48,21 @@ const resetPasswordController = async (req, res) => {
         res.status(400).json({ message: error.message })
     }
 }
-export { UsersignUpController, verifyOtpController, resendOtpController, forgetPasswordController, resetPasswordController }
+
+const userLoginController = async (req, res) => {
+    try {
+        const result = await userLogin(req.body.email, req.body.password);
+        res.cookie('token', result.token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.status(200).json({ message: "Login Successfull", user: result.user });
+    } catch (error) {
+        res.status(400).json({ message: error.message })
+    }
+}
+export {
+    UsersignUpController,
+    verifyOtpController,
+    resendOtpController,
+    forgetPasswordController,
+    resetPasswordController,
+    userLoginController
+}
