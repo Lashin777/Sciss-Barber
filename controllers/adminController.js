@@ -3,10 +3,12 @@ import { adminLogin, blockUser, UnblockUser, getAllUser } from '../services/admi
 const adminLoginController = async (req, res) => {
     try {
         const result = await adminLogin(req.body.email, req.body.password);
-        res.status(200).json(result)
+        res.cookie('token', result.token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ message: error.message })
     }
+
 }
 const adminBlockController = async (req, res) => {
     try {

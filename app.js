@@ -2,6 +2,7 @@ import express from 'express';
 import UserRoutes from './routes/UserRoute.js';
 import adminRoutes from './routes/adminRoute.js'
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 
 const app = express();
@@ -12,7 +13,8 @@ app.set('view engine', 'pug')
 //middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser())
 
 //routes
 app.use('/api/user', UserRoutes)
