@@ -1,0 +1,101 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    title Sciss Barber
+
+    link(rel="preconnect", href="https://fonts.googleapis.com")
+    link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin)
+    link(
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono&display=swap"
+      rel="stylesheet"
+    )
+
+    link(rel="stylesheet", href="/css/output.css")
+
+  body(class="min-h-dvh bg-white text-neutral-950")
+
+    main(class="flex min-h-dvh flex-col px-8 py-7 lg:px-16 lg:py-8")
+
+      //- Top section
+      section(class="flex items-start justify-between")
+
+        div(class="flex items-start gap-5")
+
+          div(
+            class="grid size-12 shrink-0 place-items-center rounded-xl bg-black font-mono text-sm font-bold text-[#00D06C]"
+          ) SB
+
+          h1(
+            class="max-w-[520px] text-2xl font-bold leading-[1.15] tracking-tight lg:text-3xl"
+          )
+            | Not a style, a perspective.
+            br
+            | Precision Grooming in Soho.
+
+        div(class="flex items-center gap-8")
+
+          div(
+            class="hidden items-center gap-3 rounded-full border border-neutral-200 px-6 py-3 font-mono text-xs tracking-wider sm:flex"
+          )
+            span(class="size-2.5 rounded-full bg-[#00D06C]")
+            span NEXT: TODAY 2:30 PM (LEO)
+
+          button(
+            type="button"
+            class="font-mono text-sm font-bold tracking-wider"
+          ) MENU ::
+
+      //- Book button
+      section(class="pt-10 lg:pt-12")
+        a(
+          href="/booking"
+          class="inline-flex items-center gap-8 rounded-full bg-black px-8 py-5 font-mono text-sm font-bold tracking-[0.15em] text-white transition hover:bg-[#00D06C] hover:text-black"
+        )
+          span BOOK NOW
+          span(class="text-2xl leading-none") →
+
+      //- Main logo
+      section(class="flex flex-1 items-center justify-center")
+        h2(
+          class="select-none text-[clamp(7rem,24vw,22rem)] font-bold leading-none tracking-[-0.08em]"
+        ) SCISS’
+
+      //- Bottom information
+      section(
+        class="flex flex-col gap-8 pb-3 lg:flex-row lg:items-end lg:justify-between"
+      )
+
+        div
+          h3(class="text-lg font-bold tracking-tight")
+            | Precision studio in Sillk Street,KOZHIKODE
+
+          p(class="mt-2 text-base text-neutral-400")
+            | 142 Mercer Street • Mon–Sun 9AM–8PM
+
+        nav(
+          class="flex flex-wrap items-center gap-5 font-mono text-sm font-bold tracking-wide"
+        )
+          a(
+            href="/services"
+            class="transition hover:text-[#00D06C]"
+          ) SERVICES
+
+          span(class="text-neutral-300") /
+
+          a(
+            href="/bookings"
+            class="transition hover:text-[#00D06C]"
+          ) MY BOOKINGS
+
+          span(class="text-neutral-300") /
+
+          a(
+            href="/profile"
+            class="transition hover:text-[#00D06C]"
+          ) PROFILE
+
+          span(
+            class="rounded-md bg-black px-3 py-2 text-xs text-white"
+          ) KOZHIKODE

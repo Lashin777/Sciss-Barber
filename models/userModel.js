@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: false
     },
     role: {
         type: String,
@@ -35,6 +35,16 @@ const userSchema = new mongoose.Schema({
     profileImage: {
         type: String,
         default: ''
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    facebookId: {
+        type: String,
+        unique: true,
+        sparse: true
     },
     isEmailVerified: {
         type: Boolean,
