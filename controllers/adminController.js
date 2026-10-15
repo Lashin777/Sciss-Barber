@@ -30,7 +30,7 @@ const adminUnblockController = async (req, res) => {
 
 const getAllUserController = async (req, res) => {
     try {
-        const getUser = await getAllUser(req.query.search, req.query.page, req.query.list);
+        const getUser = await getAllUser(req.query.search, req.query.page, req.query.list, req.query.date);
         res.status(200).json({ message: getUser });
     } catch (error) {
         res.status(400).json({ message: error.message })

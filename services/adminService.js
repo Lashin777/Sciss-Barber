@@ -41,11 +41,14 @@ const UnblockUser = async (userId) => {
     return unblockedUser
 }
 
-const getAllUser = async (search, page, list) => {
+const getAllUser = async (search, page, list, date) => {
     let filter = {}
 
     if (search) {
         filter.name = ({ $regex: search, $options: 'i' });
+    }
+    if (date) {
+        filter.user = ({ date })
     }
     const currentPage = page || 1;
     const perPage = list || 10;

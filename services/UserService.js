@@ -1,17 +1,17 @@
-import bcrypt from 'bcrypt';
+import { hashPassword, comparePassword } from '../utils/passwordUtils.js';
 import User from '../models/userModel.js';
 import { generateOtp, verifyOtp } from './otpService.js';
 import jwt from 'jsonwebtoken';
 
 
 
-const UsersignUp = async (email, name, password) => {
+const UsersignUp = async (email, name, password, phone) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
         throw new Error("User Already Exists");
     } else {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await User.create({ name, email, password: hashedPassword });
+        const hashedPassword = await hashPassword(password);
+        const newUser = await User.create({ name, email, password: hashedPassword, phone });
         await generateOtp(email, 'EMAIL_VERIFICATION')
         return newUser;
     }
@@ -28,7 +28,7 @@ const forgetPassword = async (email) => {
 
 const resetPassword = async (email, otp, newpassword) => {
     await verifyOtp(email, otp, 'PASSWORD_RESET');
-    const hashedPassword = await bcrypt.hash(newpassword, 10);
+    const hashedPassword = await hashPassword(newpassword);
 
     await User.updateOne({ email }, { password: hashedPassword })
 }
@@ -40,7 +40,7 @@ const userLogin = async (email, password) => {
     if (!user) {
         throw new Error("Invalid Email Or Password");
     }
-    const ismatch = await bcrypt.compare(password, user.password);
+    const ismatch = await comparePassword(password, user.password);
     if (!ismatch) {
         throw new Error("Invalid Email Or Password");
     }

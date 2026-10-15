@@ -1,0 +1,186 @@
+extends ../layouts/minimal
+
+block content
+  - const label = "block font-mono text-[11px] tracking-[0.2em] text-neutral-500"
+  - const input = "w-full border-0 border-b border-neutral-300 bg-transparent pb-2.5 pt-3 text-[17px] font-medium outline-none focus:border-neutral-950"
+
+  section(class="mx-auto my-auto w-full max-w-sm py-8")
+    p(class="mb-3 font-mono text-[11px] tracking-[0.3em] text-neutral-400") MEMBER ACCESS
+    h1(class="mb-10 text-[clamp(2.5rem,7vw,3.5rem)] font-bold leading-[0.95] tracking-[-0.05em]")
+      | WELCOME
+      br
+      | BACK.
+
+    form#login-form(method="POST", action="/api/user/login")
+      p#login-error(class="mb-5 hidden text-sm text-red-600", role="alert", aria-live="polite")
+
+      div(class="mb-6")
+        label(for="email", class=label) EMAIL ADDRESS
+        input#email(type="email", name="email", autocomplete="email", required, class=input)
+
+      div(class="mb-1")
+        label(for="password", class=label) PASSWORD
+        input#password(type="password", name="password", autocomplete="current-password", required, class=input)
+
+      div(class="mt-2 flex justify-end")
+        a#forgot-password-link(href="#forgot-password", class="text-xs font-bold text-neutral-500 transition-colors hover:text-green-600") Forgot password?
+
+      button#login-submit(type="submit", class="mt-2 h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white transition-colors hover:bg-neutral-800") LOG IN →
+
+    div(class="mt-4 flex justify-between border-t border-neutral-100 pt-3 text-sm text-neutral-400")
+      span New to Sciss Barber?
+      a(href="/signup", class="font-bold text-neutral-950 transition-colors hover:text-green-600") Create account
+
+    div(class="my-3 flex items-center gap-3")
+      span(class="h-px flex-1 bg-neutral-200")
+      span(class="font-mono text-[10px] tracking-[0.2em] text-neutral-400") OR
+      span(class="h-px flex-1 bg-neutral-200")
+
+    a(href="/api/user/auth/google", class="flex h-[50px] w-full items-center justify-center gap-3 rounded-full border border-neutral-300 bg-white text-[13px] font-bold tracking-[0.08em] transition-colors hover:border-neutral-950 hover:bg-neutral-50")
+      span(class="font-bold text-[#4285F4]") G
+      span CONTINUE WITH GOOGLE
+
+  dialog#blocked-modal(class="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl p-0 shadow-2xl backdrop:bg-green-950/30 backdrop:backdrop-blur-md")
+    div(class="p-6")
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ACCOUNT ACCESS
+      h2(class="mb-3 text-2xl font-bold tracking-tight") Account blocked
+      p(class="mb-6 text-sm leading-relaxed text-neutral-600") This account is currently blocked. Please contact the shop for help restoring access.
+      button#blocked-modal-close(type="button", class="h-11 w-full cursor-pointer rounded-full bg-neutral-950 text-[12px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") CLOSE
+
+  dialog#forgot-password-modal(class="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl p-0 shadow-2xl backdrop:bg-green-950/30 backdrop:backdrop-blur-md")
+    div(class="p-6")
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") PASSWORD RESET
+      h2(class="mb-3 text-2xl font-bold tracking-tight") Reset your password
+      p(class="mb-5 text-sm leading-relaxed text-neutral-600") We’ll email you a verification code to reset your password.
+      p#reset-error(class="mb-4 hidden text-sm text-red-600", role="alert", aria-live="polite")
+      p#reset-success(class="mb-4 hidden text-sm text-green-700", role="status", aria-live="polite")
+      div#reset-email-step
+        label(for="reset-email", class=label) EMAIL ADDRESS
+        input#reset-email(type="email", autocomplete="email", required, class=input)
+        button#send-reset-code(type="button", class="mt-5 h-11 w-full cursor-pointer rounded-full bg-neutral-950 text-[12px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") SEND CODE
+      div#reset-password-step(class="hidden")
+        div(class="mb-3")
+          label(for="reset-otp", class=label) VERIFICATION CODE
+          input#reset-otp(type="text", inputmode="numeric", autocomplete="one-time-code", required, class=input)
+        div
+          label(for="new-password", class=label) NEW PASSWORD
+          input#new-password(type="password", minlength="8", autocomplete="new-password", required, class=input)
+        button#save-new-password(type="button", class="mt-5 h-11 w-full cursor-pointer rounded-full bg-neutral-950 text-[12px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") UPDATE PASSWORD
+      button#reset-modal-close(type="button", class="mt-3 w-full py-2 text-sm font-bold text-neutral-500 hover:text-neutral-950") CLOSE
+
+  script.
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const loginSubmit = document.getElementById('login-submit');
+    const blockedModal = document.getElementById('blocked-modal');
+    const forgotPasswordModal = document.getElementById('forgot-password-modal');
+    const resetError = document.getElementById('reset-error');
+    const resetSuccess = document.getElementById('reset-success');
+    const resetEmail = document.getElementById('reset-email');
+    const resetEmailStep = document.getElementById('reset-email-step');
+    const resetPasswordStep = document.getElementById('reset-password-step');
+
+    document.getElementById('blocked-modal-close').addEventListener('click', () => blockedModal.close());
+    document.getElementById('forgot-password-link').addEventListener('click', (event) => {
+      event.preventDefault();
+      resetEmail.value = loginForm.elements.email.value;
+      resetError.classList.add('hidden');
+      resetSuccess.classList.add('hidden');
+      document.getElementById('reset-modal-close').textContent = 'CLOSE';
+      resetEmailStep.classList.remove('hidden');
+      resetPasswordStep.classList.add('hidden');
+      forgotPasswordModal.showModal();
+      resetEmail.focus();
+    });
+    document.getElementById('reset-modal-close').addEventListener('click', () => forgotPasswordModal.close());
+
+    document.getElementById('send-reset-code').addEventListener('click', async () => {
+      resetError.classList.add('hidden');
+      if (!resetEmail.reportValidity()) return;
+      const button = document.getElementById('send-reset-code');
+      button.disabled = true;
+      button.textContent = 'SENDING…';
+      try {
+        const response = await fetch('/api/user/forget-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetEmail.value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not send a reset code.');
+        resetEmailStep.classList.add('hidden');
+        resetPasswordStep.classList.remove('hidden');
+        document.getElementById('reset-otp').focus();
+      } catch (error) {
+        resetError.textContent = error.message || 'Could not send a reset code.';
+        resetError.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'SEND CODE';
+      }
+    });
+
+    document.getElementById('save-new-password').addEventListener('click', async () => {
+      resetError.classList.add('hidden');
+      const otp = document.getElementById('reset-otp');
+      const newPassword = document.getElementById('new-password');
+      if (!otp.reportValidity() || !newPassword.reportValidity()) return;
+      const button = document.getElementById('save-new-password');
+      button.disabled = true;
+      button.textContent = 'UPDATING…';
+      try {
+        const response = await fetch('/api/user/reset-password', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetEmail.value, otp: otp.value, password: newPassword.value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not update your password.');
+        resetPasswordStep.classList.add('hidden');
+        resetSuccess.textContent = 'Your password has been updated. You can now log in.';
+        resetSuccess.classList.remove('hidden');
+        document.getElementById('reset-modal-close').textContent = 'DONE';
+      } catch (error) {
+        resetError.textContent = error.message || 'Could not update your password.';
+        resetError.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'UPDATE PASSWORD';
+      }
+    });
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      loginError.textContent = '';
+      loginError.classList.add('hidden');
+      loginSubmit.disabled = true;
+      loginSubmit.textContent = 'SIGNING IN…';
+
+      try {
+        const response = await fetch(loginForm.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: loginForm.elements.email.value,
+            password: loginForm.elements.password.value
+          })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          const message = result.message || 'Unable to log in. Please try again.';
+          if (message.toLowerCase().includes('blocked')) {
+            blockedModal.showModal();
+            return;
+          }
+          throw new Error(message);
+        }
+        window.location.assign('/');
+      } catch (error) {
+        loginError.textContent = error.message || 'Unable to log in. Please try again.';
+        loginError.classList.remove('hidden');
+      } finally {
+        loginSubmit.disabled = false;
+        loginSubmit.textContent = 'LOG IN →';
+      }
+    });

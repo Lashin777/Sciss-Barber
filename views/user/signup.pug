@@ -3,49 +3,198 @@ extends ../layouts/minimal
 block content
   - const label = "block font-mono text-[11px] tracking-[0.2em] text-neutral-500"
   - const hint = "text-xs text-neutral-400"
-  - const input = "w-full border-0 border-b border-neutral-300 bg-transparent pb-2.5 pt-3 text-[17px] font-medium outline-none focus:border-neutral-950"
+  - const input = "w-full border-0 border-b border-neutral-300 bg-transparent pb-2 pt-2.5 text-base font-medium outline-none focus:border-neutral-950"
 
-  section(class="w-full max-w-sm")
-    p(class="mb-3.5 font-mono text-[11px] tracking-[0.3em] text-neutral-400") NEW MEMBER
-    h1(class="mb-12 text-[clamp(2.5rem,7vw,3.5rem)] font-bold leading-[0.95] tracking-[-0.05em]")
+  section(class="mx-auto my-auto w-full max-w-sm py-4")
+    p(class="mb-3 font-mono text-[11px] tracking-[0.3em] text-neutral-400") NEW MEMBER
+    h1(class="mb-6 text-[clamp(2.25rem,6vw,3rem)] font-bold leading-[0.95] tracking-[-0.05em] transition-colors hover:text-green-600")
       | JOIN SCISS
       br
       | BARBER.
 
-    form(method="POST", action="/signup")
-      if error
-        p(class="mb-5 text-sm text-red-600")= error
+    form#signup-form(method="POST", action="/api/user/signup")
+      p#signup-error(class="mb-5 hidden text-sm text-red-600", role="alert", aria-live="polite")
 
-      div(class="mb-4")
+      div(class="mb-2")
         label(for="name", class=label) FULL NAME
         input#name(type="text", name="name", autocomplete="name", required, class=input)
 
-      div(class="mb-4")
+      div(class="mb-2")
         label(for="email", class=label) EMAIL ADDRESS
         input#email(type="email", name="email", autocomplete="email", required, class=input)
 
-      div(class="mb-4")
+      div(class="mb-2")
         label(for="phone", class=label) PHONE NUMBER
         input#phone(type="tel", name="phone", autocomplete="tel", required, class=input)
 
-      div(class="mb-4")
+      div(class="mb-2")
         div(class="flex items-baseline justify-between")
           label(for="referralCode", class=label) REFERRAL CODE
           span(class=hint) Optional
         input#referralCode(type="text", name="referralCode", class=input)
 
-      div(class="mb-4")
+      div(class="mb-2")
         div(class="flex items-baseline justify-between")
           label(for="password", class=label) PASSWORD
           span(class=hint) At least 8 characters
         input#password(type="password", name="password", minlength="8", autocomplete="new-password", required, class=input)
 
-      label(class="mb-7 flex items-start gap-2.5 text-[13px] leading-snug text-neutral-400")
+      label(class="mb-4 flex items-start gap-2.5 text-[13px] leading-snug text-neutral-400")
         input(type="checkbox", name="consent", required, class="mt-0.5 accent-neutral-950")
         span I agree to the Terms of Service and to receive SMS appointment updates.
 
-      button(type="submit", class="h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") CREATE ACCOUNT →
+    form#verify-form(class="hidden", action="/api/user/verify-otp")
+      p(class="mb-2 text-sm text-neutral-500") Enter the 6-digit code we sent to your email.
+      p#verify-error(class="mb-3 hidden text-sm text-red-600", role="alert", aria-live="polite")
+      label(for="otp", class=label) EMAIL VERIFICATION CODE
+      input#otp(type="text", name="otp", inputmode="numeric", pattern="[0-9]{6}", maxlength="6", autocomplete="one-time-code", required, class=input)
+      button#verify-submit(type="submit", class="mt-6 h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white transition-colors hover:bg-neutral-800") VERIFY EMAIL →
+      button#resend-otp(type="button", class="mt-4 w-full text-center text-sm font-bold text-neutral-500 hover:text-neutral-950") Resend code
 
-    div(class="mt-9 flex justify-between border-t border-neutral-100 pt-4 text-sm text-neutral-400")
+block auth_actions
+  div(class="auth-action-area")
+    button#signup-submit(type="submit", form="signup-form", class="h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white transition-colors hover:bg-neutral-800") CREATE ACCOUNT →
+    div(class="my-2 flex items-center gap-3")
+      span(class="h-px flex-1 bg-neutral-200")
+      span(class="font-mono text-[10px] tracking-[0.2em] text-neutral-400") OR
+      span(class="h-px flex-1 bg-neutral-200")
+    a(href="/api/user/auth/google", class="flex h-[50px] w-full items-center justify-center gap-3 rounded-full border border-neutral-300 bg-white text-[13px] font-bold tracking-[0.08em] transition-colors hover:border-neutral-950 hover:bg-neutral-50")
+      span(class="font-bold text-[#4285F4]") G
+      span CONTINUE WITH GOOGLE
+    div(class="mt-3 flex justify-between border-t border-neutral-100 pt-3 text-sm text-neutral-400")
       span Already a member?
-      a(href="/login", class="font-bold text-neutral-950") Log in
+      a(href="/login", class="font-bold text-neutral-950 transition-colors hover:text-green-600") Log in
+
+  script.
+    const signupForm = document.getElementById('signup-form');
+    const signupError = document.getElementById('signup-error');
+    const signupSubmit = document.getElementById('signup-submit');
+    const verifyForm = document.getElementById('verify-form');
+    const verifyError = document.getElementById('verify-error');
+    let signupEmail = '';
+
+    signupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      signupError.textContent = '';
+      signupError.classList.add('hidden');
+      signupSubmit.disabled = true;
+      signupSubmit.textContent = 'CREATING ACCOUNT…';
+
+      try {
+        const response = await fetch(signupForm.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: signupForm.elements.name.value,
+            email: signupForm.elements.email.value,
+            password: signupForm.elements.password.value,
+            phone: signupForm.elements.phone.value,
+            referralCode: signupForm.elements.referralCode.value
+          })
+        });
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.message || 'Unable to create your account. Please try again.');
+        signupEmail = signupForm.elements.email.value;
+        signupForm.classList.add('hidden');
+        verifyForm.classList.remove('hidden');
+        document.querySelector('.auth-action-area').classList.add('hidden');
+        document.getElementById('otp').focus();
+      } catch (error) {
+        signupError.textContent = error.message || 'Unable to create your account. Please try again.';
+        signupError.classList.remove('hidden');
+      } finally {
+        signupSubmit.disabled = false;
+        signupSubmit.textContent = 'CREATE ACCOUNT →';
+      }
+    });
+
+    verifyForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      verifyError.textContent = '';
+      verifyError.classList.add('hidden');
+      const button = document.getElementById('verify-submit');
+      button.disabled = true;
+      button.textContent = 'VERIFYING…';
+
+      try {
+        const response = await fetch(verifyForm.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: signupEmail,
+            otp: verifyForm.elements.otp.value,
+            purpose: 'EMAIL_VERIFICATION'
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'That code could not be verified.');
+        window.location.assign('/login');
+      } catch (error) {
+        verifyError.textContent = error.message || 'That code could not be verified.';
+        verifyError.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'VERIFY EMAIL →';
+      }
+    });
+
+    document.getElementById('resend-otp').addEventListener('click', async () => {
+      const resendButton = document.getElementById('resend-otp');
+      verifyError.textContent = '';
+      verifyError.classList.add('hidden');
+      resendButton.disabled = true;
+      resendButton.textContent = 'SENDING…';
+
+      try {
+        const response = await fetch('/api/user/resend-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: signupEmail, purpose: 'EMAIL_VERIFICATION' })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not resend the code.');
+        resendButton.textContent = 'CODE SENT';
+      } catch (error) {
+        verifyError.textContent = error.message || 'Could not resend the code.';
+        verifyError.classList.remove('hidden');
+        resendButton.textContent = 'RESEND CODE';
+      } finally {
+        resendButton.disabled = false;
+      }
+    });
+
+    signupForm.querySelectorAll('input:not([type="checkbox"])').forEach((field) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'signup-type-wrap';
+      field.parentNode.insertBefore(wrapper, field);
+      wrapper.appendChild(field);
+
+      const echo = document.createElement('span');
+      echo.className = 'signup-typing-echo';
+      echo.setAttribute('aria-hidden', 'true');
+      wrapper.appendChild(echo);
+
+      const updateEcho = () => {
+        const isTyping = document.activeElement === field && field.value.length > 0;
+        echo.replaceChildren();
+        echo.classList.toggle('visible', isTyping);
+        field.classList.toggle('typing-overlay-active', isTyping);
+        echo.style.transform = `translateX(${-field.scrollLeft}px)`;
+
+        if (!isTyping) return;
+        const value = field.type === 'password' ? '•'.repeat(field.value.length) : field.value;
+        Array.from(value).forEach((character, index) => {
+          const letter = document.createElement('span');
+          letter.textContent = character;
+          if (index === value.length - 1) letter.className = 'latest-char';
+          echo.appendChild(letter);
+        });
+      };
+
+      field.addEventListener('input', updateEcho);
+      field.addEventListener('focus', updateEcho);
+      field.addEventListener('blur', updateEcho);
+      field.addEventListener('scroll', updateEcho);
+      field.addEventListener('change', updateEcho);
+    });

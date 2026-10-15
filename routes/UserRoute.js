@@ -20,7 +20,7 @@ router.post('/forget-password', forgetPasswordController);
 router.patch('/reset-password', resetPasswordController);
 router.post('/login', userLoginController);
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
-router.get('/auth/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/signUp' }), googleCallbackController);
+router.get('/auth/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/signup' }), googleCallbackController);
 
 
 export default router

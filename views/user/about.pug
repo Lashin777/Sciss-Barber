@@ -1,0 +1,47 @@
+extends ../layouts/minimal.pug
+
+block content
+  div(class="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-2 py-10 sm:px-5 sm:py-14 lg:px-10")
+    a(href="/", class="mb-12 w-fit font-mono text-xs font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK HOME
+
+    section(class="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-end")
+      div
+        p(class="mb-5 font-mono text-[11px] tracking-[0.3em] text-neutral-400") ABOUT SCISS’
+        h1(class="max-w-3xl text-[clamp(3.5rem,11vw,8rem)] font-bold leading-[0.88] tracking-[-0.08em]")
+          | NOT A STYLE,
+          br
+          | A PERSPECTIVE.
+      p(class="max-w-md text-lg leading-relaxed text-neutral-500 sm:text-xl") Sciss’ is a precision grooming studio in Kozhikode, built around considered cuts, personal style, and the confidence that comes with both.
+
+    figure(class="about-image-frame mx-auto mt-12 aspect-[4/5] w-full max-w-md sm:mt-16")
+      span(class="about-image-floor-shadow", aria-hidden="true")
+      button#about-image-toggle.about-image-screen(type="button", aria-label="Flip the studio image", aria-pressed="false")
+        span(class="about-image-flip-inner")
+          span(class="about-image-face about-image-front")
+            img(src="/images/about-studio.png", alt="Warm, modern barber studio with a classic chair and large mirror", class="h-full w-full object-cover", loading="lazy")
+          span(class="about-image-face about-image-back")
+            span(class="font-mono text-[10px] tracking-[0.3em]") SCISS’ BARBER
+            span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") PRECISION GROOMING
+            span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") KOZHIKODE, KERALA
+
+    section(class="mt-16 grid gap-8 border-t border-neutral-200 pt-8 sm:mt-24 sm:grid-cols-2 sm:gap-12")
+      div
+        p(class="mb-3 font-mono text-[10px] tracking-[0.25em] text-neutral-400") OUR APPROACH
+        h2(class="text-2xl font-bold tracking-tight sm:text-3xl") Good grooming starts with listening.
+      p(class="max-w-xl leading-relaxed text-neutral-500") We take the time to understand what suits you and shape each appointment around the details that matter: a thoughtful consultation, precise work, and a finish that feels like you.
+
+    section(class="mt-16 flex flex-col gap-6 rounded-2xl bg-neutral-950 p-6 text-white sm:mt-20 sm:flex-row sm:items-center sm:justify-between sm:p-10")
+      div
+        p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") FIND YOUR NEXT LOOK
+        h2(class="text-2xl font-bold tracking-tight sm:text-3xl") Visit us in Kozhikode.
+      a(href="/booking", class="inline-flex h-12 items-center justify-center gap-6 rounded-full bg-[#00D06C] px-6 font-mono text-xs font-bold tracking-[0.12em] text-black transition hover:bg-white")
+        span BOOK AN APPOINTMENT
+        span(class="text-lg") →
+
+  script.
+    const aboutImageToggle = document.getElementById('about-image-toggle');
+    aboutImageToggle.addEventListener('click', () => {
+      const isFlipped = aboutImageToggle.classList.toggle('is-flipped');
+      aboutImageToggle.setAttribute('aria-pressed', String(isFlipped));
+      aboutImageToggle.setAttribute('aria-label', isFlipped ? 'Flip back to the studio image' : 'Flip the studio image');
+    });

@@ -1,54 +1,76 @@
-doctype html
-html(lang="en")
-  head
-    meta(charset="UTF-8")
-    meta(name="viewport", content="width=device-width, initial-scale=1")
-    title Sciss Barber
 
-    link(rel="preconnect", href="https://fonts.googleapis.com")
-    link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin)
-    link(
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono&display=swap"
-      rel="stylesheet"
-    )
+extends ../layouts/minimal.pug
 
-    link(rel="stylesheet", href="/css/output.css")
+block content
+  div(class="mx-auto flex w-full max-w-7xl flex-1 flex-col px-2 py-2 sm:px-5 sm:py-3 lg:px-10")
 
-  body(class="min-h-dvh bg-white text-neutral-950")
-
-    main(class="flex min-h-dvh flex-col px-8 py-7 lg:px-16 lg:py-8")
+    div(class="flex min-h-[calc(100svh-4rem)] flex-col")
 
       //- Top section
-      section(class="flex items-start justify-between")
+      section(class="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between")
 
-        div(class="flex items-start gap-5")
-
-          div(
-            class="grid size-12 shrink-0 place-items-center rounded-xl bg-black font-mono text-sm font-bold text-[#00D06C]"
-          ) SB
-
-          h1(
-            class="max-w-[520px] text-2xl font-bold leading-[1.15] tracking-tight lg:text-3xl"
-          )
+        div(class="flex items-start gap-4")
+          h1(class="max-w-[520px] text-2xl font-bold leading-[1.15] tracking-tight lg:text-3xl")
             | Not a style, a perspective.
             br
-            | Precision Grooming in Soho.
+            | Precision Grooming in Kozhikode.
 
-        div(class="flex items-center gap-8")
-
+        div(class="flex items-center gap-5 sm:gap-8")
           div(
-            class="hidden items-center gap-3 rounded-full border border-neutral-200 px-6 py-3 font-mono text-xs tracking-wider sm:flex"
+            class="flex items-center gap-3 rounded-full border border-neutral-200 px-4 py-3 font-mono text-xs tracking-wider"
           )
             span(class="size-2.5 rounded-full bg-[#00D06C]")
-            span NEXT: TODAY 2:30 PM (LEO)
+            span YOUR NEXT LOOK STARTS HERE
+
+          a(href="/login", class="font-mono text-sm font-bold tracking-wider transition hover:text-[#00D06C]") LOGIN
 
           button(
+            id="site-menu-toggle"
             type="button"
-            class="font-mono text-sm font-bold tracking-wider"
+            class="font-mono text-sm font-bold tracking-wider hover:text-[#00D06C]"
+            aria-controls="site-menu"
+            aria-expanded="false"
           ) MENU ::
 
+      button(
+        id="site-menu-backdrop"
+        type="button"
+        aria-label="Close menu"
+        class="fixed inset-0 z-40 hidden cursor-default bg-black/10 backdrop-blur-sm"
+      )
+
+      //- Menu
+      nav(
+        id="site-menu"
+        class="fixed left-4 right-4 top-20 z-50 hidden flex flex-col gap-1 rounded-2xl border border-neutral-200 bg-white p-3 font-mono text-xs font-bold tracking-wider shadow-xl sm:left-auto sm:right-8 sm:w-72 lg:right-16"
+      )
+        a(href="/", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") HOME
+        a(href="#about", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") ABOUT
+        a(href="#services", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") SERVICES
+        a(href="/bookings", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") MY BOOKINGS
+        a(href="/profile", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") PROFILE
+
+      script.
+        const menuToggle = document.getElementById('site-menu-toggle');
+        const siteMenu = document.getElementById('site-menu');
+        const menuBackdrop = document.getElementById('site-menu-backdrop');
+
+        function setSiteMenuOpen(isOpen) {
+          menuToggle.setAttribute('aria-expanded', String(isOpen));
+          siteMenu.classList.toggle('hidden', !isOpen);
+          menuBackdrop.classList.toggle('hidden', !isOpen);
+        }
+
+        menuToggle.addEventListener('click', () => {
+          setSiteMenuOpen(menuToggle.getAttribute('aria-expanded') !== 'true');
+        });
+        menuBackdrop.addEventListener('click', () => setSiteMenuOpen(false));
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') setSiteMenuOpen(false);
+        });
+
       //- Book button
-      section(class="pt-10 lg:pt-12")
+      section(class="pt-5 sm:pt-8 lg:pt-10")
         a(
           href="/booking"
           class="inline-flex items-center gap-8 rounded-full bg-black px-8 py-5 font-mono text-sm font-bold tracking-[0.15em] text-white transition hover:bg-[#00D06C] hover:text-black"
@@ -57,45 +79,104 @@ html(lang="en")
           span(class="text-2xl leading-none") →
 
       //- Main logo
-      section(class="flex flex-1 items-center justify-center")
+      section(class="flex min-h-0 flex-1 items-center justify-center overflow-hidden py-3 sm:py-5")
+        svg(class="pointer-events-none absolute h-0 w-0", aria-hidden="true", focusable="false")
+          defs
+            filter#sciss-liquid-filter(x="-15%", y="-20%", width="130%", height="140%")
+              feTurbulence(type="fractalNoise", baseFrequency="0.008 0.014", numOctaves="1", seed="8", result="liquid-noise")
+                animate(attributeName="baseFrequency", values="0.008 0.014;0.012 0.018;0.008 0.014", dur="4.5s", repeatCount="indefinite")
+              feDisplacementMap(in="SourceGraphic", in2="liquid-noise", scale="12", xChannelSelector="R", yChannelSelector="G")
         h2(
-          class="select-none text-[clamp(7rem,24vw,22rem)] font-bold leading-none tracking-[-0.08em]"
-        ) SCISS’
+          class="select-none text-[clamp(5.75rem,min(32vw,50vh),40rem)] font-bold leading-none tracking-[-0.09em]"
+        )
+          | SCISS
+          button#theme-toggle(type="button", aria-label="Switch to dark mode", aria-pressed="false", class="liquid-text cursor-pointer border-0 bg-transparent p-0") ’
+
+      script.
+        const themeToggle = document.getElementById('theme-toggle');
+        const isDarkTheme = document.documentElement.classList.contains('theme-dark');
+        themeToggle.setAttribute('aria-pressed', String(isDarkTheme));
+        themeToggle.setAttribute('aria-label', isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode');
+
+        themeToggle.addEventListener('click', () => {
+          const dark = document.documentElement.classList.toggle('theme-dark');
+          themeToggle.setAttribute('aria-pressed', String(dark));
+          themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+          try {
+            localStorage.setItem('sciss-theme', dark ? 'dark' : 'light');
+          } catch (error) {}
+        });
 
       //- Bottom information
       section(
-        class="flex flex-col gap-8 pb-3 lg:flex-row lg:items-end lg:justify-between"
+        class="flex flex-col gap-4 border-t border-neutral-100 pt-4 pb-1 sm:gap-6 sm:pt-5 lg:flex-row lg:items-end lg:justify-between"
       )
-
         div
           h3(class="text-lg font-bold tracking-tight")
-            | Precision studio in Sillk Street,KOZHIKODE
+            | Precision studio in Kozhikode
 
-          p(class="mt-2 text-base text-neutral-400")
-            | 142 Mercer Street • Mon–Sun 9AM–8PM
+          p(class="mt-2 text-sm text-neutral-400 sm:text-base")
+            | Visit us for your next cut. Contact the shop for current hours.
 
-        nav(
-          class="flex flex-wrap items-center gap-5 font-mono text-sm font-bold tracking-wide"
-        )
-          a(
-            href="/services"
-            class="transition hover:text-[#00D06C]"
-          ) SERVICES
-
+        nav(class="flex flex-wrap items-center gap-4 font-mono text-xs font-bold tracking-wide sm:gap-5 sm:text-sm")
+          a(href="#services", class="transition hover:text-[#00D06C]") SERVICES
           span(class="text-neutral-300") /
-
-          a(
-            href="/bookings"
-            class="transition hover:text-[#00D06C]"
-          ) MY BOOKINGS
-
+          a(href="/bookings", class="transition hover:text-[#00D06C]") MY BOOKINGS
           span(class="text-neutral-300") /
+          a(href="/profile", class="transition hover:text-[#00D06C]") PROFILE
+          span(class="text-neutral-300") /
+          a(href="#about", class="transition hover:text-[#00D06C]") ABOUT
 
-          a(
-            href="/profile"
-            class="transition hover:text-[#00D06C]"
-          ) PROFILE
+    section#about(class="grid scroll-mt-8 gap-8 border-t border-neutral-200 py-16 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16")
+      div(class="flex flex-col items-start gap-6")
+        p(class="mb-4 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ABOUT SCISS’
+        h2(class="max-w-xl text-4xl font-bold leading-[0.95] tracking-[-0.06em] sm:text-6xl") Not a style. A perspective.
+        p(class="max-w-xl text-base leading-relaxed text-neutral-500 sm:text-lg") Sciss’ is a precision grooming studio in Kozhikode. We take the time to understand your style and shape every visit around thoughtful consultation, careful work, and a finish that feels like you.
+        a(href="/about", class="w-fit font-mono text-xs font-bold tracking-[0.12em] transition hover:text-[#00D06C]") MORE ABOUT SCISS’ →
+      figure(class="about-image-frame mx-auto aspect-[4/5] w-full max-w-sm")
+        span(class="about-image-floor-shadow", aria-hidden="true")
+        button#landing-about-image-toggle.about-image-screen(type="button", aria-label="Flip the studio image", aria-pressed="false")
+          span(class="about-image-flip-inner")
+            span(class="about-image-face about-image-front")
+              img(src="/images/about-studio.png", alt="Warm, modern barber studio with a classic chair and large mirror", class="h-full w-full object-cover", loading="lazy")
+            span(class="about-image-face about-image-back")
+              span(class="font-mono text-[10px] tracking-[0.3em]") SCISS’ BARBER
+              span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") PRECISION GROOMING
+              span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") KOZHIKODE, KERALA
 
-          span(
-            class="rounded-md bg-black px-3 py-2 text-xs text-white"
-          ) KOZHIKODE
+    script.
+      const landingAboutImageToggle = document.getElementById('landing-about-image-toggle');
+      landingAboutImageToggle.addEventListener('click', () => {
+        const isFlipped = landingAboutImageToggle.classList.toggle('is-flipped');
+        landingAboutImageToggle.setAttribute('aria-pressed', String(isFlipped));
+        landingAboutImageToggle.setAttribute('aria-label', isFlipped ? 'Flip back to the studio image' : 'Flip the studio image');
+      });
+
+    section#services(class="scroll-mt-8 border-t border-neutral-200 py-16 sm:py-24")
+      div(class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")
+        div
+          p(class="mb-3 font-mono text-[10px] tracking-[0.25em] text-neutral-400") OUR SERVICES
+          h2(class="text-4xl font-bold tracking-[-0.06em] sm:text-6xl") The details matter.
+        a(href="/booking", class="w-fit font-mono text-xs font-bold tracking-[0.12em] transition hover:text-[#00D06C]") BOOK YOUR VISIT →
+
+      div(class="grid gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 sm:grid-cols-3")
+        article(class="bg-white p-6 sm:p-8")
+          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") 01 / CUT
+          h3(class="mb-3 text-xl font-bold tracking-tight") Precision haircut
+          p(class="text-sm leading-relaxed text-neutral-500") A considered cut shaped around your features, hair, and personal style.
+        article(class="bg-white p-6 sm:p-8")
+          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") 02 / BEARD
+          h3(class="mb-3 text-xl font-bold tracking-tight") Beard grooming
+          p(class="text-sm leading-relaxed text-neutral-500") Clean lines and balanced shaping for a finish that feels well kept.
+        article(class="bg-white p-6 sm:p-8")
+          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") 03 / FINISH
+          h3(class="mb-3 text-xl font-bold tracking-tight") The finishing touch
+          p(class="text-sm leading-relaxed text-neutral-500") A final check and styling guidance to help you carry the look forward.
+
+    footer(class="flex flex-col gap-4 border-t border-neutral-200 py-6 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between")
+      p(class="font-mono tracking-[0.12em]") SCISS’ BARBER · KOZHIKODE
+      nav(class="flex flex-wrap gap-x-5 gap-y-2 font-mono font-bold tracking-wide")
+        a(href="/", class="transition hover:text-[#00D06C]") HOME
+        a(href="#about", class="transition hover:text-[#00D06C]") ABOUT
+        a(href="#services", class="transition hover:text-[#00D06C]") SERVICES
+        a(href="/login", class="transition hover:text-[#00D06C]") LOGIN

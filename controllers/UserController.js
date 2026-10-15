@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 
 const UsersignUpController = async (req, res) => {
     try {
-        const newUser = await UsersignUp(req.body.email, req.body.name, req.body.password)
+        const newUser = await UsersignUp(req.body.email, req.body.name, req.body.password, req.body.phone)
         res.status(201).json({
             message: "signUp succesful",
             userId: newUser._id
@@ -60,13 +60,14 @@ const userLoginController = async (req, res) => {
     }
 }
 
+
 const googleCallbackController = (req, res) => {
     const token = jwt.sign({ id: req.user.id, role: req.user.role },
         process.env.JWT_SECRET,
         { expiresIn: '1d' });
 
     res.cookie('token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 })
-    res.status(200).json({ message: "Google Login Sccussful", user: { id: req.user.id, name: req.user.name, email: req.user.email } })
+    res.redirect('/');
 }
 
 
