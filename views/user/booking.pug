@@ -1,0 +1,216 @@
+extends ../layouts/minimal.pug
+
+block content
+  -
+    const serviceGroups = [
+      { title: 'Hair care', items: [['Hair cut', '₹150'], ['Hair styling', '₹200'], ['Hair wash', '₹100'], ['Beard shaping', '₹100'], ['Beard styling', '₹150'], ['Shave', '₹100'], ['Threading', '₹50'], ['Hair curling', '₹2,500']] },
+      { title: 'Face care', items: [['Skin toning', '₹100'], ['D-Tan', 'Ask in shop'], ['D-Tan hand', '₹400'], ['Bleach', '₹350'], ['Gold bleach', '₹450'], ['Face wash', '₹250'], ['Face scrub', '₹200'], ['Black mask', '₹350'], ['Peel-off mask', '₹500'], ['Clean up (basic)', '₹500'], ['Advanced clean up', '₹800'], ['Face waxing', '₹200']] },
+      { title: 'Facials', items: [['Brightening facial · basic', '₹1,000'], ['Fruit facial · basic', '₹1,500'], ['Papaya facial · mid level', '₹2,000'], ['Gold facial · mid level', '₹2,300'], ['Diamond facial · premium', '₹2,500']] },
+      { title: 'Hair colour', items: [['Basic colour', '₹350'], ['Without ammonia', '₹450'], ['Brown · starting at', '₹500'], ['Henna', '₹300'], ['Beard colour', '₹200'], ['Moustache colour', '₹100'], ['Cap highlighting', '₹1,700']] },
+      { title: 'Straightening & smoothening', items: [['Straightening · partial', '₹1,500'], ['Straightening · full', '₹2,500'], ['Hair ironing', '₹300'], ['Rebonding', '₹1,200'], ['Rebonding · full', '₹2,000'], ['Softening', '₹800'], ['Keratin treatment', '₹3,000']] },
+      { title: 'Hair spa & massage', items: [['Basic hair spa', '₹600'], ['Dandruff treatment', '₹800'], ['Dryness treatment', '₹700'], ['Oil massage', '₹250']] }
+    ];
+    const timeSlots = ['10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
+
+  div(class="mx-auto flex w-full max-w-6xl flex-1 flex-col py-8 sm:py-12")
+    a(href="/", class="mb-8 w-fit font-mono text-xs font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK HOME
+
+    div(class="mb-10 grid gap-6 border-b border-neutral-200 pb-8 sm:mb-12 sm:grid-cols-[1fr_auto] sm:items-end")
+      div
+        p(class="mb-4 font-mono text-[10px] tracking-[0.3em] text-neutral-400") SCISS’ BARBER · KOZHIKODE
+        h1(class="text-[clamp(3rem,9vw,6.5rem)] font-bold leading-[0.88] tracking-[-0.08em]") BOOK YOUR VISIT.
+      p(class="max-w-xs text-sm leading-relaxed text-neutral-500") Choose a service and a time that works for you. We’ll have the chair ready.
+
+    form#booking-form(class="grid gap-10 lg:grid-cols-[1fr_0.72fr]")
+      div(class="space-y-10")
+        fieldset
+          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 01 / SELECT A SERVICE
+          p(class="mb-4 text-xs text-neutral-500") Pick a category to see its services and prices.
+          div#service-categories(class="flex flex-wrap gap-2")
+            each group, index in serviceGroups
+              button(type="button", data-service-category=group.title, class=index === 0 ? "booking-category-chip is-active" : "booking-category-chip")= group.title
+          div#service-options(class="mt-4 grid gap-3 sm:grid-cols-2")
+            p#service-prompt(class="rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2") Choose a service category to view the menu.
+          input#booking-service(type="hidden", name="service")
+          input#booking-time(type="hidden", name="time")
+          a(href="/services", class="mt-3 inline-flex text-xs font-semibold text-neutral-500 transition hover:text-[#00D06C]") View the full services & price list →
+
+        fieldset
+          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 02 / DATE & TIME
+          p(class="mb-3 text-xs text-neutral-500") Choose a day
+          div#date-choices(class="grid grid-cols-3 gap-2 sm:grid-cols-7")
+          label(class="mt-3 flex flex-col gap-2 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between")
+            span Or pick another date
+            input#booking-date(type="date", name="date", required, class="w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm text-neutral-950 outline-none focus:border-[#00D06C] sm:w-auto")
+          div(class="mt-6")
+            p(class="mb-3 text-xs text-neutral-500") Choose a preferred time
+            div#time-choices(class="grid grid-cols-2 gap-2 sm:grid-cols-3")
+              each slot in timeSlots
+                button(type="button", data-time-slot=slot, class="booking-time-chip")= slot
+
+        fieldset
+          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 03 / YOUR DETAILS
+          div(class="grid gap-4 sm:grid-cols-2")
+            label(class="block sm:col-span-2")
+              span(class="mb-2 block text-xs text-neutral-500") Full name
+              input(type="text", name="name", autocomplete="name", required, class="w-full border-0 border-b border-neutral-300 bg-transparent py-3 text-sm outline-none focus:border-[#00D06C]")
+            label(class="block")
+              span(class="mb-2 block text-xs text-neutral-500") Email
+              input(type="email", name="email", autocomplete="email", required, class="w-full border-0 border-b border-neutral-300 bg-transparent py-3 text-sm outline-none focus:border-[#00D06C]")
+            label(class="block")
+              span(class="mb-2 block text-xs text-neutral-500") Phone
+              input(type="tel", name="phone", autocomplete="tel", required, class="w-full border-0 border-b border-neutral-300 bg-transparent py-3 text-sm outline-none focus:border-[#00D06C]")
+
+      aside(class="h-fit rounded-2xl bg-neutral-950 p-6 text-white sm:p-8")
+        p(class="font-mono text-[10px] tracking-[0.25em] text-neutral-400") YOUR APPOINTMENT
+        h2(class="mb-8 mt-3 text-2xl font-bold tracking-tight") Ready when you are.
+        p(class="mb-8 text-sm leading-relaxed text-neutral-400") Review your service, date, and time before you continue.
+        div(class="mb-6 border-y border-white/15 py-5")
+          div(class="flex items-start justify-between gap-4")
+            div
+              p(class="font-mono text-[9px] tracking-[0.16em] text-neutral-400") SELECTED SERVICE
+              p#summary-service(class="mt-2 text-sm font-semibold") Choose a service
+            div(class="text-right")
+              p(class="font-mono text-[9px] tracking-[0.16em] text-neutral-400") PRICE
+              p#summary-price(class="mt-2 text-sm font-bold text-[#00D06C]") —
+          p#summary-datetime(class="mt-4 text-xs text-neutral-400") Select your date and time
+        button(type="submit", class="flex h-14 w-full items-center justify-between rounded-full bg-[#00D06C] px-6 font-mono text-xs font-bold tracking-[0.12em] text-black transition hover:bg-white")
+          span REVIEW APPOINTMENT
+          span(class="text-lg") →
+        p#booking-status.mt-5.text-sm.leading-relaxed.text-neutral-300(role="status", aria-live="polite")
+
+  script#booking-service-data(type="application/json")!= JSON.stringify(serviceGroups)
+
+  script.
+    const bookingForm = document.getElementById('booking-form');
+    const bookingDate = document.getElementById('booking-date');
+    const bookingService = document.getElementById('booking-service');
+    const bookingTime = document.getElementById('booking-time');
+    const serviceGroups = JSON.parse(document.getElementById('booking-service-data').textContent);
+    const serviceCategories = document.getElementById('service-categories');
+    const serviceOptions = document.getElementById('service-options');
+    const dateChoices = document.getElementById('date-choices');
+    const summaryService = document.getElementById('summary-service');
+    const summaryPrice = document.getElementById('summary-price');
+    const summaryDateTime = document.getElementById('summary-datetime');
+    const today = new Date();
+    const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    bookingDate.min = localToday;
+
+    function updateBookingSummary() {
+      const selectedService = bookingService.value;
+      const selectedPrice = bookingService.dataset.price || '';
+      const selectedDate = bookingDate.value;
+      const selectedTime = bookingTime.value;
+      const prettyDate = selectedDate
+        ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : '';
+      summaryService.textContent = selectedService || 'Choose a service';
+      summaryPrice.textContent = !selectedPrice ? '—' : selectedPrice === 'Ask in shop' ? 'Confirm in shop' : selectedPrice;
+      summaryDateTime.textContent = prettyDate || selectedTime
+        ? (prettyDate || 'Choose a date') + (selectedTime ? ' · ' + selectedTime : '')
+        : 'Select your date and time';
+    }
+
+    function setServiceCategory(categoryName) {
+      serviceCategories.querySelectorAll('[data-service-category]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.serviceCategory === categoryName);
+      });
+      const group = serviceGroups.find((item) => item.title === categoryName);
+      serviceOptions.replaceChildren();
+      bookingService.value = '';
+      bookingService.dataset.price = '';
+      if (!group) {
+        updateBookingSummary();
+        return;
+      }
+      group.items.forEach(([name, price]) => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'booking-service-card';
+        option.dataset.serviceName = name;
+        option.dataset.price = price;
+        const serviceName = document.createElement('span');
+        serviceName.className = 'text-sm font-semibold';
+        serviceName.textContent = name;
+        const servicePrice = document.createElement('span');
+        servicePrice.className = 'font-mono text-xs font-bold';
+        servicePrice.textContent = price;
+        option.append(serviceName, servicePrice);
+        option.addEventListener('click', () => {
+          serviceOptions.querySelectorAll('.booking-service-card').forEach((card) => card.classList.remove('is-selected'));
+          option.classList.add('is-selected');
+          bookingService.value = name;
+          bookingService.dataset.price = price;
+          updateBookingSummary();
+        });
+        serviceOptions.appendChild(option);
+      });
+      updateBookingSummary();
+    }
+
+    serviceCategories.addEventListener('click', (event) => {
+      const categoryButton = event.target.closest('[data-service-category]');
+      if (categoryButton) setServiceCategory(categoryButton.dataset.serviceCategory);
+    });
+
+    function setDate(dateValue, selectedButton) {
+      bookingDate.value = dateValue;
+      dateChoices.querySelectorAll('.booking-date-chip').forEach((button) => button.classList.remove('is-selected'));
+      if (selectedButton) selectedButton.classList.add('is-selected');
+      updateBookingSummary();
+    }
+
+    for (let offset = 0; offset < 7; offset += 1) {
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+      const isoDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+      const dayButton = document.createElement('button');
+      dayButton.type = 'button';
+      dayButton.className = 'booking-date-chip';
+      dayButton.dataset.date = isoDate;
+      const dayName = document.createElement('span');
+      dayName.className = 'font-mono text-[9px] tracking-[0.08em]';
+      dayName.textContent = offset === 0 ? 'TODAY' : date.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase();
+      const dayNumber = document.createElement('span');
+      dayNumber.className = 'text-xl font-bold';
+      dayNumber.textContent = String(date.getDate());
+      const monthName = document.createElement('span');
+      monthName.className = 'font-mono text-[8px] tracking-[0.08em]';
+      monthName.textContent = date.toLocaleDateString('en-IN', { month: 'short' }).toUpperCase();
+      dayButton.append(dayName, dayNumber, monthName);
+      dayButton.addEventListener('click', () => setDate(isoDate, dayButton));
+      dateChoices.appendChild(dayButton);
+    }
+
+    bookingDate.addEventListener('change', () => {
+      dateChoices.querySelectorAll('.booking-date-chip').forEach((button) => {
+        button.classList.toggle('is-selected', button.dataset.date === bookingDate.value);
+      });
+      updateBookingSummary();
+    });
+
+    document.getElementById('time-choices').addEventListener('click', (event) => {
+      const timeButton = event.target.closest('[data-time-slot]');
+      if (!timeButton) return;
+      document.querySelectorAll('[data-time-slot]').forEach((button) => button.classList.remove('is-selected'));
+      timeButton.classList.add('is-selected');
+      bookingTime.value = timeButton.dataset.timeSlot;
+      updateBookingSummary();
+    });
+
+    bookingForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const status = document.getElementById('booking-status');
+      if (!bookingService.value) {
+        status.textContent = 'Choose a service to continue.';
+        return;
+      }
+      if (!bookingTime.value) {
+        status.textContent = 'Choose a preferred time to continue.';
+        return;
+      }
+      const values = new FormData(bookingForm);
+      const selectedPrice = bookingService.dataset.price;
+      const priceMessage = selectedPrice === 'Ask in shop' ? 'Price to be confirmed in shop' : selectedPrice;
+      status.textContent = values.get('service') + ' · ' + priceMessage + ' · ' + values.get('date') + ' at ' + values.get('time') + '. Details ready for review; booking confirmation is not connected yet.';
+    });

@@ -1,0 +1,37 @@
+extends ../layouts/minimal.pug
+
+block content
+  -
+    const serviceGroups = [
+      { title: 'Hair care', items: [['Hair cut', '₹150'], ['Hair styling', '₹200'], ['Hair wash', '₹100'], ['Beard shaping', '₹100'], ['Beard styling', '₹150'], ['Shave', '₹100'], ['Threading', '₹50'], ['Hair curling', '₹2,500']] },
+      { title: 'Face care', items: [['Skin toning', '₹100'], ['D-Tan', 'Ask in shop'], ['D-Tan hand', '₹400'], ['Bleach', '₹350'], ['Gold bleach', '₹450'], ['Face wash', '₹250'], ['Face scrub', '₹200'], ['Black mask', '₹350'], ['Peel-off mask', '₹500'], ['Clean up (basic)', '₹500'], ['Advanced clean up', '₹800'], ['Face waxing', '₹200']] },
+      { title: 'Facials', items: [['Brightening facial · basic', '₹1,000'], ['Fruit facial · basic', '₹1,500'], ['Papaya facial · mid level', '₹2,000'], ['Gold facial · mid level', '₹2,300'], ['Diamond facial · premium', '₹2,500']] },
+      { title: 'Hair colour', items: [['Basic colour', '₹350'], ['Without ammonia', '₹450'], ['Brown · starting at', '₹500'], ['Henna', '₹300'], ['Beard colour', '₹200'], ['Moustache colour', '₹100'], ['Cap highlighting', '₹1,700']] },
+      { title: 'Straightening & smoothening', items: [['Straightening · partial', '₹1,500'], ['Straightening · full', '₹2,500'], ['Hair ironing', '₹300'], ['Rebonding', '₹1,200'], ['Rebonding · full', '₹2,000'], ['Softening', '₹800'], ['Keratin treatment', '₹3,000']] },
+      { title: 'Hair spa & massage', items: [['Basic hair spa', '₹600'], ['Dandruff treatment', '₹800'], ['Dryness treatment', '₹700'], ['Oil massage', '₹250']] }
+    ];
+
+  div(class="services-page-content mx-auto w-full max-w-7xl flex-1 px-2 py-8 sm:px-5 sm:py-12 lg:px-10")
+    div(class="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between")
+      div
+        a(href="/", class="mb-8 inline-block font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK HOME
+        p(class="mb-4 font-mono text-[10px] tracking-[0.3em] text-neutral-400") SCISS’ BARBER · KOZHIKODE
+        h1(class="text-[clamp(3.5rem,9vw,7rem)] font-bold leading-[0.88] tracking-[-0.08em]")
+          | SERVICES
+          br
+          | & PRICES.
+      div(class="max-w-xs")
+        p(class="mb-5 text-sm leading-relaxed text-neutral-500") Browse the full service menu. All prices are in Indian rupees.
+        a(href="/booking", class="inline-flex h-12 items-center justify-center rounded-full bg-[#00D06C] px-6 font-mono text-xs font-bold tracking-[0.12em] text-black transition hover:bg-neutral-950 hover:text-white") BOOK NOW →
+
+    div(class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3")
+      each group, index in serviceGroups
+        article(class="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6")
+          p(class="mb-5 font-mono text-[10px] tracking-[0.22em] text-[#00D06C]")= `0${index + 1} / ${group.title.toUpperCase()}`
+          ul(class="space-y-3")
+            each item in group.items
+              li(class="flex items-baseline justify-between gap-4 border-b border-neutral-100 pb-2.5 text-sm last:border-0 last:pb-0")
+                span(class="text-neutral-600")= item[0]
+                span(class="shrink-0 font-mono text-xs font-bold text-neutral-950")= item[1]
+
+  block auth_actions

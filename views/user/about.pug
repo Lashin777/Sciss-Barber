@@ -13,16 +13,68 @@ block content
           | A PERSPECTIVE.
       p(class="max-w-md text-lg leading-relaxed text-neutral-500 sm:text-xl") Sciss’ is a precision grooming studio in Kozhikode, built around considered cuts, personal style, and the confidence that comes with both.
 
-    figure(class="about-image-frame mx-auto mt-12 aspect-[4/5] w-full max-w-md sm:mt-16")
-      span(class="about-image-floor-shadow", aria-hidden="true")
-      button#about-image-toggle.about-image-screen(type="button", aria-label="Flip the studio image", aria-pressed="false")
-        span(class="about-image-flip-inner")
-          span(class="about-image-face about-image-front")
-            img(src="/images/about-studio.png", alt="Warm, modern barber studio with a classic chair and large mirror", class="h-full w-full object-cover", loading="lazy")
-          span(class="about-image-face about-image-back")
-            span(class="font-mono text-[10px] tracking-[0.3em]") SCISS’ BARBER
-            span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") PRECISION GROOMING
-            span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") KOZHIKODE, KERALA
+    section#about-gallery.about-gallery(class="mt-12 sm:mt-16", aria-label="Sciss’ studio photo carousel")
+      div.about-gallery-stage
+        figure.about-image-frame.about-gallery-card.is-current(data-slide="0")
+          span(class="about-image-floor-shadow", aria-hidden="true")
+          button.about-image-screen.about-gallery-image(type="button", aria-label="Flip the studio image", aria-pressed="false")
+            span(class="about-image-flip-inner")
+              span(class="about-image-face about-image-front")
+                img(src="/images/about-studio.png", alt="Warm modern barber studio with a classic chair and large mirror", class="h-full w-full object-cover", loading="lazy")
+              span(class="about-image-face about-image-back")
+                span(class="font-mono text-[10px] tracking-[0.3em]") SCISS’ BARBER
+                span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") PRECISION GROOMING
+                span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") KOZHIKODE, KERALA
+
+        figure.about-image-frame.about-gallery-card(data-slide="1")
+          span(class="about-image-floor-shadow", aria-hidden="true")
+          button.about-image-screen.about-gallery-image(type="button", aria-label="Flip the haircut photo", aria-pressed="false")
+            span(class="about-image-flip-inner")
+              span(class="about-image-face about-image-front")
+                img(src="/images/about-haircut.webp", alt="Barber shaping a client’s fade haircut in the studio", class="h-full w-full object-cover", loading="lazy")
+              span(class="about-image-face about-image-back")
+                span(class="font-mono text-[10px] tracking-[0.3em]") THE CRAFT
+                span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") MADE WITH CARE
+                span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") EVERY DETAIL MATTERS
+
+        figure.about-image-frame.about-gallery-card(data-slide="2")
+          span(class="about-image-floor-shadow", aria-hidden="true")
+          button.about-image-screen.about-gallery-image(type="button", aria-label="Flip the barber tools photo", aria-pressed="false")
+            span(class="about-image-flip-inner")
+              span(class="about-image-face about-image-front")
+                img(src="/images/about-tools.webp", alt="Scissors, clippers, and grooming tools on a wooden barber counter", class="h-full w-full object-cover", loading="lazy")
+              span(class="about-image-face about-image-back")
+                span(class="font-mono text-[10px] tracking-[0.3em]") THE DETAILS
+                span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") TOOLS OF THE TRADE
+                span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") PRECISION IN EVERY CUT
+
+        figure.about-image-frame.about-gallery-card(data-slide="3")
+          span(class="about-image-floor-shadow", aria-hidden="true")
+          button.about-image-screen.about-gallery-image(type="button", aria-label="Flip the consultation photo", aria-pressed="false")
+            span(class="about-image-flip-inner")
+              span(class="about-image-face about-image-front")
+                img(src="/images/about-consultation.webp", alt="Barber discussing a haircut with a client in front of the studio mirror", class="h-full w-full object-cover", loading="lazy")
+              span(class="about-image-face about-image-back")
+                span(class="font-mono text-[10px] tracking-[0.3em]") THE CONSULTATION
+                span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") YOUR STYLE, YOUR WAY
+                span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") GOOD CUTS START WITH LISTENING
+
+        figure.about-image-frame.about-gallery-card(data-slide="4")
+          span(class="about-image-floor-shadow", aria-hidden="true")
+          button.about-image-screen.about-gallery-image(type="button", aria-label="Flip the barber chair photo", aria-pressed="false")
+            span(class="about-image-flip-inner")
+              span(class="about-image-face about-image-front")
+                img(src="/images/about-chair.webp", alt="Empty leather barber chair in a warmly lit studio", class="h-full w-full object-cover", loading="lazy")
+              span(class="about-image-face about-image-back")
+                span(class="font-mono text-[10px] tracking-[0.3em]") YOUR CHAIR IS READY
+                span(class="mt-5 text-center text-4xl font-bold leading-[0.9] tracking-[-0.06em] sm:text-5xl") MAKE YOURSELF AT HOME
+                span(class="mt-5 font-mono text-[10px] tracking-[0.2em]") KOZHIKODE, KERALA
+
+      div.about-gallery-controls(aria-label="Photo controls")
+        button#about-gallery-prev.about-gallery-control(type="button", aria-label="Previous photo") ←
+        button#about-gallery-next.about-gallery-control(type="button", aria-label="Next photo") →
+
+      p#about-gallery-status(class="mt-6 text-center font-mono text-[10px] tracking-[0.2em] text-neutral-500", aria-live="polite") 01 / 05
 
     section(class="mt-16 grid gap-8 border-t border-neutral-200 pt-8 sm:mt-24 sm:grid-cols-2 sm:gap-12")
       div
@@ -39,9 +91,61 @@ block content
         span(class="text-lg") →
 
   script.
-    const aboutImageToggle = document.getElementById('about-image-toggle');
-    aboutImageToggle.addEventListener('click', () => {
-      const isFlipped = aboutImageToggle.classList.toggle('is-flipped');
-      aboutImageToggle.setAttribute('aria-pressed', String(isFlipped));
-      aboutImageToggle.setAttribute('aria-label', isFlipped ? 'Flip back to the studio image' : 'Flip the studio image');
+    const aboutGalleryCards = [...document.querySelectorAll('.about-gallery-card')];
+    const aboutGalleryStatus = document.getElementById('about-gallery-status');
+    const aboutGallery = document.getElementById('about-gallery');
+    let activeAboutSlide = 0;
+    let aboutGalleryTimer;
+
+    function updateAboutGallery() {
+      aboutGalleryCards.forEach((card, index) => {
+        card.classList.remove('is-current', 'is-previous', 'is-next', 'is-hidden');
+        if (index === activeAboutSlide) card.classList.add('is-current');
+        else if (index === (activeAboutSlide + aboutGalleryCards.length - 1) % aboutGalleryCards.length) card.classList.add('is-previous');
+        else if (index === (activeAboutSlide + 1) % aboutGalleryCards.length) card.classList.add('is-next');
+        else card.classList.add('is-hidden');
+      });
+      aboutGalleryStatus.textContent = `${String(activeAboutSlide + 1).padStart(2, '0')} / ${String(aboutGalleryCards.length).padStart(2, '0')}`;
+    }
+
+    updateAboutGallery();
+
+    document.getElementById('about-gallery-prev').addEventListener('click', () => {
+      activeAboutSlide = (activeAboutSlide + aboutGalleryCards.length - 1) % aboutGalleryCards.length;
+      updateAboutGallery();
+      restartAboutGalleryTimer();
+    });
+    document.getElementById('about-gallery-next').addEventListener('click', () => {
+      activeAboutSlide = (activeAboutSlide + 1) % aboutGalleryCards.length;
+      updateAboutGallery();
+      restartAboutGalleryTimer();
+    });
+
+    function stopAboutGalleryTimer() {
+      window.clearInterval(aboutGalleryTimer);
+    }
+
+    function restartAboutGalleryTimer() {
+      stopAboutGalleryTimer();
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      aboutGalleryTimer = window.setInterval(() => {
+        activeAboutSlide = (activeAboutSlide + 1) % aboutGalleryCards.length;
+        updateAboutGallery();
+      }, 5000);
+    }
+
+    aboutGallery.addEventListener('mouseenter', stopAboutGalleryTimer);
+    aboutGallery.addEventListener('mouseleave', restartAboutGalleryTimer);
+    aboutGallery.addEventListener('focusin', stopAboutGalleryTimer);
+    aboutGallery.addEventListener('focusout', (event) => {
+      if (!aboutGallery.contains(event.relatedTarget)) restartAboutGalleryTimer();
+    });
+    restartAboutGalleryTimer();
+
+    document.querySelectorAll('.about-gallery-image').forEach((imageButton) => {
+      imageButton.addEventListener('click', () => {
+        const isFlipped = imageButton.classList.toggle('is-flipped');
+        imageButton.setAttribute('aria-pressed', String(isFlipped));
+        imageButton.setAttribute('aria-label', isFlipped ? 'Flip back to the photo' : 'Flip to the photo details');
+      });
     });

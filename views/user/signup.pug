@@ -139,6 +139,29 @@ block auth_actions
       }
     });
 
+    let resendCountdown;
+    function startResendCountdown(seconds = 60){
+      const resendButton = document.getElementById('resend-otp');
+      let remaining = seconds;
+
+
+      clearInterval(resendCountdown);
+      resendButton.disabled =  true;
+      resendButton.textContent = `RESEND IN ${remaining}s`;
+
+      resendCountdown = setInterval(()=>{
+        remaining --;
+
+      if(remaining<=0){
+        clearInterval(resendCountdown);
+        resendButton.disabled = false;
+        resendButton.textContent = 'RESEND CODE'
+        return;
+      }
+      resendButton.textContent =`RESEND IN ${remaining}s`;
+      },1000);
+    }
+
     document.getElementById('resend-otp').addEventListener('click', async () => {
       const resendButton = document.getElementById('resend-otp');
       verifyError.textContent = '';

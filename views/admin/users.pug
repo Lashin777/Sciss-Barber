@@ -1,0 +1,276 @@
+extends ../layouts/minimal.pug
+
+block content
+  section(class="mx-auto flex w-full max-w-7xl flex-1 flex-col py-8 sm:py-12")
+    header(class="mb-10 flex flex-wrap items-end justify-between gap-5 border-b border-neutral-200 pb-6")
+      div
+        a(href="/", class="mb-5 inline-block font-mono text-[10px] font-bold tracking-[0.18em] text-neutral-500 transition hover:text-[#00D06C]") ← SCISS’ BARBER
+        p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / CUSTOMER ACCOUNTS
+        h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") User management
+      a(href="/admin/login", class="font-mono text-xs font-bold tracking-[0.12em] text-neutral-500 transition hover:text-[#00D06C]") ADMIN SIGN IN →
+
+    section(class="flex flex-col gap-5")
+      div(class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")
+        div
+          p(class="font-mono text-[10px] tracking-[0.2em] text-neutral-400") CUSTOMER DIRECTORY
+          p#user-count(class="mt-2 text-sm text-neutral-500", aria-live="polite") Loading users…
+        div(class="flex w-full gap-2 sm:w-auto")
+          label(class="relative flex min-w-0 flex-1 items-center sm:w-80")
+            span(class="sr-only") Search users by name
+            input#user-search(type="search", placeholder="Search by name…", autocomplete="off", class="h-12 w-full border border-neutral-200 bg-white px-4 pr-12 text-sm outline-none transition focus:border-neutral-950")
+            button#clear-user-search(type="button", aria-label="Clear search", title="Clear search", class="absolute right-2 hidden size-9 cursor-pointer items-center justify-center text-lg text-neutral-400 transition hover:text-neutral-950") ×
+          button#refresh-users(type="button", class="h-12 shrink-0 border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.1em] transition hover:border-neutral-950") REFRESH
+
+      p#users-error(class="hidden border-l-2 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-700", role="alert", aria-live="polite")
+      p#users-notice(class="hidden border-l-2 border-[#00D06C] bg-green-50 px-4 py-3 text-sm text-green-800", role="status", aria-live="polite")
+
+      div(class="overflow-hidden border border-neutral-200 bg-white")
+        div(class="overflow-x-auto")
+          table(class="w-full min-w-[800px] border-collapse text-left")
+            thead
+              tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[10px] tracking-[0.15em] text-neutral-500")
+                th(scope="col", class="px-5 py-4 font-normal") CUSTOMER
+                th(scope="col", class="px-5 py-4 font-normal") CONTACT
+                th(scope="col", class="px-5 py-4 font-normal") JOINED · NEWEST FIRST
+                th(scope="col", class="px-5 py-4 font-normal") STATUS
+                th(scope="col", class="px-5 py-4 text-right font-normal") ACTION
+            tbody#users-table-body
+              tr
+                td(colspan="5", class="px-5 py-12 text-center text-sm text-neutral-400") Loading users…
+
+      div(class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between")
+        label(class="flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-neutral-500")
+          | ROWS PER PAGE
+          select#page-size(class="h-10 border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none focus:border-neutral-950")
+            option(value="10", selected) 10
+            option(value="25") 25
+            option(value="50") 50
+        div(class="flex items-center justify-between gap-4 sm:justify-end")
+          span#page-indicator(class="min-w-20 text-center font-mono text-[10px] tracking-[0.1em] text-neutral-500", aria-live="polite") PAGE 1
+          div(class="flex gap-2")
+            button#previous-page(type="button", disabled, class="h-10 border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.12em] transition hover:border-neutral-950 disabled:cursor-not-allowed disabled:opacity-40") ← PREVIOUS
+            button#next-page(type="button", class="h-10 border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.12em] transition hover:border-neutral-950 disabled:cursor-not-allowed disabled:opacity-40") NEXT →
+
+  dialog#user-action-confirmation(class="m-auto w-[calc(100%-2rem)] max-w-md border border-neutral-200 bg-white p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm")
+    div(class="p-6 sm:p-8")
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") CONFIRM ACCOUNT CHANGE
+      h2#confirmation-title(class="mb-3 text-2xl font-bold tracking-tight") Block this user?
+      p#confirmation-copy(class="mb-7 text-sm leading-relaxed text-neutral-500") This user will not be able to sign in while blocked.
+      div(class="flex gap-3")
+        button#cancel-user-action(type="button", class="h-11 flex-1 border border-neutral-200 font-mono text-[10px] font-bold tracking-[0.1em] transition hover:border-neutral-950") CANCEL
+        button#confirm-user-action(type="button", class="h-11 flex-1 bg-neutral-950 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") BLOCK USER
+
+  script.
+    const usersTableBody = document.getElementById('users-table-body');
+    const usersError = document.getElementById('users-error');
+    const usersNotice = document.getElementById('users-notice');
+    const userCount = document.getElementById('user-count');
+    const userSearch = document.getElementById('user-search');
+    const clearUserSearch = document.getElementById('clear-user-search');
+    const pageSizeSelect = document.getElementById('page-size');
+    const pageIndicator = document.getElementById('page-indicator');
+    const previousPage = document.getElementById('previous-page');
+    const nextPage = document.getElementById('next-page');
+    const confirmationDialog = document.getElementById('user-action-confirmation');
+    const confirmationTitle = document.getElementById('confirmation-title');
+    const confirmationCopy = document.getElementById('confirmation-copy');
+    const confirmUserAction = document.getElementById('confirm-user-action');
+    const cancelUserAction = document.getElementById('cancel-user-action');
+    let currentPage = 1;
+    let pageUsers = [];
+    let pendingAction = null;
+    let searchTimer;
+
+    function showUsersError(message) {
+      usersError.textContent = message;
+      usersError.classList.remove('hidden');
+    }
+
+    function hideUsersMessages() {
+      usersError.classList.add('hidden');
+      usersNotice.classList.add('hidden');
+    }
+
+    function renderUsers(users) {
+      usersTableBody.replaceChildren();
+      if (!users.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 5;
+        cell.className = 'px-5 py-12 text-center text-sm text-neutral-400';
+        cell.textContent = userSearch.value.trim() ? 'No users match that search.' : 'No users found.';
+        row.appendChild(cell);
+        usersTableBody.appendChild(row);
+        return;
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      users.forEach((user) => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-neutral-100 last:border-b-0';
+
+        const customer = document.createElement('td');
+        customer.className = 'px-5 py-4';
+        const name = document.createElement('p');
+        name.className = 'font-bold';
+        name.textContent = user.name || 'Unnamed customer';
+        const role = document.createElement('p');
+        role.className = 'mt-1 font-mono text-[9px] tracking-[0.12em] text-neutral-400';
+        role.textContent = user.role || 'CUSTOMER';
+        customer.append(name, role);
+
+        const contact = document.createElement('td');
+        contact.className = 'px-5 py-4 text-sm';
+        const email = document.createElement('p');
+        email.textContent = user.email || '—';
+        const phone = document.createElement('p');
+        phone.className = 'mt-1 text-xs text-neutral-400';
+        phone.textContent = user.phone || 'No phone added';
+        contact.append(email, phone);
+
+        const joined = document.createElement('td');
+        joined.className = 'whitespace-nowrap px-5 py-4 text-sm text-neutral-500';
+        const createdAt = user.createdAt ? new Date(user.createdAt) : null;
+        joined.textContent = createdAt && !Number.isNaN(createdAt.getTime()) ? dateFormatter.format(createdAt) : '—';
+
+        const statusCell = document.createElement('td');
+        statusCell.className = 'px-5 py-4';
+        const status = document.createElement('span');
+        const isBlocked = user.status === 'BLOCKED';
+        status.className = isBlocked
+          ? 'inline-flex items-center gap-2 bg-red-50 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.1em] text-red-700'
+          : 'inline-flex items-center gap-2 bg-green-50 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.1em] text-green-800';
+        status.textContent = isBlocked ? 'BLOCKED' : 'ACTIVE';
+        statusCell.appendChild(status);
+
+        const actionCell = document.createElement('td');
+        actionCell.className = 'px-5 py-4 text-right';
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.dataset.userId = user._id;
+        action.dataset.userName = user.name || user.email || 'this user';
+        action.dataset.action = isBlocked ? 'unblock' : 'block';
+        action.className = isBlocked
+          ? 'user-status-action border border-neutral-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:text-green-700'
+          : 'user-status-action border border-neutral-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-red-400 hover:text-red-600';
+        action.textContent = isBlocked ? 'UNBLOCK' : 'BLOCK';
+        actionCell.appendChild(action);
+
+        row.append(customer, contact, joined, statusCell, actionCell);
+        usersTableBody.appendChild(row);
+      });
+    }
+
+    async function loadUsers() {
+      hideUsersMessages();
+      usersTableBody.innerHTML = '<tr><td colspan="5" class="px-5 py-12 text-center text-sm text-neutral-400">Loading users…</td></tr>';
+      const query = new URLSearchParams({ page: String(currentPage), list: pageSizeSelect.value });
+      const search = userSearch.value.trim();
+      if (search) query.set('search', search);
+
+      try {
+        const response = await fetch(`/api/admin/getUser?${query.toString()}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not load users.');
+        const users = Array.isArray(result.message) ? result.message : [];
+        users.sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0));
+        pageUsers = users;
+        renderUsers(users);
+        userCount.textContent = `${users.length} ${users.length === 1 ? 'user' : 'users'} on this page`;
+        pageIndicator.textContent = `PAGE ${currentPage}`;
+        previousPage.disabled = currentPage <= 1;
+        nextPage.disabled = users.length < Number(pageSizeSelect.value);
+        clearUserSearch.classList.toggle('hidden', !search);
+        clearUserSearch.classList.toggle('flex', Boolean(search));
+      } catch (error) {
+        pageUsers = [];
+        renderUsers([]);
+        userCount.textContent = 'Unable to load users';
+        nextPage.disabled = true;
+        showUsersError(error.message || 'Could not load users.');
+      }
+    }
+
+    function requestUserAction(user, action) {
+      pendingAction = { id: user._id, name: user.name || user.email || 'this user', action };
+      const isBlocking = action === 'block';
+      confirmationTitle.textContent = isBlocking ? 'Block this user?' : 'Unblock this user?';
+      confirmationCopy.textContent = isBlocking
+        ? `${pendingAction.name} will not be able to sign in while blocked.`
+        : `${pendingAction.name} will be able to sign in again.`;
+      confirmUserAction.className = isBlocking
+        ? 'h-11 flex-1 bg-red-600 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-red-700'
+        : 'h-11 flex-1 bg-neutral-950 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black';
+      confirmUserAction.textContent = isBlocking ? 'BLOCK USER' : 'UNBLOCK USER';
+      confirmationDialog.showModal();
+    }
+
+    usersTableBody.addEventListener('click', (event) => {
+      const button = event.target.closest('.user-status-action');
+      if (!button) return;
+      const user = pageUsers.find((item) => item._id === button.dataset.userId);
+      if (user) requestUserAction(user, button.dataset.action);
+    });
+
+    cancelUserAction.addEventListener('click', () => confirmationDialog.close());
+    confirmUserAction.addEventListener('click', async () => {
+      if (!pendingAction) return;
+      confirmUserAction.disabled = true;
+      confirmUserAction.textContent = pendingAction.action === 'block' ? 'BLOCKING…' : 'UNBLOCKING…';
+      try {
+        const response = await fetch(`/api/admin/users/${encodeURIComponent(pendingAction.id)}/${pendingAction.action}`, { method: 'PATCH' });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not update this account.');
+        confirmationDialog.close();
+        const notice = pendingAction.action === 'block' ? 'User blocked.' : 'User unblocked.';
+        pendingAction = null;
+        await loadUsers();
+        usersNotice.textContent = notice;
+        usersNotice.classList.remove('hidden');
+      } catch (error) {
+        confirmationDialog.close();
+        showUsersError(error.message || 'Could not update this account.');
+      } finally {
+        confirmUserAction.disabled = false;
+        confirmUserAction.className = 'h-11 flex-1 bg-neutral-950 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black';
+        confirmUserAction.textContent = 'BLOCK USER';
+      }
+    });
+
+    userSearch.addEventListener('input', () => {
+      clearUserSearch.classList.toggle('hidden', !userSearch.value);
+      clearUserSearch.classList.toggle('flex', Boolean(userSearch.value));
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        currentPage = 1;
+        loadUsers();
+      }, 300);
+    });
+
+    clearUserSearch.addEventListener('click', () => {
+      clearTimeout(searchTimer);
+      userSearch.value = '';
+      currentPage = 1;
+      loadUsers();
+      userSearch.focus();
+    });
+
+    document.getElementById('refresh-users').addEventListener('click', loadUsers);
+    pageSizeSelect.addEventListener('change', () => {
+      currentPage = 1;
+      loadUsers();
+    });
+    previousPage.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        loadUsers();
+      }
+    });
+    nextPage.addEventListener('click', () => {
+      if (pageUsers.length === Number(pageSizeSelect.value)) {
+        currentPage += 1;
+        loadUsers();
+      }
+    });
+
+    loadUsers();

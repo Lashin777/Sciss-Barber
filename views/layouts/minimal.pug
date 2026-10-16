@@ -29,4 +29,127 @@ html(lang="en", class="scroll-smooth")
 
     block auth_actions
 
+    script.
+      document.addEventListener('click', (event) => {
+        const link = event.target.closest('.booking-transition-link');
+        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        event.preventDefault();
+        if (link.classList.contains('is-cutting')) return;
+        link.classList.add('is-cutting');
+
+        const scissors = link.querySelector('.booking-arrow');
+        const scissorsRect = scissors.getBoundingClientRect();
+        const startX = Math.round(scissorsRect.left + scissorsRect.width / 2);
+        const startY = Math.round(scissorsRect.top + scissorsRect.height / 2);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const tear = document.createElement('div');
+        tear.className = 'booking-page-tear';
+        tear.setAttribute('aria-hidden', 'true');
+        tear.style.setProperty('--tear-start-x', `${startX}px`);
+        tear.style.setProperty('--tear-start-y', `${startY}px`);
+
+        const bookingPage = document.createElement('iframe');
+        bookingPage.className = 'booking-page-underlay';
+        bookingPage.src = link.href;
+        bookingPage.title = 'Booking page';
+        bookingPage.tabIndex = -1;
+        let bookingReady = false;
+        bookingPage.addEventListener('load', () => { bookingReady = true; }, { once: true });
+
+        function makePageHalf(className) {
+          const half = document.createElement('div');
+          half.className = `booking-page-paper ${className}`;
+          const snapshot = document.createElement('div');
+          snapshot.className = `booking-page-snapshot ${document.body.className}`;
+          snapshot.setAttribute('style', 'position:absolute;inset:0;width:100%;min-height:100dvh;overflow:hidden');
+          [...document.body.children].forEach((child) => {
+            if (child.tagName !== 'SCRIPT') snapshot.appendChild(child.cloneNode(true));
+          });
+          snapshot.querySelectorAll('.booking-arrow').forEach((arrow) => arrow.remove());
+          half.appendChild(snapshot);
+          return half;
+        }
+
+        const upperHalf = makePageHalf('booking-page-paper-top');
+        const lowerHalf = makePageHalf('booking-page-paper-bottom');
+        const cutPoints = [{ x: startX, y: startY }];
+        let cutIndex = 0;
+        for (let x = startX + 38; x < width; x += 38) {
+          cutIndex += 1;
+          const direction = cutIndex % 2 === 0 ? 1 : -1;
+          cutPoints.push({ x, y: startY + direction * (3 + Math.random() * 5) });
+        }
+        cutPoints.push({ x: width, y: startY });
+        const paperEdge = [{ x: 0, y: startY }, ...cutPoints];
+        const polygonPoint = ({ x, y }) => `${(x / width) * 100}% ${y}px`;
+        upperHalf.style.clipPath = `polygon(0 0, 100% 0, ${paperEdge.slice().reverse().map(polygonPoint).join(', ')})`;
+        lowerHalf.style.clipPath = `polygon(${paperEdge.map(polygonPoint).join(', ')}, 100% 100%, 0 100%)`;
+        const svgNs = 'http://www.w3.org/2000/svg';
+        const seam = document.createElementNS(svgNs, 'svg');
+        seam.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        seam.setAttribute('preserveAspectRatio', 'none');
+        seam.classList.add('booking-page-tear-seam');
+        const seamPath = document.createElementNS(svgNs, 'path');
+        seamPath.setAttribute('d', cutPoints.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' '));
+        seam.appendChild(seamPath);
+        const shards = document.createDocumentFragment();
+        const shardCount = 14;
+        for (let index = 0; index < shardCount; index += 1) {
+          const shard = document.createElement('span');
+          const progress = (index + 0.5) / shardCount;
+          const source = cutPoints[Math.round(progress * (cutPoints.length - 1))];
+          const shardWidth = 10 + Math.random() * 14;
+          const shardHeight = 12 + Math.random() * 18;
+          const scatterX = (Math.random() - 0.5) * 150;
+          const scatterY = (Math.random() < 0.5 ? -1 : 1) * (35 + Math.random() * 100);
+          const rotation = (Math.random() - 0.5) * 240;
+          shard.className = 'booking-page-shard';
+          shard.style.left = `${source.x}px`;
+          shard.style.top = `${source.y - shardHeight / 2}px`;
+          shard.style.width = `${shardWidth}px`;
+          shard.style.height = `${shardHeight}px`;
+          shard.style.setProperty('--shard-x', `${scatterX}px`);
+          shard.style.setProperty('--shard-y', `${scatterY}px`);
+          shard.style.setProperty('--shard-rotation', `${rotation}deg`);
+          shards.appendChild(shard);
+        }
+        scissors.classList.add('booking-page-scissors');
+
+        tear.append(bookingPage, upperHalf, lowerHalf, seam, shards, scissors);
+        document.body.appendChild(tear);
+
+        let hasStarted = false;
+        function startTear() {
+          if (hasStarted) return;
+          hasStarted = true;
+          const seamLength = seamPath.getTotalLength();
+          seamPath.style.strokeDasharray = `${seamLength} ${seamLength}`;
+          seamPath.style.strokeDashoffset = String(seamLength);
+          tear.classList.add('is-cutting');
+          window.setTimeout(() => {
+            let pageReady = bookingReady;
+            try {
+              pageReady = pageReady || bookingPage.contentDocument.readyState === 'complete';
+            } catch (error) {}
+            if (pageReady) {
+              window.location.assign(link.href);
+              return;
+            }
+            let hasNavigated = false;
+            const navigate = () => {
+              if (hasNavigated) return;
+              hasNavigated = true;
+              window.location.assign(link.href);
+            };
+            bookingPage.addEventListener('load', navigate, { once: true });
+            window.setTimeout(navigate, 450);
+          }, 1800);
+        }
+
+        startTear();
+      });
+
 

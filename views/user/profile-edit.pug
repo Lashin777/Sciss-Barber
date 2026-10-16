@@ -1,0 +1,283 @@
+extends ../layouts/minimal
+
+block content
+  - const label = "mb-2 block font-mono text-[9px] font-bold tracking-[0.18em] text-neutral-500"
+  - const field = "w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-[#00D06C]"
+  section(class="mx-auto w-full max-w-6xl flex-1 py-5 sm:py-8")
+    nav(class="mb-8 flex items-center justify-between border-b border-neutral-200 pb-4")
+      a(href="/", class="font-mono text-sm font-bold tracking-[-0.08em] transition hover:text-[#00D06C]") SCISS’
+      div(class="flex items-center gap-4")
+        button#profile-theme-toggle(type="button", aria-label="Switch theme", class="grid size-9 place-items-center rounded-full border border-neutral-200 text-base transition hover:border-[#00D06C] hover:bg-[#00D06C]") ◐
+        a(href="/profile", class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500 transition hover:text-[#00D06C]") ← PROFILE
+
+    header(class="mb-8 sm:mb-10")
+      p(class="mb-3 font-mono text-[10px] tracking-[0.28em] text-neutral-400") MEMBER SPACE / SETTINGS
+      h1(class="text-4xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl") Edit your details.
+      p(class="mt-4 max-w-xl text-sm leading-relaxed text-neutral-500 sm:text-base") A few details help us keep your visits easy. Changes here are shown as a frontend preview.
+
+    div(class="mx-auto w-full max-w-3xl")
+      form#profile-edit-form(class="space-y-5", onsubmit="event.preventDefault(); document.getElementById('profile-save-note').classList.remove('hidden'); document.getElementById('profile-save-note').scrollIntoView({behavior:'smooth',block:'center'})")
+        section#personal(class="scroll-mt-6 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8")
+          div(class="mb-7 flex flex-wrap items-center justify-between gap-5")
+            div
+              p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") 01 / YOUR PROFILE
+              h2(class="text-2xl font-bold tracking-[-0.04em]") Personal details
+            div(class="flex items-center gap-3")
+              div(class="grid size-14 place-items-center rounded-full bg-[#00D06C] font-mono text-lg font-bold text-black") AM
+              label(for="photo", class="cursor-pointer font-mono text-[9px] font-bold tracking-[0.1em] transition hover:text-[#00D06C]") CHANGE PHOTO
+              input#photo(type="file", accept="image/*", class="sr-only")
+          div(class="grid gap-5 sm:grid-cols-2")
+            div
+              label(for="name", class=label) FULL NAME
+              input#name(type="text", value="Alex Morgan", autocomplete="name", required, class=field)
+            div
+              label(for="phone", class=label) PHONE NUMBER
+              input#phone(type="tel", value="+91 98765 43210", autocomplete="tel", required, class=field)
+            div(class="sm:col-span-2")
+              label(for="email", class=label) EMAIL ADDRESS
+              div(class="flex flex-col gap-3 sm:flex-row")
+                input#email(type="email", value="alex.morgan@example.com", autocomplete="email", required, class=field)
+                button#verify-email(type="button", class="h-12 shrink-0 rounded-xl border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL
+              p(class="mt-2 flex items-center gap-2 text-xs text-neutral-400")
+                span(class="size-1.5 rounded-full bg-[#00D06C]")
+                | Current email verified · New email requires a one-time code
+
+          div#security(class="mt-8 scroll-mt-6 border-t border-neutral-200 pt-6")
+            div(class="flex flex-wrap items-center justify-between gap-4")
+              div
+                p(class="font-mono text-[9px] tracking-[0.18em] text-neutral-400") PASSWORD
+                p(class="mt-1 text-sm font-semibold tracking-[0.2em]") ••••••••••
+              button#toggle-password-fields(type="button", aria-expanded="false", class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") CHANGE PASSWORD
+            div#password-fields(class="mt-5 hidden gap-5 sm:grid-cols-2")
+              div(class="sm:col-span-2")
+                div(class="mb-2 flex items-center justify-between gap-3")
+                  label(for="current-password", class="font-mono text-[9px] font-bold tracking-[0.18em] text-neutral-500") CURRENT PASSWORD
+                  a(href="/login?returnTo=%2Fprofile%2Fedit%23security#forgot-password", class="text-xs font-semibold text-neutral-500 transition hover:text-[#00D06C]") Forgot current password?
+                input#current-password(type="password", placeholder="Enter current password", autocomplete="current-password", class=field)
+              div
+                label(for="new-password", class=label) NEW PASSWORD
+                input#new-password(type="password", minlength="8", placeholder="At least 8 characters", autocomplete="new-password", class=field)
+              div
+                label(for="confirm-password", class=label) CONFIRM NEW PASSWORD
+                input#confirm-password(type="password", minlength="8", placeholder="Enter it once more", autocomplete="new-password", class=field)
+
+        section#addresses(class="scroll-mt-6 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8")
+          div(class="mb-6 flex flex-wrap items-end justify-between gap-4")
+            div
+              p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") 02 / WHERE TO FIND YOU
+              h2(class="text-2xl font-bold tracking-[-0.04em]") Saved addresses
+            button#add-address(type="button", class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") + ADD ADDRESS
+          div#address-list(class="space-y-3")
+            article.address-card(class="rounded-2xl bg-neutral-50 p-5", data-address-card)
+              div(class="flex flex-wrap items-start justify-between gap-4")
+                div(class="flex gap-3")
+                  span(class="mt-1 grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm", aria-hidden="true") ⌂
+                  div
+                    div(class="mb-2 flex flex-wrap items-center gap-2")
+                      h3(class="text-sm font-bold") Home
+                      span(class="rounded-full bg-[#00D06C]/20 px-2 py-1 font-mono text-[8px] font-bold tracking-[0.1em]") DEFAULT
+                    p(class="text-sm font-medium") Alex Morgan
+                    p(class="mt-1 max-w-md text-sm leading-relaxed text-neutral-500") 12 Beach Road, Near City Centre<br>Kozhikode, Kerala 673001
+                    p(class="mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400") +91 98765 43210
+                div(class="flex items-center gap-3")
+                  button(type="button", data-edit-address, class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") EDIT
+                  button(type="button", data-remove-address, class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-400 transition hover:text-red-600") REMOVE
+          div#new-address-form(class="mt-4 hidden rounded-2xl border border-dashed border-neutral-300 p-5")
+            div(class="mb-5 flex items-center justify-between")
+              h3(class="font-bold") Add an address
+              button#close-address-form(type="button", aria-label="Close add address form", class="grid size-8 place-items-center rounded-full border border-neutral-200 transition hover:border-[#00D06C]") ×
+            div(class="grid gap-4 sm:grid-cols-2")
+              div(class="sm:col-span-2")
+                label(for="address-line", class=label) ADDRESS
+                input#address-line(type="text", placeholder="House, street, area", class=field)
+              div
+                label(for="address-city", class=label) CITY
+                input#address-city(type="text", placeholder="City", class=field)
+              div
+                label(for="address-state", class=label) STATE
+                input#address-state(type="text", placeholder="State", class=field)
+              div
+                label(for="address-postal", class=label) PIN CODE
+                input#address-postal(type="text", inputmode="numeric", placeholder="Postal code", class=field)
+              div
+                label(for="address-label", class=label) LABEL
+                select#address-label(class=field)
+                  option Home
+                  option Work
+                  option Other
+              div(class="flex items-center gap-2 sm:col-span-2")
+                input#address-default(type="checkbox", class="size-4 accent-[#00D06C]")
+                label(for="address-default", class="text-xs text-neutral-500") Set as my default address
+            button#save-address(type="button", class="mt-5 rounded-full bg-neutral-950 px-5 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE ADDRESS
+
+        p#profile-save-note(class="hidden rounded-2xl border border-[#00D06C]/30 bg-[#00D06C]/10 px-5 py-4 text-sm", role="status") Preview only — changes are not connected to an account yet.
+        div(class="flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center")
+          a(href="/profile", class="inline-flex h-12 items-center justify-center rounded-full px-5 font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-500 transition hover:text-neutral-950") CANCEL
+          button(type="submit", class="h-12 rounded-full bg-neutral-950 px-7 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE CHANGES →
+
+    dialog#email-verify-modal(class="w-[calc(100%-2rem)] max-w-md rounded-[1.75rem] border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm")
+      div(class="p-6 sm:p-8")
+        div(class="mb-6 flex items-start justify-between")
+          div
+            p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") EMAIL VERIFICATION
+            h2(class="text-2xl font-bold tracking-[-0.04em]") Check your inbox.
+          button#close-email-modal(type="button", aria-label="Close dialog", class="grid size-9 place-items-center rounded-full border border-neutral-200 transition hover:border-[#00D06C]") ×
+        p(class="mb-5 text-sm leading-relaxed text-neutral-500") Enter the six-digit code sent to your new email address.
+        label(for="email-otp", class=label) ONE-TIME CODE
+        input#email-otp(type="text", inputmode="numeric", maxlength="6", autocomplete="one-time-code", placeholder="— — — — — —", class=field)
+        div(class="mt-4 flex items-center justify-between text-xs text-neutral-400")
+          span#otp-countdown Code expires in 00:30
+          button#resend-email-otp(type="button", disabled, class="font-bold transition hover:text-[#00D06C] disabled:cursor-not-allowed disabled:opacity-40") Resend code
+        p#otp-feedback(class="mt-4 hidden rounded-xl bg-[#00D06C]/10 px-4 py-3 text-xs", role="status") Demo only: code accepted.
+        button#confirm-email-otp(type="button", class="mt-6 h-12 w-full rounded-full bg-neutral-950 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL →
+
+    dialog#remove-address-modal(class="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm")
+      div(class="p-6")
+        p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") REMOVE ADDRESS
+        h2(class="text-2xl font-bold tracking-[-0.04em]") Are you sure?
+        p(class="mt-3 text-sm leading-relaxed text-neutral-500") This address will be removed from the preview.
+        div(class="mt-6 flex justify-end gap-3")
+          button#cancel-remove-address(type="button", class="rounded-full border border-neutral-200 px-4 py-3 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-neutral-950") KEEP IT
+          button#confirm-remove-address(type="button", class="rounded-full bg-neutral-950 px-4 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-red-600") REMOVE
+
+  script.
+    const emailModal = document.getElementById('email-verify-modal');
+    const removeModal = document.getElementById('remove-address-modal');
+    const addressForm = document.getElementById('new-address-form');
+    const addressList = document.getElementById('address-list');
+    let addressToRemove = null;
+    let addressBeingEdited = null;
+    let otpTimer;
+
+    const profileThemeToggle = document.getElementById('profile-theme-toggle');
+    const syncProfileTheme = () => {
+      const isDark = document.documentElement.classList.contains('theme-dark');
+      profileThemeToggle.setAttribute('aria-pressed', String(isDark));
+      profileThemeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    };
+    syncProfileTheme();
+    profileThemeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('theme-dark');
+      try { localStorage.setItem('sciss-theme', isDark ? 'dark' : 'light'); } catch (error) {}
+      syncProfileTheme();
+    });
+
+    const passwordFields = document.getElementById('password-fields');
+    const passwordToggle = document.getElementById('toggle-password-fields');
+    passwordToggle.addEventListener('click', () => {
+      const willOpen = passwordFields.classList.contains('hidden');
+      passwordFields.classList.toggle('hidden', !willOpen);
+      passwordFields.classList.toggle('grid', willOpen);
+      passwordToggle.setAttribute('aria-expanded', String(willOpen));
+      passwordToggle.textContent = willOpen ? 'CANCEL PASSWORD CHANGE' : 'CHANGE PASSWORD';
+    });
+    if (window.location.hash === '#security') {
+      passwordFields.classList.remove('hidden');
+      passwordFields.classList.add('grid');
+      passwordToggle.setAttribute('aria-expanded', 'true');
+      passwordToggle.textContent = 'CANCEL PASSWORD CHANGE';
+    }
+
+    document.getElementById('verify-email').addEventListener('click', () => {
+      emailModal.showModal();
+      startOtpTimer(30);
+    });
+    document.getElementById('close-email-modal').addEventListener('click', () => emailModal.close());
+    emailModal.addEventListener('click', (event) => { if (event.target === emailModal) emailModal.close(); });
+    document.getElementById('confirm-email-otp').addEventListener('click', () => {
+      const feedback = document.getElementById('otp-feedback');
+      feedback.classList.remove('hidden');
+    });
+    document.getElementById('resend-email-otp').addEventListener('click', () => {
+      document.getElementById('otp-feedback').classList.add('hidden');
+      startOtpTimer(30);
+    });
+
+    function startOtpTimer(seconds) {
+      window.clearInterval(otpTimer);
+      const countdown = document.getElementById('otp-countdown');
+      const resend = document.getElementById('resend-email-otp');
+      let remaining = seconds;
+      resend.disabled = true;
+      const updateTimer = () => {
+        countdown.textContent = `Code expires in 00:${String(remaining).padStart(2, '0')}`;
+        if (remaining <= 0) {
+          window.clearInterval(otpTimer);
+          countdown.textContent = 'You can request a new code';
+          resend.disabled = false;
+          return;
+        }
+        remaining -= 1;
+      };
+      updateTimer();
+      otpTimer = window.setInterval(updateTimer, 1000);
+    }
+
+    document.getElementById('add-address').addEventListener('click', () => {
+      addressBeingEdited = null;
+      addressForm.querySelector('h3').textContent = 'Add an address';
+      document.getElementById('save-address').textContent = 'SAVE ADDRESS';
+      addressForm.querySelectorAll('input:not([type="checkbox"])').forEach((input) => { input.value = ''; });
+      addressForm.classList.remove('hidden');
+      addressForm.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+    document.getElementById('close-address-form').addEventListener('click', () => {
+      addressForm.classList.add('hidden');
+      addressBeingEdited = null;
+    });
+    document.getElementById('save-address').addEventListener('click', () => {
+      const line = document.getElementById('address-line').value.trim();
+      const city = document.getElementById('address-city').value.trim();
+      const state = document.getElementById('address-state').value.trim();
+      const postal = document.getElementById('address-postal').value.trim();
+      if (!line || !city || !state || !postal) {
+        document.getElementById('address-line').focus();
+        return;
+      }
+      const title = document.getElementById('address-label').value;
+      if (addressBeingEdited) {
+        addressBeingEdited.querySelector('h3').textContent = title;
+        addressBeingEdited.querySelectorAll('p')[1].textContent = `${line}, ${city}, ${state} ${postal}`;
+        addressBeingEdited = null;
+      } else {
+        const card = document.createElement('article');
+        card.className = 'address-card rounded-2xl bg-neutral-50 p-5';
+        card.dataset.addressCard = '';
+        card.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-4"><div class="flex gap-3"><span class="mt-1 grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm">⌂</span><div><div class="mb-2 flex flex-wrap items-center gap-2"><h3 class="text-sm font-bold"></h3></div><p class="text-sm font-medium">Alex Morgan</p><p class="mt-1 max-w-md text-sm leading-relaxed text-neutral-500"></p><p class="mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400">+91 98765 43210</p></div></div><div class="flex items-center gap-3"><button type="button" data-edit-address class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]">EDIT</button><button type="button" data-remove-address class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-400 transition hover:text-red-600">REMOVE</button></div></div>`;
+        card.querySelector('h3').textContent = title;
+        card.querySelectorAll('p')[1].textContent = `${line}, ${city}, ${state} ${postal}`;
+        addressList.appendChild(card);
+      }
+      addressForm.classList.add('hidden');
+      document.getElementById('profile-save-note').classList.remove('hidden');
+    });
+
+    addressList.addEventListener('click', (event) => {
+      const card = event.target.closest('[data-address-card]');
+      if (!card) return;
+      if (event.target.closest('[data-remove-address]')) {
+        addressToRemove = card;
+        removeModal.showModal();
+      }
+      if (event.target.closest('[data-edit-address]')) {
+        addressBeingEdited = card;
+        addressForm.querySelector('h3').textContent = 'Edit address';
+        document.getElementById('save-address').textContent = 'UPDATE ADDRESS';
+        const parts = card.querySelectorAll('p');
+        const addressParts = parts[1].textContent.split(', ');
+        document.getElementById('address-line').value = addressParts[0] || '';
+        document.getElementById('address-city').value = addressParts[1] || '';
+        document.getElementById('address-state').value = addressParts[2]?.split(' ')[0] || '';
+        document.getElementById('address-postal').value = addressParts[2]?.split(' ')[1] || '';
+        addressForm.classList.remove('hidden');
+        addressForm.scrollIntoView({behavior:'smooth',block:'center'});
+      }
+    });
+    document.getElementById('cancel-remove-address').addEventListener('click', () => removeModal.close());
+    document.getElementById('confirm-remove-address').addEventListener('click', () => {
+      if (addressToRemove) addressToRemove.remove();
+      addressToRemove = null;
+      removeModal.close();
+      document.getElementById('profile-save-note').classList.remove('hidden');
+    });
+    removeModal.addEventListener('click', (event) => { if (event.target === removeModal) removeModal.close(); });

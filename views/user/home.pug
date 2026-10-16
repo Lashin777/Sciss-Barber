@@ -42,29 +42,58 @@ block content
       //- Menu
       nav(
         id="site-menu"
-        class="fixed left-4 right-4 top-20 z-50 hidden flex flex-col gap-1 rounded-2xl border border-neutral-200 bg-white p-3 font-mono text-xs font-bold tracking-wider shadow-xl sm:left-auto sm:right-8 sm:w-72 lg:right-16"
+        class="site-menu fixed left-4 right-4 top-20 z-50 hidden flex flex-col gap-1 rounded-2xl border border-neutral-200 bg-white p-3 font-mono text-xs font-bold tracking-wider shadow-xl sm:left-auto sm:right-8 sm:w-72 lg:right-16"
+        aria-hidden="true"
       )
         a(href="/", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") HOME
         a(href="#about", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") ABOUT
-        a(href="#services", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") SERVICES
+        a(href="/services", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") SERVICES & PRICES
         a(href="/bookings", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") MY BOOKINGS
         a(href="/profile", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") PROFILE
+        a(href="/login", class="mt-1 rounded-xl border-t border-neutral-100 px-4 py-4 text-neutral-500 hover:bg-neutral-100 hover:text-[#00D06C]") LOG OUT ↗
 
       script.
         const menuToggle = document.getElementById('site-menu-toggle');
         const siteMenu = document.getElementById('site-menu');
         const menuBackdrop = document.getElementById('site-menu-backdrop');
+        let menuCloseTimer;
 
         function setSiteMenuOpen(isOpen) {
+          window.clearTimeout(menuCloseTimer);
           menuToggle.setAttribute('aria-expanded', String(isOpen));
-          siteMenu.classList.toggle('hidden', !isOpen);
+          siteMenu.setAttribute('aria-hidden', String(!isOpen));
+          siteMenu.inert = !isOpen;
           menuBackdrop.classList.toggle('hidden', !isOpen);
+
+          if (isOpen) {
+            siteMenu.classList.remove('hidden');
+            requestAnimationFrame(() => siteMenu.classList.add('is-open'));
+          } else {
+            siteMenu.classList.remove('is-open');
+            menuCloseTimer = window.setTimeout(() => siteMenu.classList.add('hidden'), 220);
+          }
         }
 
         menuToggle.addEventListener('click', () => {
           setSiteMenuOpen(menuToggle.getAttribute('aria-expanded') !== 'true');
         });
         menuBackdrop.addEventListener('click', () => setSiteMenuOpen(false));
+        siteMenu.addEventListener('click', (event) => {
+          const menuLink = event.target.closest('a');
+          if (!menuLink) return;
+
+          const href = menuLink.getAttribute('href');
+          const section = href && href.startsWith('#') ? document.querySelector(href) : null;
+          if (!section && href !== '/') return;
+
+          event.preventDefault();
+          setSiteMenuOpen(false);
+          if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
         document.addEventListener('keydown', (event) => {
           if (event.key === 'Escape') setSiteMenuOpen(false);
         });
@@ -73,10 +102,17 @@ block content
       section(class="pt-5 sm:pt-8 lg:pt-10")
         a(
           href="/booking"
-          class="inline-flex items-center gap-8 rounded-full bg-black px-8 py-5 font-mono text-sm font-bold tracking-[0.15em] text-white transition hover:bg-[#00D06C] hover:text-black"
+          class="booking-transition-link relative isolate inline-flex items-center gap-8 rounded-full bg-black px-8 py-5 font-mono text-sm font-bold tracking-[0.15em] text-white transition hover:bg-[#00D06C] hover:text-black"
         )
-          span BOOK NOW
-          span(class="text-2xl leading-none") →
+          span.booking-label BOOK NOW
+          span.booking-arrow(aria-hidden="true")
+            svg(viewBox="0 0 48 48", focusable="false")
+              g.booking-scissor-blade.booking-scissor-blade-upper
+                circle(cx="12", cy="14", r="5")
+                path(d="M15.5 17.5 23 24 42 5")
+              g.booking-scissor-blade.booking-scissor-blade-lower
+                circle(cx="12", cy="34", r="5")
+                path(d="M15.5 30.5 23 24 42 43")
 
       //- Main logo
       section(class="flex min-h-0 flex-1 items-center justify-center overflow-hidden py-3 sm:py-5")
@@ -89,10 +125,21 @@ block content
         h2(
           class="select-none text-[clamp(5.75rem,min(32vw,50vh),40rem)] font-bold leading-none tracking-[-0.09em]"
         )
-          | SCISS
+          button#home-logo-mark(type="button", aria-label="Animate the SCISS logo", class="home-logo-mark cursor-pointer")
+            span.home-logo-first-s S
+            span.home-logo-c C
+            | IS
+            span.home-logo-final-s S
           button#theme-toggle(type="button", aria-label="Switch to dark mode", aria-pressed="false", class="liquid-text cursor-pointer border-0 bg-transparent p-0") ’
 
       script.
+        const homeLogoMark = document.getElementById('home-logo-mark');
+        let logoColorStep = 0;
+        homeLogoMark.addEventListener('click', () => {
+          logoColorStep = (logoColorStep % 3) + 1;
+          homeLogoMark.dataset.colorStep = String(logoColorStep);
+        });
+
         const themeToggle = document.getElementById('theme-toggle');
         const isDarkTheme = document.documentElement.classList.contains('theme-dark');
         themeToggle.setAttribute('aria-pressed', String(isDarkTheme));
@@ -155,28 +202,32 @@ block content
     section#services(class="scroll-mt-8 border-t border-neutral-200 py-16 sm:py-24")
       div(class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")
         div
-          p(class="mb-3 font-mono text-[10px] tracking-[0.25em] text-neutral-400") OUR SERVICES
-          h2(class="text-4xl font-bold tracking-[-0.06em] sm:text-6xl") The details matter.
-        a(href="/booking", class="w-fit font-mono text-xs font-bold tracking-[0.12em] transition hover:text-[#00D06C]") BOOK YOUR VISIT →
+          p(class="mb-3 font-mono text-[10px] tracking-[0.25em] text-neutral-400") SERVICES
+          h2(class="text-4xl font-bold tracking-[-0.06em] sm:text-6xl") The essentials.
+          p(class="mt-3 text-sm text-neutral-500") A few popular services, with clear prices.
+        a(href="/services", class="w-fit rounded-full border border-neutral-300 px-5 py-3 font-mono text-xs font-bold tracking-[0.12em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") EXPLORE FULL MENU →
 
-      div(class="grid gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 sm:grid-cols-3")
-        article(class="bg-white p-6 sm:p-8")
-          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") 01 / CUT
-          h3(class="mb-3 text-xl font-bold tracking-tight") Precision haircut
-          p(class="text-sm leading-relaxed text-neutral-500") A considered cut shaped around your features, hair, and personal style.
-        article(class="bg-white p-6 sm:p-8")
-          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") 02 / BEARD
-          h3(class="mb-3 text-xl font-bold tracking-tight") Beard grooming
-          p(class="text-sm leading-relaxed text-neutral-500") Clean lines and balanced shaping for a finish that feels well kept.
-        article(class="bg-white p-6 sm:p-8")
-          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") 03 / FINISH
-          h3(class="mb-3 text-xl font-bold tracking-tight") The finishing touch
-          p(class="text-sm leading-relaxed text-neutral-500") A final check and styling guidance to help you carry the look forward.
+      div(class="grid gap-4 sm:grid-cols-3")
+        article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") HAIR CARE
+          div(class="flex items-baseline justify-between gap-4")
+            h3(class="text-xl font-bold tracking-tight") Hair cut
+            span(class="font-mono text-sm font-bold") ₹150
+        article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") HAIR CARE
+          div(class="flex items-baseline justify-between gap-4")
+            h3(class="text-xl font-bold tracking-tight") Hair styling
+            span(class="font-mono text-sm font-bold") ₹200
+        article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+          p(class="mb-8 font-mono text-[10px] tracking-[0.2em] text-neutral-400") BEARD CARE
+          div(class="flex items-baseline justify-between gap-4")
+            h3(class="text-xl font-bold tracking-tight") Beard shaping
+            span(class="font-mono text-sm font-bold") ₹100
 
     footer(class="flex flex-col gap-4 border-t border-neutral-200 py-6 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between")
       p(class="font-mono tracking-[0.12em]") SCISS’ BARBER · KOZHIKODE
       nav(class="flex flex-wrap gap-x-5 gap-y-2 font-mono font-bold tracking-wide")
         a(href="/", class="transition hover:text-[#00D06C]") HOME
         a(href="#about", class="transition hover:text-[#00D06C]") ABOUT
-        a(href="#services", class="transition hover:text-[#00D06C]") SERVICES
+          a(href="/services", class="transition hover:text-[#00D06C]") SERVICES & PRICES
         a(href="/login", class="transition hover:text-[#00D06C]") LOGIN

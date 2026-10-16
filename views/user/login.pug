@@ -5,6 +5,9 @@ block content
   - const input = "w-full border-0 border-b border-neutral-300 bg-transparent pb-2.5 pt-3 text-[17px] font-medium outline-none focus:border-neutral-950"
 
   section(class="mx-auto my-auto w-full max-w-sm py-8")
+    a(href="/", class="mb-8 inline-flex items-center gap-2 font-mono text-[10px] font-bold tracking-[0.14em] text-neutral-400 transition hover:text-[#00D06C]")
+      span(aria-hidden="true") ←
+      | CANCEL & RETURN HOME
     p(class="mb-3 font-mono text-[11px] tracking-[0.3em] text-neutral-400") MEMBER ACCESS
     h1(class="mb-10 text-[clamp(2.5rem,7vw,3.5rem)] font-bold leading-[0.95] tracking-[-0.05em]")
       | WELCOME
@@ -79,20 +82,38 @@ block content
     const resetEmail = document.getElementById('reset-email');
     const resetEmailStep = document.getElementById('reset-email-step');
     const resetPasswordStep = document.getElementById('reset-password-step');
+    const requestedReturnTo = new URLSearchParams(window.location.search).get('returnTo');
+    const resetReturnTo = requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//') ? requestedReturnTo : null;
+    let passwordResetComplete = false;
 
-    document.getElementById('blocked-modal-close').addEventListener('click', () => blockedModal.close());
-    document.getElementById('forgot-password-link').addEventListener('click', (event) => {
-      event.preventDefault();
+    function openForgotPassword() {
       resetEmail.value = loginForm.elements.email.value;
       resetError.classList.add('hidden');
       resetSuccess.classList.add('hidden');
-      document.getElementById('reset-modal-close').textContent = 'CLOSE';
+      document.getElementById('reset-modal-close').textContent = resetReturnTo ? 'CANCEL' : 'CLOSE';
       resetEmailStep.classList.remove('hidden');
       resetPasswordStep.classList.add('hidden');
       forgotPasswordModal.showModal();
       resetEmail.focus();
+    }
+
+    document.getElementById('blocked-modal-close').addEventListener('click', () => blockedModal.close());
+    document.getElementById('forgot-password-link').addEventListener('click', (event) => {
+      event.preventDefault();
+      openForgotPassword();
     });
-    document.getElementById('reset-modal-close').addEventListener('click', () => forgotPasswordModal.close());
+    document.getElementById('reset-modal-close').addEventListener('click', () => {
+      if (passwordResetComplete && resetReturnTo) {
+        window.location.assign(resetReturnTo);
+        return;
+      }
+      if (resetReturnTo) {
+        window.location.assign(resetReturnTo);
+        return;
+      }
+      forgotPasswordModal.close();
+    });
+    if (window.location.hash === '#forgot-password') openForgotPassword();
 
     document.getElementById('send-reset-code').addEventListener('click', async () => {
       resetError.classList.add('hidden');
@@ -137,9 +158,12 @@ block content
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Could not update your password.');
         resetPasswordStep.classList.add('hidden');
-        resetSuccess.textContent = 'Your password has been updated. You can now log in.';
+        resetSuccess.textContent = resetReturnTo
+          ? 'Your password has been updated. Return to profile editing to finish.'
+          : 'Your password has been updated. You can now log in.';
         resetSuccess.classList.remove('hidden');
-        document.getElementById('reset-modal-close').textContent = 'DONE';
+        passwordResetComplete = true;
+        document.getElementById('reset-modal-close').textContent = resetReturnTo ? 'RETURN TO PROFILE' : 'DONE';
       } catch (error) {
         resetError.textContent = error.message || 'Could not update your password.';
         resetError.classList.remove('hidden');

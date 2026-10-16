@@ -24,8 +24,7 @@ app.use(passport.initialize())
 app.use('/api/user', UserRoutes)
 app.use('/api/admin', adminRoutes)
 
-//Frontent Routes
-
+//Frontent Routes USER
 app.get('/', (req, res) => {
     res.render('user/home', {
         title: 'Home'
@@ -50,4 +49,49 @@ app.get('/about', (req, res) => {
     })
 })
 
+app.get('/services', (req, res) => {
+    res.render('user/services', {
+        title: 'Services & Prices'
+    })
+})
+
+app.get('/profile', (req, res) => {
+    res.render('user/profile', {
+        title: 'Your Profile'
+    })
+})
+
+app.get('/profile/edit', (req, res) => {
+    res.render('user/profile-edit', {
+        title: 'Edit Profile'
+    })
+})
+
+app.get('/booking', (req, res) => {
+    res.render('user/booking', {
+        title: 'Book an appointment'
+    })
+})
+
+app.get('/services', (req, res) => {
+    res.render('user/services', {
+        title: 'User Service'
+    })
+})
+
+
+
+//Frontent Routes ADMIN
+
+app.get('/admin/login', (req, res) => {
+    res.render('admin/login', {
+        title: 'Login'
+    })
+})
+
+app.get('/admin/users', (req, res) => {
+    res.render('admin/users', {
+        title: 'Admin dashboard'
+    })
+})
 export default app
