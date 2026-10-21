@@ -23,7 +23,13 @@ block content
 
       div(class="mb-1")
         label(for="password", class=label) PASSWORD
-        input#password(type="password", name="password", autocomplete="current-password", required, class=input)
+        //- Worked by Codex: compact accessible show/hide control for login password.
+        div(class="relative")
+          input#password(type="password", name="password", autocomplete="current-password", required, class=input + " pr-10")
+          button(type="button", data-password-toggle="password", aria-label="Show password", style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+            svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+              path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+              circle(cx="12", cy="12", r="2.5")
 
       div(class="mt-2 flex justify-end")
         a#forgot-password-link(href="#forgot-password", class="text-xs font-bold text-neutral-500 transition-colors hover:text-green-600") Forgot password?
@@ -67,7 +73,13 @@ block content
           input#reset-otp(type="text", inputmode="numeric", autocomplete="one-time-code", required, class=input)
         div
           label(for="new-password", class=label) NEW PASSWORD
-          input#new-password(type="password", minlength="8", autocomplete="new-password", required, class=input)
+          //- Worked by Codex: allow checking the new password before saving the reset.
+          div(class="relative")
+            input#new-password(type="password", minlength="8", autocomplete="new-password", required, class=input + " pr-10")
+            button(type="button", data-password-toggle="new-password", data-password-label="new password", aria-label="Show new password", style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+              svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+                path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+                circle(cx="12", cy="12", r="2.5")
         button#save-new-password(type="button", class="mt-5 h-11 w-full cursor-pointer rounded-full bg-neutral-950 text-[12px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") UPDATE PASSWORD
       button#reset-modal-close(type="button", class="mt-3 w-full py-2 text-sm font-bold text-neutral-500 hover:text-neutral-950") CLOSE
 
@@ -85,6 +97,16 @@ block content
     const requestedReturnTo = new URLSearchParams(window.location.search).get('returnTo');
     const resetReturnTo = requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//') ? requestedReturnTo : null;
     let passwordResetComplete = false;
+
+    document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
+      const password = document.getElementById(toggle.dataset.passwordToggle);
+      const label = toggle.dataset.passwordLabel || 'password';
+      toggle.addEventListener('click', () => {
+        const showPassword = password.type === 'password';
+        password.type = showPassword ? 'text' : 'password';
+        toggle.setAttribute('aria-label', `${showPassword ? 'Hide' : 'Show'} ${label}`);
+      });
+    });
 
     function openForgotPassword() {
       resetEmail.value = loginForm.elements.email.value;

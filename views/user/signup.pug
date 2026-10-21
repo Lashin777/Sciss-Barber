@@ -17,7 +17,9 @@ block content
 
       div(class="mb-2")
         label(for="name", class=label) FULL NAME
-        input#name(type="text", name="name", autocomplete="name", required, class=input)
+        input#name(type="text", name="name", autocomplete="name", required, pattern="[A-Za-z\s'-]+",class=input)
+        p#name-error(class="mt-1 hidden text-xs text-red-600",role="alert")
+
 
       div(class="mb-2")
         label(for="email", class=label) EMAIL ADDRESS
@@ -37,7 +39,14 @@ block content
         div(class="flex items-baseline justify-between")
           label(for="password", class=label) PASSWORD
           span(class=hint) At least 8 characters
-        input#password(type="password", name="password", minlength="8", autocomplete="new-password", required, class=input)
+
+        div(class="relative")
+          input#password(type="password", name="password", minlength="6", autocomplete="new-password", required, class=input + " pr-10")
+          //- Worked by Codex: keep the eye toggle compact and positioned inside the dynamically wrapped input.
+          button#togglePassword(type="button", aria-label="Show password", style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+            svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+              path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+              circle(cx="12", cy="12", r="2.5")
 
       label(class="mb-4 flex items-start gap-2.5 text-[13px] leading-snug text-neutral-400")
         input(type="checkbox", name="consent", required, class="mt-0.5 accent-neutral-950")
@@ -71,8 +80,27 @@ block auth_actions
     const signupSubmit = document.getElementById('signup-submit');
     const verifyForm = document.getElementById('verify-form');
     const verifyError = document.getElementById('verify-error');
+    const password = document.getElementById('password')
     let signupEmail = '';
 
+    const passwordField = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+
+    togglePassword.addEventListener('click', () => {
+    const showPassword = passwordField.type === 'password';
+
+    passwordField.type = showPassword ? 'text' : 'password';
+
+    passwordField.classList.remove('typing-overlay-active');
+
+    togglePassword.setAttribute(
+      'aria-label',
+      showPassword ? 'Hide password' : 'Show password'
+    );
+
+    updateEcho();
+    });
+    
     signupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       signupError.textContent = '';
@@ -178,12 +206,11 @@ block auth_actions
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Could not resend the code.');
         resendButton.textContent = 'CODE SENT';
+        startResendCountdown()
       } catch (error) {
         verifyError.textContent = error.message || 'Could not resend the code.';
         verifyError.classList.remove('hidden');
         resendButton.textContent = 'RESEND CODE';
-      } finally {
-        resendButton.disabled = false;
       }
     });
 
@@ -193,20 +220,22 @@ block auth_actions
       field.parentNode.insertBefore(wrapper, field);
       wrapper.appendChild(field);
 
+      if (field.id === 'password') wrapper.appendChild(togglePassword);
+
       const echo = document.createElement('span');
       echo.className = 'signup-typing-echo';
       echo.setAttribute('aria-hidden', 'true');
       wrapper.appendChild(echo);
 
       const updateEcho = () => {
-        const isTyping = document.activeElement === field && field.value.length > 0;
+        const isTyping = document.activeElement === field && field.value.length > 0 &&!(field.id ==='password' && field.type==='text');
         echo.replaceChildren();
         echo.classList.toggle('visible', isTyping);
         field.classList.toggle('typing-overlay-active', isTyping);
         echo.style.transform = `translateX(${-field.scrollLeft}px)`;
 
         if (!isTyping) return;
-        const value = field.type === 'password' ? '•'.repeat(field.value.length) : field.value;
+        const value ='•'.repeat(field.value.length);
         Array.from(value).forEach((character, index) => {
           const letter = document.createElement('span');
           letter.textContent = character;

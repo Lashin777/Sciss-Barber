@@ -15,7 +15,8 @@ passport.use(
                 let user = await User.findOne({ googleId: profile.id });
 
                 if (user) {
-                    if (user.status === 'BLOCKED') {
+                    // Worked by Codex: Google sign-in on this route is customer-only.
+                    if (user.role !== 'CUSTOMER' || user.status === 'BLOCKED') {
                         return done(null, false)
                     }
                     return done(null, user)
@@ -25,7 +26,7 @@ passport.use(
                 user = await User.findOne({ email });
 
                 if (user) {
-                    if (user.status === 'BLOCKED') {
+                    if (user.role !== 'CUSTOMER' || user.status === 'BLOCKED') {
                         return done(null, false);
                     }
                     user.googleId = profile.id;

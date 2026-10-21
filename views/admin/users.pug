@@ -7,7 +7,9 @@ block content
         a(href="/", class="mb-5 inline-block font-mono text-[10px] font-bold tracking-[0.18em] text-neutral-500 transition hover:text-[#00D06C]") ← SCISS’ BARBER
         p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / CUSTOMER ACCOUNTS
         h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") User management
-      a(href="/admin/login", class="font-mono text-xs font-bold tracking-[0.12em] text-neutral-500 transition hover:text-[#00D06C]") ADMIN SIGN IN →
+      //- Worked by Codex: expose a real admin logout action in the protected dashboard.
+      form(action="/api/admin/logout", method="POST")
+        button(type="submit", class="font-mono text-xs font-bold tracking-[0.12em] text-neutral-500 transition hover:text-[#00D06C]") LOG OUT
 
     section(class="flex flex-col gap-5")
       div(class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")

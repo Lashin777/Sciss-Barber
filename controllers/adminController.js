@@ -1,15 +1,27 @@
 import { adminLogin, blockUser, UnblockUser, getAllUser } from '../services/adminService.js';
+import { setAdminSessionCookie, clearAdminSessionCookie } from '../utils/session.js';
+
+// Worked by Codex: keep admin page response logic in the admin controller.
+const renderAdminLoginPageController = (req, res) => res.render('admin/login', { title: 'Login' });
+const renderAdminUsersPageController = (req, res) => res.render('admin/users', { title: 'Admin dashboard' });
 
 const adminLoginController = async (req, res) => {
     try {
         const result = await adminLogin(req.body.email, req.body.password);
-        res.cookie('token', result.token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
-        res.status(200).json(result);
+        // Worked by Codex: store admin auth separately from the customer session.
+        setAdminSessionCookie(res, result.token);
+        res.status(200).json({ message: 'Admin login successful', user: result.user });
     } catch (error) {
         res.status(400).json({ message: error.message })
     }
 
 }
+
+const adminLogoutController = (req, res) => {
+    // Worked by Codex: clear only the admin session cookie on admin sign out.
+    clearAdminSessionCookie(res);
+    res.redirect('/admin/login');
+};
 const adminBlockController = async (req, res) => {
     try {
         const block = await blockUser(req.params.id);
@@ -37,4 +49,12 @@ const getAllUserController = async (req, res) => {
     }
 }
 
-export { adminLoginController, adminBlockController, adminUnblockController, getAllUserController }
+export {
+    renderAdminLoginPageController,
+    renderAdminUsersPageController,
+    adminLoginController,
+    adminLogoutController,
+    adminBlockController,
+    adminUnblockController,
+    getAllUserController
+}

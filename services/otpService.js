@@ -28,7 +28,7 @@ const generateOtp = async (email, purpose) => {
     return otp;
 }
 
-const verifyOtp = async (email, otp, purpose) => {
+const consumeOtp = async (email, otp, purpose) => {
     const record = await Otp.findOne({ email, otp, purpose });
 
     if (!record) {
@@ -41,8 +41,18 @@ const verifyOtp = async (email, otp, purpose) => {
         throw Error('OTP already Used')
     }
 
-    record.isUsed = true;
-    await record.save();
+    const consumedRecord = await Otp.findOneAndUpdate(
+        { _id: record._id, isUsed: false, expiresAt: { $gt: new Date() } },
+        { $set: { isUsed: true } },
+        { new: true }
+    );
+    if (!consumedRecord) throw new Error('OTP already Used');
+
+    return consumedRecord;
+}
+
+const verifyOtp = async (email, otp, purpose) => {
+    await consumeOtp(email, otp, purpose);
 
     await User.updateOne({ email }, { isEmailVerified: true });
 
@@ -53,4 +63,4 @@ const resendOtp = async (email, purpose) => {
     return await generateOtp(email, purpose);
 }
 
-export { generateOtp, verifyOtp, resendOtp };
+export { generateOtp, verifyOtp, resendOtp, consumeOtp };

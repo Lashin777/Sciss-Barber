@@ -10,6 +10,11 @@ const adminLogin = async (email, password) => {
         throw new Error("Invalid admin credentials")
     }
 
+    // Worked by Codex: do not issue sessions to blocked admin accounts.
+    if (user.status === 'BLOCKED') {
+        throw new Error('Your admin account is blocked');
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -48,7 +53,14 @@ const getAllUser = async (search, page, list, date) => {
         filter.name = ({ $regex: search, $options: 'i' });
     }
     if (date) {
-        filter.user = ({ date })
+        const startDate = new Date(`${date}T00:00:00.000Z`);
+        const endDate = new Date(startDate);
+        endDate.setUTCDate(endDate.getUTCDate() + 1);
+        filter.createdAt = {
+            $gte: startDate,
+            $lt: endDate
+        }
+
     }
     const currentPage = page || 1;
     const perPage = list || 10;
@@ -57,4 +69,4 @@ const getAllUser = async (search, page, list, date) => {
     return users
 }
 
-export { adminLogin, blockUser, UnblockUser, getAllUser } 
+export { adminLogin, blockUser, UnblockUser, getAllUser }
