@@ -8,6 +8,7 @@ import {
     userLoginController,
     userLogoutController,
     updateUserProfileController,
+    changeUserPasswordController,
     sendEmailChangeOtpController,
     verifyEmailChangeOtpController,
     googleCallbackController,
@@ -25,7 +26,7 @@ import {
     deleteAddressController,
     setDefaultAddressController
 } from '../controllers/UserController.js';
-import { validationSignup, validationLogin, validationProfileUpdate } from '../middlewares/validation.js';
+import { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange } from '../middlewares/validation.js';
 import passport from 'passport';
 import { protect, customerOnly, optionalAuth } from '../middlewares/authMiddleware.js';
 
@@ -41,6 +42,7 @@ router.post('/api/user/login', validationLogin, userLoginController);
 // Worked by Codex: submit logout as POST so the server can clear the session cookie.
 router.post('/api/user/logout', userLogoutController);
 router.patch('/api/user/profile', protect, customerOnly, validationProfileUpdate, updateUserProfileController);
+router.patch('/api/user/password', protect, customerOnly, validationPasswordChange, changeUserPasswordController);
 router.post('/api/user/email-change/request', protect, customerOnly, sendEmailChangeOtpController);
 router.post('/api/user/email-change/verify', protect, customerOnly, verifyEmailChangeOtpController);
 router.get('/api/user/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));

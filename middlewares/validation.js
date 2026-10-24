@@ -93,7 +93,7 @@ const validationProfileUpdate = (req, res, next) => {
         }
     }
 
-    if (!namePattern.test(name)) {
+    if (name !== undefined && !namePattern.test(name)) {
         return res.status(400).json({
             message: "please enter a valid name "
         });
@@ -119,4 +119,20 @@ const validationProfileUpdate = (req, res, next) => {
     next();
 };
 
-export { validationSignup, validationLogin, validationProfileUpdate }
+const validationPasswordChange = (req, res, next) => {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (typeof currentPassword !== 'string' || !currentPassword) {
+        return res.status(400).json({ message: 'Enter your current password' });
+    }
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+        return res.status(400).json({ message: 'New password must be at least 8 characters' });
+    }
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'New passwords do not match' });
+    }
+
+    next();
+};
+
+export { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange }

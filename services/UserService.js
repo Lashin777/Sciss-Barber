@@ -64,7 +64,12 @@ const userLogin = async (email, password) => {
 
 
     const token = jwt.sign(
-        { id: user._id, role: user.role },
+        {
+            id: user._id,
+            role: user.role,
+            tokenVersion: user.tokenVersion
+
+        },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
     )
@@ -81,9 +86,19 @@ const userLogin = async (email, password) => {
 
 const UpdateUserProfile = async (userId, updates) => {
     const fields = {};
-    if (typeof updates.name === 'string') fields.name = updates.name.trim();
-    if (typeof updates.phone === 'string') fields.phone = updates.phone.trim();
-    if (typeof updates.profileImage === 'string') fields.profileImage = updates.profileImage.trim();
+    if (typeof updates.name === 'string') {
+        fields.name = updates.name.trim();
+        fields['addresses.$[].fullName'] = fields.name;
+    }
+
+    if (typeof updates.phone === 'string') {
+        fields.phone = updates.phone.trim();
+        fields['addresses.$[].phone'] = fields.phone;
+    }
+
+    if (typeof updates.profileImage === 'string') {
+        fields.profileImage = updates.profileImage.trim();
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
         userId,
@@ -94,6 +109,24 @@ const UpdateUserProfile = async (userId, updates) => {
     if (!updatedUser) throw new Error('User not found');
     return updatedUser;
 }
+
+const changeUserPassword = async (userId, currentPassword, newPassword) => {
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'CUSTOMER') throw new Error('Customer account not found');
+    if (user.googleId || !user.password) {
+        throw new Error('This account uses Google sign-in and does not have a password to change');
+    }
+
+    const currentPasswordMatches = await comparePassword(currentPassword, user.password);
+    if (!currentPasswordMatches) throw new Error('Current password is incorrect');
+    if (newPassword.length < 8) throw new Error('New password must be at least 8 characters');
+
+    const newPasswordMatches = await comparePassword(newPassword, user.password);
+    if (newPasswordMatches) throw new Error('Choose a new password different from your current password');
+
+    const hashedPassword = await hashPassword(newPassword);
+    await User.updateOne({ _id: userId }, { $set: { password: hashedPassword } });
+};
 
 // Worked by Codex: change the account email only after its new address proves ownership.
 const sendEmailChangeOtp = async (userId, newEmail) => {
@@ -300,6 +333,7 @@ export {
     resetPassword,
     userLogin,
     UpdateUserProfile,
+    changeUserPassword,
     sendEmailChangeOtp,
     verifyEmailChangeOtp,
     addUserAddress,

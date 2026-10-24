@@ -1,5 +1,5 @@
 import User from '../models/userModel.js';
-import { UsersignUp, forgetPassword, resetPassword, userLogin, UpdateUserProfile, sendEmailChangeOtp, verifyEmailChangeOtp, addUserAddress, getUserAddresses, updateAddress, deleteAddress, setDefaultAddress } from '../services/UserService.js';
+import { UsersignUp, forgetPassword, resetPassword, userLogin, UpdateUserProfile, changeUserPassword, sendEmailChangeOtp, verifyEmailChangeOtp, addUserAddress, getUserAddresses, updateAddress, deleteAddress, setDefaultAddress } from '../services/UserService.js';
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 import jwt from 'jsonwebtoken'
 import { setUserSessionCookie, clearUserSessionCookie } from '../utils/session.js';
@@ -120,6 +120,15 @@ const updateUserProfileController = async (req, res) => {
         res.status(400).json({
             message: error.message
         });
+    }
+};
+
+const changeUserPasswordController = async (req, res) => {
+    try {
+        await changeUserPassword(req.user._id, req.body.currentPassword, req.body.newPassword);
+        res.status(200).json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(400).json({ message: error.message || 'Could not change your password' });
     }
 };
 
@@ -250,6 +259,7 @@ export {
     userLoginController,
     userLogoutController,
     updateUserProfileController,
+    changeUserPasswordController,
     sendEmailChangeOtpController,
     verifyEmailChangeOtpController,
     googleCallbackController,

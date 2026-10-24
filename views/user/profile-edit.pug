@@ -86,6 +86,9 @@ block content
                         svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
                           path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
                           circle(cx="12", cy="12", r="2.5")
+                  div(class="sm:col-span-2")
+                    button#save-password(type="button", class="rounded-full bg-neutral-950 px-5 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE PASSWORD
+                p#password-change-feedback(class="hidden max-w-sm rounded-xl border px-4 py-3 text-xs shadow-lg", role="status", aria-live="polite", style="position:fixed;top:1rem;right:1rem;z-index:1000;opacity:0;transform:translateY(-8px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none")
 
         section#addresses(class="scroll-mt-6 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8")
           div(class="mb-6 flex flex-wrap items-end justify-between gap-4")
@@ -136,7 +139,7 @@ block content
                 label(for="address-default", class="text-xs text-neutral-500") Set as my default address
             button#save-address(type="button", class="mt-5 rounded-full bg-neutral-950 px-5 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE ADDRESS
 
-        p#profile-save-note(class="hidden rounded-2xl border border-[#00D06C]/30 bg-[#00D06C]/10 px-5 py-4 text-sm", role="status")
+        p#profile-save-note(class="hidden max-w-sm rounded-xl border px-4 py-3 text-xs shadow-lg", role="status", aria-live="polite", style="position:fixed;top:1rem;right:1rem;z-index:1000;opacity:0;transform:translateY(-8px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none")
         div(class="flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center")
           a(href="/profile", class="inline-flex h-12 items-center justify-center rounded-full px-5 font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-500 transition hover:text-neutral-950") CANCEL
           button(type="submit", class="h-12 rounded-full bg-neutral-950 px-7 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE CHANGES →
@@ -179,6 +182,36 @@ block content
     const currentEmail = emailInput.defaultValue.trim().toLowerCase();
     const emailChangeFeedback = document.getElementById('email-change-feedback');
     const otpFeedback = document.getElementById('otp-feedback');
+    const profileSaveNote = document.getElementById('profile-save-note');
+    let profileToastTimer;
+    let profileToastHideTimer;
+
+    const hideProfileToast = () => {
+      window.clearTimeout(profileToastTimer);
+      window.clearTimeout(profileToastHideTimer);
+      profileSaveNote.style.opacity = '0';
+      profileSaveNote.style.transform = 'translateY(-8px)';
+      profileSaveNote.classList.add('hidden');
+    };
+
+    const showProfileToast = (message, isError = false) => {
+      window.clearTimeout(profileToastTimer);
+      window.clearTimeout(profileToastHideTimer);
+      profileSaveNote.textContent = message;
+      profileSaveNote.style.borderColor = isError ? '#dc2626' : '#00D06C';
+      profileSaveNote.style.backgroundColor = isError ? '#fef2f2' : '#ecfdf5';
+      profileSaveNote.style.color = isError ? '#b91c1c' : '#525252';
+      profileSaveNote.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        profileSaveNote.style.opacity = '1';
+        profileSaveNote.style.transform = 'translateY(0)';
+      });
+      profileToastTimer = window.setTimeout(() => {
+        profileSaveNote.style.opacity = '0';
+        profileSaveNote.style.transform = 'translateY(-8px)';
+        profileToastHideTimer = window.setTimeout(() => profileSaveNote.classList.add('hidden'), 300);
+      }, 4000);
+    };
 
     const showEmailFeedback = (message, isError = false) => {
       emailChangeFeedback.textContent = message;
@@ -228,6 +261,12 @@ block content
         passwordFields.classList.toggle('grid', willOpen);
         passwordToggle.setAttribute('aria-expanded', String(willOpen));
         passwordToggle.textContent = willOpen ? 'CANCEL PASSWORD CHANGE' : 'CHANGE PASSWORD';
+        if (!willOpen) {
+          ['current-password', 'new-password', 'confirm-password'].forEach((id) => {
+            document.getElementById(id).value = '';
+          });
+          document.getElementById('password-change-feedback').classList.add('hidden');
+        }
       });
       if (window.location.hash === '#security') {
         passwordFields.classList.remove('hidden');
@@ -356,12 +395,18 @@ block content
       const city = document.getElementById('address-city').value.trim();
       const state = document.getElementById('address-state').value.trim();
       const postal = document.getElementById('address-postal').value.trim();
-      if (!line || !city || !state || !postal) {
-        document.getElementById('address-line').focus();
+      const missingAddressField = [
+        ['address-line', 'Address line'],
+        ['address-city', 'City'],
+        ['address-state', 'State'],
+        ['address-postal', 'Postal code']
+      ].find(([id]) => !document.getElementById(id).value.trim());
+      if (missingAddressField) {
+        document.getElementById(missingAddressField[0]).focus();
+        showProfileToast(`${missingAddressField[1]} is required.`, true);
         return;
       }
       const title = document.getElementById('address-label').value;
-      const saveNote = document.getElementById('profile-save-note');
       try {
         const response = await fetch(
           addressBeingEdited
@@ -391,13 +436,11 @@ block content
         addressForm.querySelector('h3').textContent = 'Add an address';
         document.getElementById('save-address').textContent = 'SAVE ADDRESS';
 
-        saveNote.textContent = 'Address saved successfully.';
-        saveNote.classList.remove('hidden');
+        showProfileToast('Address saved successfully.');
 
         await loadUserAddresses();
       } catch (error) {
-        saveNote.textContent = error.message || 'Could not save address.';
-        saveNote.classList.remove('hidden');
+        showProfileToast(error.message || 'Could not save address.', true);
       }
     });
 
@@ -411,9 +454,7 @@ block content
       if (event.target.closest('[data-edit-address]')) {
         addressBeingEdited = card;
         if (!card.dataset.addressId) {
-          const saveNote = document.getElementById('profile-save-note');
-          saveNote.textContent = 'Could not edit this address. Please refresh the page and try again.';
-          saveNote.classList.remove('hidden');
+          showProfileToast('Could not edit this address. Please refresh the page and try again.', true);
           return;
         }
         addressForm.querySelector('h3').textContent = 'Edit address';
@@ -430,8 +471,11 @@ block content
     });
     document.getElementById('cancel-remove-address').addEventListener('click', () => removeModal.close());
     document.getElementById('confirm-remove-address').addEventListener('click', async () => {
-      if (!addressToRemove?.dataset.addressId) return;
-      const saveNote = document.getElementById('profile-save-note');
+      if (!addressToRemove?.dataset.addressId) {
+        showProfileToast('Could not remove this address. Please refresh the page and try again.', true);
+        removeModal.close();
+        return;
+      }
       const addressId = addressToRemove.dataset.addressId;
       const confirmButton = document.getElementById('confirm-remove-address');
       confirmButton.disabled = true;
@@ -441,12 +485,10 @@ block content
         if (!response.ok) throw new Error(result.message || 'Could not remove address.');
         removeModal.close();
         addressToRemove = null;
-        saveNote.textContent = 'Address removed successfully.';
-        saveNote.classList.remove('hidden');
+        showProfileToast('Address removed successfully.');
         await loadUserAddresses();
       } catch (error) {
-        saveNote.textContent = error.message || 'Could not remove address.';
-        saveNote.classList.remove('hidden');
+        showProfileToast(error.message || 'Could not remove address.', true);
       } finally {
         confirmButton.disabled = false;
       }
@@ -530,6 +572,7 @@ block content
         });
         } catch (error) {
         console.error('Address loading failed:', error);
+        showProfileToast(error.message || 'Could not load saved addresses.', true);
         }
     };
 
@@ -548,15 +591,88 @@ block content
       profileInitials.classList.add('hidden');
     });
 
+    const savePasswordButton = document.getElementById('save-password');
+    let passwordFeedbackTimer;
+    let passwordFeedbackHideTimer;
+    if (savePasswordButton) savePasswordButton.addEventListener('click', async () => {
+      const currentPassword = document.getElementById('current-password');
+      const newPassword = document.getElementById('new-password');
+      const confirmPassword = document.getElementById('confirm-password');
+      const feedback = document.getElementById('password-change-feedback');
+      const showFeedback = (message, isError = false) => {
+        window.clearTimeout(passwordFeedbackTimer);
+        window.clearTimeout(passwordFeedbackHideTimer);
+        feedback.textContent = message;
+        feedback.style.borderColor = isError ? '#dc2626' : '#00D06C';
+        feedback.style.backgroundColor = isError ? '#fef2f2' : '#ecfdf5';
+        feedback.style.color = isError ? '#b91c1c' : '#525252';
+        feedback.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          feedback.style.opacity = '1';
+          feedback.style.transform = 'translateY(0)';
+        });
+        passwordFeedbackTimer = window.setTimeout(() => {
+          feedback.style.opacity = '0';
+          feedback.style.transform = 'translateY(-8px)';
+          passwordFeedbackHideTimer = window.setTimeout(() => feedback.classList.add('hidden'), 300);
+        }, 4000);
+      };
+
+      if (!currentPassword.value) {
+        currentPassword.focus();
+        showFeedback('Enter your current password.', true);
+        return;
+      }
+      if (newPassword.value.length < 8) {
+        newPassword.focus();
+        showFeedback('Your new password must be at least 8 characters.', true);
+        return;
+      }
+      if (newPassword.value !== confirmPassword.value) {
+        confirmPassword.focus();
+        showFeedback('The new passwords do not match.', true);
+        return;
+      }
+
+      savePasswordButton.disabled = true;
+      savePasswordButton.textContent = 'SAVING…';
+      try {
+        const response = await fetch('/api/user/password', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: currentPassword.value,
+            newPassword: newPassword.value,
+            confirmPassword: confirmPassword.value
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not change your password.');
+
+        currentPassword.value = '';
+        newPassword.value = '';
+        confirmPassword.value = '';
+        passwordFields.classList.add('hidden');
+        passwordFields.classList.remove('grid');
+        passwordToggle.setAttribute('aria-expanded', 'false');
+        passwordToggle.textContent = 'CHANGE PASSWORD';
+        showFeedback(result.message || 'Password changed successfully.');
+      } catch (error) {
+        showFeedback(error.message || 'Could not change your password.', true);
+      } finally {
+        savePasswordButton.disabled = false;
+        savePasswordButton.textContent = 'SAVE PASSWORD';
+      }
+    });
+
     document.getElementById('profile-edit-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const saveButton = event.currentTarget.querySelector('button[type="submit"]');
-      const saveNote = document.getElementById('profile-save-note');
       saveButton.disabled = true;
       saveButton.textContent = 'SAVING…';
-      saveNote.classList.add('hidden');
+      hideProfileToast();
 
       try {
         const response = await fetch('/api/user/profile', {
@@ -567,13 +683,11 @@ block content
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Could not save your profile.');
 
-        saveNote.textContent = document.getElementById('photo').files.length
+        showProfileToast(document.getElementById('photo').files.length
           ? 'Your profile details were saved. The photo preview is not saved yet.'
-          : 'Your profile changes were saved.';
-        saveNote.classList.remove('hidden');
+          : 'Your profile changes were saved.');
       } catch (error) {
-        saveNote.textContent = error.message || 'Could not save your profile.';
-        saveNote.classList.remove('hidden');
+        showProfileToast(error.message || 'Could not save your profile.', true);
       } finally {
         saveButton.disabled = false;
         saveButton.textContent = 'SAVE CHANGES →';

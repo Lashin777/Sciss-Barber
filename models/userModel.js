@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
         enum: ['ACTIVE', 'BLOCKED'],
         default: 'ACTIVE'
     },
+    tokenVersion: {
+        type: Number,
+        default: 0
+    },
     phone: {
         type: String,
         trim: true
