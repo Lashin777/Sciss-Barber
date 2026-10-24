@@ -3,8 +3,7 @@ extends ../layouts/minimal
 block content
   - const label = "block font-mono text-[11px] tracking-[0.2em] text-neutral-500"
   - const hint = "text-xs text-neutral-400"
-  - const input = "w-full border-0 border-b border-neutral-300 bg-transparent pb-2 pt-2.5 text-base font-medium outline-none focus:border-neutral-950"
-
+  - const input = "w-full border-0 border-b border-neutral-300 dark:border-neutral-700 bg-transparent pb-2 pt-2.5 text-base font-medium text-neutral-950 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none focus:border-neutral-950 dark:focus:border-white"
   section(class="mx-auto my-auto w-full max-w-sm py-4")
     p(class="mb-3 font-mono text-[11px] tracking-[0.3em] text-neutral-400") NEW MEMBER
     h1(class="mb-6 text-[clamp(2.25rem,6vw,3rem)] font-bold leading-[0.95] tracking-[-0.05em] transition-colors hover:text-green-600")
@@ -17,9 +16,8 @@ block content
 
       div(class="mb-2")
         label(for="name", class=label) FULL NAME
-        input#name(type="text", name="name", autocomplete="name", required, pattern="[A-Za-z\s'-]+",class=input)
-        p#name-error(class="mt-1 hidden text-xs text-red-600",role="alert")
-
+        input#name(type="text", name="name", autocomplete="name", required, pattern="[A-Za-z\\s'-]+", class=input)
+        p#name-error(class="mt-1 hidden text-xs text-red-600", role="alert")
 
       div(class="mb-2")
         label(for="email", class=label) EMAIL ADDRESS
@@ -41,9 +39,22 @@ block content
           span(class=hint) At least 8 characters
 
         div(class="relative")
-          input#password(type="password", name="password", minlength="6", autocomplete="new-password", required, class=input + " pr-10")
-          //- Worked by Codex: keep the eye toggle compact and positioned inside the dynamically wrapped input.
-          button#togglePassword(type="button", aria-label="Show password", style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+          input#password(
+            type="password"
+            name="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+            class=input + " pr-10"
+          )
+          //- Worked by Codex: Keep the password eye toggle consistent with login.
+          button#togglePassword(
+            type="button"
+            aria-label="Show password"
+            data-password-toggle="password"
+            data-password-label="password"
+            style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer"
+          )
             svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
               path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
               circle(cx="12", cy="12", r="2.5")
@@ -80,27 +91,26 @@ block auth_actions
     const signupSubmit = document.getElementById('signup-submit');
     const verifyForm = document.getElementById('verify-form');
     const verifyError = document.getElementById('verify-error');
-    const password = document.getElementById('password')
     let signupEmail = '';
 
-    const passwordField = document.getElementById('password');
-    const togglePassword = document.getElementById('togglePassword');
+    // Worked by Codex: Keep password visibility consistent with the login page.
+    document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
+      const passwordField = document.getElementById(toggle.dataset.passwordToggle);
+      const label = toggle.dataset.passwordLabel || 'password';
 
-    togglePassword.addEventListener('click', () => {
-    const showPassword = passwordField.type === 'password';
+      if (!passwordField) return;
 
-    passwordField.type = showPassword ? 'text' : 'password';
+      toggle.addEventListener('click', () => {
+        const showPassword = passwordField.type === 'password';
+        passwordField.type = showPassword ? 'text' : 'password';
 
-    passwordField.classList.remove('typing-overlay-active');
-
-    togglePassword.setAttribute(
-      'aria-label',
-      showPassword ? 'Hide password' : 'Show password'
-    );
-
-    updateEcho();
+        toggle.setAttribute(
+          'aria-label',
+          `${showPassword ? 'Hide' : 'Show'} ${label}`
+        );
+      });
     });
-    
+
     signupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       signupError.textContent = '';
@@ -120,9 +130,13 @@ block auth_actions
             referralCode: signupForm.elements.referralCode.value
           })
         });
+
         const result = await response.json();
 
-        if (!response.ok) throw new Error(result.message || 'Unable to create your account. Please try again.');
+        if (!response.ok) {
+          throw new Error(result.message || 'Unable to create your account. Please try again.');
+        }
+
         signupEmail = signupForm.elements.email.value;
         signupForm.classList.add('hidden');
         verifyForm.classList.remove('hidden');
@@ -141,6 +155,7 @@ block auth_actions
       event.preventDefault();
       verifyError.textContent = '';
       verifyError.classList.add('hidden');
+
       const button = document.getElementById('verify-submit');
       button.disabled = true;
       button.textContent = 'VERIFYING…';
@@ -155,8 +170,13 @@ block auth_actions
             purpose: 'EMAIL_VERIFICATION'
           })
         });
+
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'That code could not be verified.');
+
+        if (!response.ok) {
+          throw new Error(result.message || 'That code could not be verified.');
+        }
+
         window.location.assign('/login');
       } catch (error) {
         verifyError.textContent = error.message || 'That code could not be verified.';
@@ -168,26 +188,27 @@ block auth_actions
     });
 
     let resendCountdown;
-    function startResendCountdown(seconds = 60){
+
+    function startResendCountdown(seconds = 60) {
       const resendButton = document.getElementById('resend-otp');
       let remaining = seconds;
 
-
       clearInterval(resendCountdown);
-      resendButton.disabled =  true;
+      resendButton.disabled = true;
       resendButton.textContent = `RESEND IN ${remaining}s`;
 
-      resendCountdown = setInterval(()=>{
-        remaining --;
+      resendCountdown = setInterval(() => {
+        remaining--;
 
-      if(remaining<=0){
-        clearInterval(resendCountdown);
-        resendButton.disabled = false;
-        resendButton.textContent = 'RESEND CODE'
-        return;
-      }
-      resendButton.textContent =`RESEND IN ${remaining}s`;
-      },1000);
+        if (remaining <= 0) {
+          clearInterval(resendCountdown);
+          resendButton.disabled = false;
+          resendButton.textContent = 'RESEND CODE';
+          return;
+        }
+
+        resendButton.textContent = `RESEND IN ${remaining}s`;
+      }, 1000);
     }
 
     document.getElementById('resend-otp').addEventListener('click', async () => {
@@ -201,26 +222,37 @@ block auth_actions
         const response = await fetch('/api/user/resend-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: signupEmail, purpose: 'EMAIL_VERIFICATION' })
+          body: JSON.stringify({
+            email: signupEmail,
+            purpose: 'EMAIL_VERIFICATION'
+          })
         });
+
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not resend the code.');
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Could not resend the code.');
+        }
+
         resendButton.textContent = 'CODE SENT';
-        startResendCountdown()
+        startResendCountdown();
       } catch (error) {
         verifyError.textContent = error.message || 'Could not resend the code.';
         verifyError.classList.remove('hidden');
         resendButton.textContent = 'RESEND CODE';
+        resendButton.disabled = false;
       }
     });
 
-    signupForm.querySelectorAll('input:not([type="checkbox"])').forEach((field) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'signup-type-wrap';
-      field.parentNode.insertBefore(wrapper, field);
-      wrapper.appendChild(field);
+    // Worked by Codex: Restore the signup typing animation.
+   signupForm.querySelectorAll('input:not([type="checkbox"])').forEach((field) => {
+      // Keep password visibility smooth without the typing overlay.
+     if (field.id === 'password') return;
 
-      if (field.id === 'password') wrapper.appendChild(togglePassword);
+     const wrapper = document.createElement('div');
+    wrapper.className = 'signup-type-wrap';
+    field.parentNode.insertBefore(wrapper, field);
+    wrapper.appendChild(field);
 
       const echo = document.createElement('span');
       echo.className = 'signup-typing-echo';
@@ -228,21 +260,29 @@ block auth_actions
       wrapper.appendChild(echo);
 
       const updateEcho = () => {
-        const isTyping = document.activeElement === field && field.value.length > 0 &&!(field.id ==='password' && field.type==='text');
-        echo.replaceChildren();
-        echo.classList.toggle('visible', isTyping);
+        const isTyping =
+          document.activeElement === field && field.value.length > 0;
+
+          echo.replaceChildren();
+         echo.classList.toggle('visible', isTyping);
         field.classList.toggle('typing-overlay-active', isTyping);
         echo.style.transform = `translateX(${-field.scrollLeft}px)`;
 
         if (!isTyping) return;
-        const value ='•'.repeat(field.value.length);
-        Array.from(value).forEach((character, index) => {
-          const letter = document.createElement('span');
-          letter.textContent = character;
-          if (index === value.length - 1) letter.className = 'latest-char';
-          echo.appendChild(letter);
-        });
-      };
+
+    const value = field.value;
+
+    Array.from(value).forEach((character, index) => {
+      const letter = document.createElement('span');
+      letter.textContent = character;
+
+      if (index === value.length - 1) {
+        letter.className = 'latest-char';
+      }
+
+        echo.appendChild(letter);
+      });
+    };
 
       field.addEventListener('input', updateEcho);
       field.addEventListener('focus', updateEcho);

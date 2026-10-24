@@ -8,6 +8,7 @@ const sessionCookieOptions = {
     path: '/'
 };
 
+// Worked by Codex: issue the customer session cookie with the shared one-day options.
 const setUserSessionCookie = (res, token) => {
     res.cookie('token', token, {
         ...sessionCookieOptions,

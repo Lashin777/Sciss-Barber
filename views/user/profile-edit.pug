@@ -10,7 +10,6 @@ block content
         button#profile-theme-toggle(type="button", aria-label="Switch theme", class="grid size-9 place-items-center rounded-full border border-neutral-200 text-base transition hover:border-[#00D06C] hover:bg-[#00D06C]") ◐
         //- Worked by Codex: provide direct customer logout from edit profile.
         form(action="/api/user/logout", method="POST")
-          button(type="submit", class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500 transition hover:text-[#00D06C]") LOG OUT
         a(href="/profile", class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500 transition hover:text-[#00D06C]") ← PROFILE
 
     header(class="mb-8 sm:mb-10")
@@ -103,12 +102,12 @@ block content
                     div(class="mb-2 flex flex-wrap items-center gap-2")
                       h3(class="text-sm font-bold") Home
                       span(class="rounded-full bg-[#00D06C]/20 px-2 py-1 font-mono text-[8px] font-bold tracking-[0.1em]") DEFAULT
-                    p(class="text-sm font-medium") Alex Morgan
+                    p(class="text-sm font-medium")=user.name
                     p(class="mt-1 max-w-md text-sm leading-relaxed text-neutral-500") 12 Beach Road, Near City Centre<br>Kozhikode, Kerala 673001
                     p(class="mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400") +91 98765 43210
-                div(class="flex items-center gap-3")
-                  button(type="button", data-edit-address, class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") EDIT
-                  button(type="button", data-remove-address, class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-400 transition hover:text-red-600") REMOVE
+                div(class="flex shrink-0 items-center gap-2")
+                  button(type="button", data-edit-address, class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-600 transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") EDIT
+                  button(type="button", data-remove-address, class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:border-red-500 hover:bg-red-50 hover:text-red-600") REMOVE
           div#new-address-form(class="mt-4 hidden rounded-2xl border border-dashed border-neutral-300 p-5")
             div(class="mb-5 flex items-center justify-between")
               h3(class="font-bold") Add an address
@@ -158,7 +157,7 @@ block content
         p#otp-feedback(class="mt-4 hidden rounded-xl bg-[#00D06C]/10 px-4 py-3 text-xs", role="status", aria-live="polite")
         button#confirm-email-otp(type="button", class="mt-6 h-12 w-full rounded-full bg-neutral-950 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL →
 
-    dialog#remove-address-modal(class="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm")
+    dialog#remove-address-modal(class="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm", style="position:fixed;inset:0;margin:auto")
       div(class="p-6")
         p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") REMOVE ADDRESS
         h2(class="text-2xl font-bold tracking-[-0.04em]") Are you sure?
@@ -343,6 +342,8 @@ block content
       addressForm.querySelector('h3').textContent = 'Add an address';
       document.getElementById('save-address').textContent = 'SAVE ADDRESS';
       addressForm.querySelectorAll('input:not([type="checkbox"])').forEach((input) => { input.value = ''; });
+      document.getElementById('address-label').value = 'Home';
+      document.getElementById('address-default').checked = false;
       addressForm.classList.remove('hidden');
       addressForm.scrollIntoView({behavior:'smooth',block:'center'});
     });
@@ -350,7 +351,7 @@ block content
       addressForm.classList.add('hidden');
       addressBeingEdited = null;
     });
-    document.getElementById('save-address').addEventListener('click', () => {
+    document.getElementById('save-address').addEventListener('click',async () => {
       const line = document.getElementById('address-line').value.trim();
       const city = document.getElementById('address-city').value.trim();
       const state = document.getElementById('address-state').value.trim();
@@ -360,21 +361,44 @@ block content
         return;
       }
       const title = document.getElementById('address-label').value;
-      if (addressBeingEdited) {
-        addressBeingEdited.querySelector('h3').textContent = title;
-        addressBeingEdited.querySelectorAll('p')[1].textContent = `${line}, ${city}, ${state} ${postal}`;
+      const saveNote = document.getElementById('profile-save-note');
+      try {
+        const response = await fetch(
+          addressBeingEdited
+            ? `/api/user/addresses/${addressBeingEdited.dataset.addressId}`
+            : '/api/user/addresses',
+          {
+            method: addressBeingEdited ? 'PATCH' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              label: title,
+              addressLine: line,
+              city,
+              state,
+              postalCode: postal
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Could not save address');
+        }
+
         addressBeingEdited = null;
-      } else {
-        const card = document.createElement('article');
-        card.className = 'address-card rounded-2xl bg-neutral-50 p-5';
-        card.dataset.addressCard = '';
-        card.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-4"><div class="flex gap-3"><span class="mt-1 grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm">⌂</span><div><div class="mb-2 flex flex-wrap items-center gap-2"><h3 class="text-sm font-bold"></h3></div><p class="text-sm font-medium">Alex Morgan</p><p class="mt-1 max-w-md text-sm leading-relaxed text-neutral-500"></p><p class="mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400">+91 98765 43210</p></div></div><div class="flex items-center gap-3"><button type="button" data-edit-address class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]">EDIT</button><button type="button" data-remove-address class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-400 transition hover:text-red-600">REMOVE</button></div></div>`;
-        card.querySelector('h3').textContent = title;
-        card.querySelectorAll('p')[1].textContent = `${line}, ${city}, ${state} ${postal}`;
-        addressList.appendChild(card);
+        addressForm.classList.add('hidden');
+        addressForm.querySelector('h3').textContent = 'Add an address';
+        document.getElementById('save-address').textContent = 'SAVE ADDRESS';
+
+        saveNote.textContent = 'Address saved successfully.';
+        saveNote.classList.remove('hidden');
+
+        await loadUserAddresses();
+      } catch (error) {
+        saveNote.textContent = error.message || 'Could not save address.';
+        saveNote.classList.remove('hidden');
       }
-      addressForm.classList.add('hidden');
-      document.getElementById('profile-save-note').classList.remove('hidden');
     });
 
     addressList.addEventListener('click', (event) => {
@@ -386,26 +410,130 @@ block content
       }
       if (event.target.closest('[data-edit-address]')) {
         addressBeingEdited = card;
+        if (!card.dataset.addressId) {
+          const saveNote = document.getElementById('profile-save-note');
+          saveNote.textContent = 'Could not edit this address. Please refresh the page and try again.';
+          saveNote.classList.remove('hidden');
+          return;
+        }
         addressForm.querySelector('h3').textContent = 'Edit address';
         document.getElementById('save-address').textContent = 'UPDATE ADDRESS';
-        const parts = card.querySelectorAll('p');
-        const addressParts = parts[1].textContent.split(', ');
-        document.getElementById('address-line').value = addressParts[0] || '';
-        document.getElementById('address-city').value = addressParts[1] || '';
-        document.getElementById('address-state').value = addressParts[2]?.split(' ')[0] || '';
-        document.getElementById('address-postal').value = addressParts[2]?.split(' ')[1] || '';
+        document.getElementById('address-label').value = card.dataset.label || 'Home';
+        document.getElementById('address-line').value = card.dataset.addressLine || '';
+        document.getElementById('address-city').value = card.dataset.city || '';
+        document.getElementById('address-state').value = card.dataset.state || '';
+        document.getElementById('address-postal').value = card.dataset.postalCode || '';
+        document.getElementById('address-default').checked = card.dataset.isDefault === 'true';
         addressForm.classList.remove('hidden');
         addressForm.scrollIntoView({behavior:'smooth',block:'center'});
       }
     });
     document.getElementById('cancel-remove-address').addEventListener('click', () => removeModal.close());
-    document.getElementById('confirm-remove-address').addEventListener('click', () => {
-      if (addressToRemove) addressToRemove.remove();
-      addressToRemove = null;
-      removeModal.close();
-      document.getElementById('profile-save-note').classList.remove('hidden');
+    document.getElementById('confirm-remove-address').addEventListener('click', async () => {
+      if (!addressToRemove?.dataset.addressId) return;
+      const saveNote = document.getElementById('profile-save-note');
+      const addressId = addressToRemove.dataset.addressId;
+      const confirmButton = document.getElementById('confirm-remove-address');
+      confirmButton.disabled = true;
+      try {
+        const response = await fetch(`/api/user/addresses/${addressId}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not remove address.');
+        removeModal.close();
+        addressToRemove = null;
+        saveNote.textContent = 'Address removed successfully.';
+        saveNote.classList.remove('hidden');
+        await loadUserAddresses();
+      } catch (error) {
+        saveNote.textContent = error.message || 'Could not remove address.';
+        saveNote.classList.remove('hidden');
+      } finally {
+        confirmButton.disabled = false;
+      }
     });
     removeModal.addEventListener('click', (event) => { if (event.target === removeModal) removeModal.close(); });
+
+      const loadUserAddresses = async () => {
+          try {
+          const response = await fetch('/api/user/addresses');
+          const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Could not load addresses');
+            }
+
+        addressList.innerHTML = '';
+
+        result.addresses.forEach((address) => {
+          const card = document.createElement('article');
+          card.className = 'address-card rounded-2xl bg-neutral-50 p-5';
+          card.dataset.addressCard = '';
+          card.dataset.addressId = address._id;
+          card.dataset.label = address.label || 'Home';
+          card.dataset.addressLine = address.addressLine || '';
+          card.dataset.city = address.city || '';
+          card.dataset.state = address.state || '';
+          card.dataset.postalCode = address.postalCode || '';
+          card.dataset.isDefault = String(Boolean(address.isDefault));
+
+        const heading = document.createElement('h3');
+        heading.className = 'text-sm font-bold';
+        heading.textContent = address.label || 'Home';
+        const headingRow = document.createElement('div');
+        headingRow.className = 'mb-2 flex flex-wrap items-center gap-2';
+        headingRow.appendChild(heading);
+
+        if (address.isDefault) {
+          const defaultBadge = document.createElement('span');
+          defaultBadge.className = 'rounded-full bg-[#00D06C]/20 px-2 py-1 font-mono text-[8px] font-bold tracking-[0.1em]';
+          defaultBadge.textContent = 'DEFAULT';
+          headingRow.appendChild(defaultBadge);
+        }
+
+        const name = document.createElement('p');
+        name.className = 'text-sm font-medium';
+        name.textContent = address.fullName;
+
+        const details = document.createElement('p');
+        details.className = 'mt-1 max-w-md text-sm leading-relaxed text-neutral-500';
+        details.textContent =
+        `${address.addressLine}, ${address.city}, ${address.state} ${address.postalCode}`;
+
+        const phone = document.createElement('p');
+          phone.className = 'mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400';
+          phone.textContent = address.phone;
+
+          const actions = document.createElement('div');
+          actions.className = 'flex shrink-0 items-center gap-2';
+
+          const editButton = document.createElement('button');
+              editButton.type = 'button';
+              editButton.dataset.editAddress = '';
+              editButton.className = 'rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-600 transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black';
+              editButton.textContent = 'EDIT';
+
+          const removeButton = document.createElement('button');
+              removeButton.type = 'button';
+              removeButton.dataset.removeAddress = '';
+              removeButton.className = 'rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:border-red-500 hover:bg-red-50 hover:text-red-600';
+              removeButton.textContent = 'REMOVE';
+
+              actions.append(editButton, removeButton);
+              const content = document.createElement('div');
+              content.className = 'min-w-0';
+              content.append(headingRow, name, details, phone);
+              const cardLayout = document.createElement('div');
+              cardLayout.className = 'flex flex-wrap items-start justify-between gap-4';
+              cardLayout.append(content, actions);
+              card.appendChild(cardLayout);
+          addressList.appendChild(card);
+        });
+        } catch (error) {
+        console.error('Address loading failed:', error);
+        }
+    };
+
+      loadUserAddresses();
 
     const photoInput = document.getElementById('photo');
     const profilePreview = document.getElementById('profile-preview');

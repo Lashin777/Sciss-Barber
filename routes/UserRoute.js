@@ -18,7 +18,12 @@ import {
     renderServicesPageController,
     renderProfilePageController,
     renderProfileEditPageController,
-    renderBookingPageController
+    renderBookingPageController,
+    addAddressController,
+    getUserAddressesController,
+    updateAddressController,
+    deleteAddressController,
+    setDefaultAddressController
 } from '../controllers/UserController.js';
 import { validationSignup, validationLogin, validationProfileUpdate } from '../middlewares/validation.js';
 import passport from 'passport';
@@ -42,6 +47,7 @@ router.get('/api/user/auth/google', passport.authenticate('google', { scope: ['p
 router.get('/api/user/auth/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/signup' }), googleCallbackController);
 
 // Worked by Codex: keep customer facing pages alongside customer API routes.
+//FRONTED RENDER ROUTES
 router.get('/', optionalAuth, renderHomePageController);
 router.get('/login', renderLoginPageController);
 router.get('/signup', renderSignupPageController);
@@ -50,6 +56,13 @@ router.get('/services', renderServicesPageController);
 router.get('/profile', optionalAuth, renderProfilePageController);
 router.get('/profile/edit', optionalAuth, renderProfileEditPageController);
 router.get('/booking', renderBookingPageController);
+
+//ADRESS MANAGEMENT ROUTE
+router.post('/api/user/addresses', protect, customerOnly, addAddressController);
+router.get('/api/user/addresses', protect, customerOnly, getUserAddressesController);
+router.patch('/api/user/addresses/:addressId', protect, customerOnly, updateAddressController);
+router.delete('/api/user/addresses/:addressId', protect, customerOnly, deleteAddressController);
+router.patch('api/user/addresses/:addressId', protect, customerOnly, setDefaultAddressController)
 
 
 export default router
