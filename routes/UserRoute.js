@@ -26,7 +26,7 @@ import {
     deleteAddressController,
     setDefaultAddressController
 } from '../controllers/UserController.js';
-import { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange } from '../middlewares/validation.js';
+import { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange, validationResetPassword } from '../middlewares/validation.js';
 import passport from 'passport';
 import { protect, customerOnly, optionalAuth, preventCache } from '../middlewares/authMiddleware.js';
 import googleAuthMiddleWare from '../middlewares/googleAuthMiddleware.js';
@@ -38,7 +38,7 @@ router.post('/api/user/signup', validationSignup, UsersignUpController);
 router.post('/api/user/verify-otp', verifyOtpController);
 router.post('/api/user/resend-otp', resendOtpController);
 router.post('/api/user/forget-password', forgetPasswordController);
-router.patch('/api/user/reset-password', resetPasswordController);
+router.patch('/api/user/reset-password', validationResetPassword, resetPasswordController);
 router.post('/api/user/login', validationLogin, userLoginController);
 router.post('/api/user/logout', protect, customerOnly, userLogoutController);
 router.patch('/api/user/profile', protect, customerOnly, validationProfileUpdate, updateUserProfileController);

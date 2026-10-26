@@ -12,6 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const generateOtp = async (email, purpose) => {
+    await Otp.deleteMany({ email, purpose, isUsed: false });
     const otp = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -54,7 +55,13 @@ const consumeOtp = async (email, otp, purpose) => {
 const verifyOtp = async (email, otp, purpose) => {
     await consumeOtp(email, otp, purpose);
 
-    await User.updateOne({ email }, { isEmailVerified: true });
+    if (purpose === 'EMAIL_VERIFICATION') {
+        await User.updateOne(
+            { email },
+            { isEmailVerified: true }
+        );
+    }
+
 
 }
 

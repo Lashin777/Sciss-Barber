@@ -40,7 +40,13 @@ const resetPassword = async (email, otp, newpassword) => {
     await verifyOtp(email, otp, 'PASSWORD_RESET');
     const hashedPassword = await hashPassword(newpassword);
 
-    await User.updateOne({ email }, { password: hashedPassword })
+    await User.updateOne(
+        { email },
+        {
+            $set: { password: hashedPassword },
+            $inc: { tokenVersion: 1 }
+        }
+    );
 }
 
 

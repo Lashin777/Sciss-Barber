@@ -135,4 +135,23 @@ const validationPasswordChange = (req, res, next) => {
     next();
 };
 
-export { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange }
+
+const validationResetPassword = (req, res, next) => {
+    const { email, otp, password } = req.body;
+
+    if (typeof email !== 'string' || !email.trim()) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+
+    if (typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
+        return res.status(400).json({ message: 'Enter a valid 6-digit OTP' });
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    next();
+};
+
+export { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange, validationResetPassword }
