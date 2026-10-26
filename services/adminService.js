@@ -10,7 +10,6 @@ const adminLogin = async (email, password) => {
         throw new Error("Invalid admin credentials")
     }
 
-    // Worked by Codex: do not issue sessions to blocked admin accounts.
     if (user.status === 'BLOCKED') {
         throw new Error('Your admin account is blocked');
     }
@@ -22,7 +21,7 @@ const adminLogin = async (email, password) => {
     }
 
     const token = jwt.sign(
-        { id: user._id, role: user.role },
+        { id: user._id, role: user.role, tokenVersion: user.tokenVersion },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
     )

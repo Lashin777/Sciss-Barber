@@ -95,6 +95,11 @@ block content
     const resetEmailStep = document.getElementById('reset-email-step');
     const resetPasswordStep = document.getElementById('reset-password-step');
     const requestedReturnTo = new URLSearchParams(window.location.search).get('returnTo');
+    const loginErrorType = new URLSearchParams(window.location.search).get('error');
+
+    if (loginErrorType === 'BLOCKED') {
+      blockedModal.showModal();
+    }
     const resetReturnTo = requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//') ? requestedReturnTo : null;
     let passwordResetComplete = false;
 

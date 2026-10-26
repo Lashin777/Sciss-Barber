@@ -1,3 +1,4 @@
+import User from '../models/userModel.js';
 import { adminLogin, blockUser, UnblockUser, getAllUser } from '../services/adminService.js';
 import { setAdminSessionCookie, clearAdminSessionCookie } from '../utils/session.js';
 
@@ -17,10 +18,20 @@ const adminLoginController = async (req, res) => {
 
 }
 
-const adminLogoutController = (req, res) => {
-    // Worked by Codex: clear only the admin session cookie on admin sign out.
-    clearAdminSessionCookie(res);
-    res.redirect('/admin/login');
+const adminLogoutController = async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.user._id, {
+            $inc: { tokenVersion: 1 }
+        });
+
+        clearAdminSessionCookie(res);
+        res.redirect('/admin/login');
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Logout Failed"
+        })
+    }
 };
 const adminBlockController = async (req, res) => {
     try {

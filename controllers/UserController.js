@@ -3,13 +3,26 @@ import { UsersignUp, forgetPassword, resetPassword, userLogin, UpdateUserProfile
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 import jwt from 'jsonwebtoken'
 import { setUserSessionCookie, clearUserSessionCookie } from '../utils/session.js';
+import passport from 'passport';
 
-// Worked by Codex: keep customer page response logic in controllers.
 const renderHomePageController = (req, res) => {
-    res.render('user/home', { title: 'Home', isLoggedIn: Boolean(req.user) });
+    res.render('user/home', {
+        title: 'Home',
+        isLoggedIn: Boolean(req.user)
+    });
 };
 
-const renderLoginPageController = (req, res) => res.render('user/login', { title: 'Login' });
+const renderLoginPageController = (req, res) => {
+    let message = null
+    if (req.query.error === 'BLOCKED') {
+        message = "Your account Have Been BLocked"
+    }
+    res.render('user/login', {
+        title: 'Login',
+        message
+    });
+};
+
 const renderSignupPageController = (req, res) => res.render('user/signup', { title: 'signUp' });
 const renderAboutPageController = (req, res) => res.render('user/about', { title: 'About' });
 const renderServicesPageController = (req, res) => res.render('user/services', { title: 'Services & Prices' });
@@ -151,17 +164,26 @@ const verifyEmailChangeOtpController = async (req, res) => {
     }
 };
 
-const userLogoutController = (req, res) => {
-    // Worked by Codex: end the customer session by clearing its HTTP-only cookie.
-    clearUserSessionCookie(res);
-    res.redirect('/');
+const userLogoutController = async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.user._id, {
+            $inc: { tokenVersion: 1 }
+        });
+
+        clearUserSessionCookie(res);
+        res.redirect('/');
+    } catch (error) {
+        res.status(500).json({
+            message: "logout Failed"
+        })
+    }
 };
 
 
 const googleCallbackController = (req, res) => {
     if (req.user.role !== 'CUSTOMER') return res.redirect('/login');
 
-    const token = jwt.sign({ id: req.user.id, role: req.user.role },
+    const token = jwt.sign({ id: req.user.id, role: req.user.role, tokenVersion: req.user.tokenVersion },
         process.env.JWT_SECRET,
         { expiresIn: '1d' });
 

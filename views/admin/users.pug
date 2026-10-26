@@ -2,14 +2,21 @@ extends ../layouts/minimal.pug
 
 block content
   section(class="mx-auto flex w-full max-w-7xl flex-1 flex-col py-8 sm:py-12")
-    header(class="mb-10 flex flex-wrap items-end justify-between gap-5 border-b border-neutral-200 pb-6")
+    nav(class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4", aria-label="Admin navigation")
+      a(href="/admin/users", class="flex items-center gap-3 font-mono text-sm font-bold tracking-[0.12em] transition hover:text-[#00D06C]")
+        span(class="grid size-9 place-items-center rounded-full bg-[#00D06C] text-base text-black", aria-hidden="true") S
+        | SCISS’ ADMIN
+      div(class="flex flex-wrap items-center gap-3 sm:gap-6")
+        a(href="/admin/users", aria-current="page", class="rounded-full bg-neutral-950 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") USERS
+        a(href="/", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") VIEW SITE
+        //- Worked by Codex: expose a real admin logout action in the dashboard navigation.
+        form(action="/api/admin/logout", method="POST")
+          button(type="submit", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-red-600") LOG OUT
+
+    header(class="mb-10 border-b border-neutral-200 pb-6")
       div
-        a(href="/", class="mb-5 inline-block font-mono text-[10px] font-bold tracking-[0.18em] text-neutral-500 transition hover:text-[#00D06C]") ← SCISS’ BARBER
         p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / CUSTOMER ACCOUNTS
         h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") User management
-      //- Worked by Codex: expose a real admin logout action in the protected dashboard.
-      form(action="/api/admin/logout", method="POST")
-        button(type="submit", class="font-mono text-xs font-bold tracking-[0.12em] text-neutral-500 transition hover:text-[#00D06C]") LOG OUT
 
     section(class="flex flex-col gap-5")
       div(class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")

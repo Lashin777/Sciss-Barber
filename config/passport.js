@@ -15,19 +15,26 @@ passport.use(
                 let user = await User.findOne({ googleId: profile.id });
 
                 if (user) {
-                    // Worked by Codex: Google sign-in on this route is customer-only.
-                    if (user.role !== 'CUSTOMER' || user.status === 'BLOCKED') {
+
+                    if (user.role !== 'CUSTOMER') {
                         return done(null, false)
                     }
+                    if (user.status === 'BLOCKED') {
+                        return done(null, false, { code: "BLOCKED" })
+                    }
                     return done(null, user)
+
                 }
 
                 const email = profile.emails[0].value;
                 user = await User.findOne({ email });
 
                 if (user) {
-                    if (user.role !== 'CUSTOMER' || user.status === 'BLOCKED') {
-                        return done(null, false);
+                    if (user.role !== 'CUSTOMER') {
+                        return done(null, false)
+                    }
+                    if (user.status === 'BLOCKED') {
+                        return done(null, false, { code: 'BLOCKED' })
                     }
                     user.googleId = profile.id;
                     user.isEmailVerified = true;
