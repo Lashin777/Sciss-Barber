@@ -238,3 +238,9 @@ block content
           a(href="/services", class="transition hover:text-[#00D06C]") SERVICES & PRICES
         unless isLoggedIn
           a(href="/login", class="transition hover:text-[#00D06C]") LOGIN
+  script.
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });

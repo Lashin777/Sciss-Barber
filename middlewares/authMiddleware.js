@@ -16,6 +16,13 @@ const protect = async (req, res, next) => {
             clearUserSessionCookie(res);
             return res.status(401).json({ message: "Account Not Available" })
         }
+
+        if ((decode.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+            clearUserSessionCookie(res)
+            return res.status(401).json({
+                message: "Session Expried Please Login again "
+            });
+        }
         if (user.status === 'BLOCKED') {
             clearUserSessionCookie(res);
             return res.status(401).json({ message: "Account Not Available" })
@@ -44,9 +51,10 @@ const optionalAuth = async (req, res, next) => {
     }
 
     const user = await User.findById(decode.id).select('-password');
-    // Worked by Codex: only customer sessions count as signed in on public pages.
-    if (user && user.role === 'CUSTOMER' && user.status !== 'BLOCKED') req.user = user;
-    else if (!user || user.status === 'BLOCKED') clearUserSessionCookie(res);
+    if (user && user.role === 'CUSTOMER' && user.status !== 'BLOCKED' && (decode.tokenVersion ?? 0) === (user.tokenVersion ?? 0)) req.user = user;
+    else {
+        clearUserSessionCookie(res);
+    }
 
     next();
 }
@@ -58,7 +66,6 @@ const adminOnly = async (req, res, next) => {
     next()
 }
 
-// Worked by Codex: validate the separate admin cookie and current account status.
 const loadAdminSession = async (req, res) => {
     const token = req.cookies?.admin_token;
     if (!token) return false;
@@ -66,7 +73,7 @@ const loadAdminSession = async (req, res) => {
     try {
         const decode = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decode.id).select('-password');
-        if (!user || user.role !== 'ADMIN' || user.status === 'BLOCKED') {
+        if (!user || user.role !== 'ADMIN' || user.status === 'BLOCKED' || (decode.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
             clearAdminSessionCookie(res);
             return false;
         }
@@ -98,4 +105,12 @@ const customerOnly = (req, res, next) => {
     next();
 }
 
-export { protect, optionalAuth, customerOnly, adminOnly, adminProtect, adminPageProtect };
+
+const preventCache = (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+};
+
+export { protect, optionalAuth, customerOnly, adminOnly, adminProtect, adminPageProtect, preventCache };
