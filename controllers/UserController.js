@@ -187,7 +187,7 @@ const googleCallbackController = (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: '1d' });
 
-    // Worked by Codex: issue the same customer session cookie used by password login.
+
     setUserSessionCookie(res, token);
     res.redirect('/');
     console.log('Google callback reached');

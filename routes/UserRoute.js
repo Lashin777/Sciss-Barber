@@ -30,7 +30,7 @@ import { validationSignup, validationLogin, validationProfileUpdate, validationP
 import passport from 'passport';
 import { protect, customerOnly, optionalAuth, preventCache } from '../middlewares/authMiddleware.js';
 import googleAuthMiddleWare from '../middlewares/googleAuthMiddleware.js';
-
+import upload from '../middlewares/uploadMiddleware.js';
 const router = express.Router();
 
 
@@ -41,7 +41,7 @@ router.post('/api/user/forget-password', forgetPasswordController);
 router.patch('/api/user/reset-password', validationResetPassword, resetPasswordController);
 router.post('/api/user/login', validationLogin, userLoginController);
 router.post('/api/user/logout', protect, customerOnly, userLogoutController);
-router.patch('/api/user/profile', protect, customerOnly, validationProfileUpdate, updateUserProfileController);
+router.patch('/api/user/profile', protect, customerOnly, upload.single('profileImage'), validationProfileUpdate, updateUserProfileController);
 router.patch('/api/user/password', protect, customerOnly, validationPasswordChange, changeUserPasswordController);
 router.post('/api/user/email-change/request', protect, customerOnly, sendEmailChangeOtpController);
 router.post('/api/user/email-change/verify', protect, customerOnly, verifyEmailChangeOtpController);
@@ -66,7 +66,7 @@ router.post('/api/user/addresses', protect, customerOnly, addAddressController);
 router.get('/api/user/addresses', protect, customerOnly, getUserAddressesController);
 router.patch('/api/user/addresses/:addressId', protect, customerOnly, updateAddressController);
 router.delete('/api/user/addresses/:addressId', protect, customerOnly, deleteAddressController);
-router.patch('api/user/addresses/:addressId', protect, customerOnly, setDefaultAddressController)
+router.patch('/api/user/addresses/:addressId/default', protect, customerOnly, setDefaultAddressController);
 
 
 export default router

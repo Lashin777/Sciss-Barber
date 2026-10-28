@@ -9,7 +9,6 @@ const renderAdminUsersPageController = (req, res) => res.render('admin/users', {
 const adminLoginController = async (req, res) => {
     try {
         const result = await adminLogin(req.body.email, req.body.password);
-        // Worked by Codex: store admin auth separately from the customer session.
         setAdminSessionCookie(res, result.token);
         res.status(200).json({ message: 'Admin login successful', user: result.user });
     } catch (error) {

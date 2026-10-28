@@ -665,37 +665,4 @@ block content
       }
     });
 
-    document.getElementById('profile-edit-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const saveButton = event.currentTarget.querySelector('button[type="submit"]');
-      saveButton.disabled = true;
-      saveButton.textContent = 'SAVING…';
-      hideProfileToast();
-
-      try {
-        const response = await fetch('/api/user/profile', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not save your profile.');
-
-        showProfileToast(document.getElementById('photo').files.length
-          ? 'Your profile details were saved. The photo preview is not saved yet.'
-          : 'Your profile changes were saved.');
-      } catch (error) {
-        showProfileToast(error.message || 'Could not save your profile.', true);
-      } finally {
-        saveButton.disabled = false;
-        saveButton.textContent = 'SAVE CHANGES →';
-      }
-    });
-
-    window.addEventListener('pageshow', function (event) {
-      if (event.persisted) {
-        window.location.reload();
-      }
-    });
+    

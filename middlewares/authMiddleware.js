@@ -12,7 +12,7 @@ const protect = async (req, res, next) => {
         const decode = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decode.id).select('-password');
         if (!user) {
-            // Worked by Codex: remove stale customer session cookies.
+
             clearUserSessionCookie(res);
             return res.status(401).json({ message: "Account Not Available" })
         }
@@ -45,7 +45,7 @@ const optionalAuth = async (req, res, next) => {
     try {
         decode = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-        // Invalid or expired tokens are treated as signed out on public pages.
+
         clearUserSessionCookie(res);
         return next();
     }
@@ -98,7 +98,7 @@ const adminPageProtect = async (req, res, next) => {
 };
 
 const customerOnly = (req, res, next) => {
-    // Worked by Codex: prevent admin sessions from calling customer profile APIs.
+
     if (req.user.role !== 'CUSTOMER') {
         return res.status(403).json({ message: 'Customer Access Required' });
     }

@@ -99,6 +99,7 @@ const validationProfileUpdate = (req, res, next) => {
         });
     }
 
+
     // Phone validation
     if (phone !== undefined && phone !== '') {
         if (!/^\+?[0-9() .-]{7,20}$/.test(phone)) {
@@ -107,7 +108,6 @@ const validationProfileUpdate = (req, res, next) => {
             });
         }
     }
-
     // Check whether any changes were provided
     if (
         (name === undefined || name === '') && (phone === undefined || phone === '') && !req.file) {

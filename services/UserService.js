@@ -23,7 +23,7 @@ const getPasswordLoginAccount = async (email) => {
     if (!user || user.role !== 'CUSTOMER') {
         throw new Error('No Account With This EMAIL');
     }
-    // Worked by Codex: Google-linked accounts manage credentials through Google.
+
     if (user.googleId) {
         throw new Error('This account uses Google sign-in. Manage your password through Google.');
     }
@@ -53,7 +53,7 @@ const resetPassword = async (email, otp, newpassword) => {
 const userLogin = async (email, password) => {
     const user = await User.findOne({ email });
 
-    // Worked by Codex: keep admin accounts out of customer login.
+
     if (!user || user.role !== 'CUSTOMER') {
         throw new Error("Invalid Email Or Password");
     }
@@ -131,10 +131,16 @@ const changeUserPassword = async (userId, currentPassword, newPassword) => {
     if (newPasswordMatches) throw new Error('Choose a new password different from your current password');
 
     const hashedPassword = await hashPassword(newPassword);
-    await User.updateOne({ _id: userId }, { $set: { password: hashedPassword } });
+    await User.updateOne(
+        { _id: userId },
+        {
+            $set: { password: hashedPassword },
+            $inc: { tokenVersion: 1 }
+        }
+    );
 };
 
-// Worked by Codex: change the account email only after its new address proves ownership.
+
 const sendEmailChangeOtp = async (userId, newEmail) => {
     const normalizedEmail = typeof newEmail === 'string' ? newEmail.trim().toLowerCase() : '';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
