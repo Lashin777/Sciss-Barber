@@ -1,5 +1,5 @@
 import User from '../models/userModel.js';
-import { UsersignUp, forgetPassword, resetPassword, userLogin, UpdateUserProfile, changeUserPassword, sendEmailChangeOtp, verifyEmailChangeOtp, addUserAddress, getUserAddresses, updateAddress, deleteAddress, setDefaultAddress } from '../services/UserService.js';
+import { UsersignUp, forgetPassword, resetPassword, userLogin, UpdateUserProfile, changeUserPassword, sendEmailChangeOtp, verifyEmailChangeOtp } from '../services/UserService.js';
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 import jwt from 'jsonwebtoken'
 import { setUserSessionCookie, clearUserSessionCookie } from '../utils/session.js';
@@ -193,77 +193,6 @@ const googleCallbackController = (req, res) => {
     console.log('Google callback reached');
 }
 
-const addAddressController = async (req, res) => {
-    try {
-
-        const address = await addUserAddress(req.user._id, req.body);
-
-        res.status(201).json({
-            message: "Address added succssfully",
-            address
-        });
-    } catch (error) {
-        res.status(400).json({ message: error.message })
-    }
-};
-
-
-const getUserAddressesController = async (req, res) => {
-    try {
-        const addresses = await getUserAddresses(req.user._id);
-
-        res.status(201).json({ addresses })
-    } catch (error) {
-        res.status(400).json({
-            message: error.message
-        })
-    }
-};
-
-
-const updateAddressController = async (req, res) => {
-    try {
-        const address = await updateAddress(req.user._id, req.params.addressId, req.body);
-
-        res.status(201).json({
-            message: "Address Updated Succssfully",
-            address
-        });
-    } catch (error) {
-        const status = error.message === 'Address not found' ? 404 : 400;
-        res.status(status).json({ message: error.message })
-    }
-}
-
-
-const deleteAddressController = async (req, res) => {
-    try {
-        const address = await deleteAddress(req.user._id, req.params.addressId);
-        res.status(201).json({
-            message: "Address Deleted Successfully",
-            address
-        })
-    } catch (error) {
-        res.status(400).json({
-            message: error.message
-        })
-    }
-}
-
-const setDefaultAddressController = async (req, res) => {
-    try {
-        const address = await setDefaultAddress(req.user._id, req.params.addressId);
-        res.status(201).json({
-            message: "Default Address Updated Succssfully",
-            address
-        })
-    } catch (error) {
-        res.status(400).json({
-            message: error.message
-        })
-    }
-}
-
 export {
     renderHomePageController,
     renderLoginPageController,
@@ -285,9 +214,4 @@ export {
     sendEmailChangeOtpController,
     verifyEmailChangeOtpController,
     googleCallbackController,
-    addAddressController,
-    getUserAddressesController,
-    updateAddressController,
-    deleteAddressController,
-    setDefaultAddressController
 }

@@ -45,7 +45,7 @@ const consumeOtp = async (email, otp, purpose) => {
     const consumedRecord = await Otp.findOneAndUpdate(
         { _id: record._id, isUsed: false, expiresAt: { $gt: new Date() } },
         { $set: { isUsed: true } },
-        { new: true }
+        { returnDocument: 'after' }
     );
     if (!consumedRecord) throw new Error('OTP already Used');
 

@@ -94,12 +94,10 @@ const UpdateUserProfile = async (userId, updates) => {
     const fields = {};
     if (typeof updates.name === 'string') {
         fields.name = updates.name.trim();
-        fields['addresses.$[].fullName'] = fields.name;
     }
 
     if (typeof updates.phone === 'string') {
         fields.phone = updates.phone.trim();
-        fields['addresses.$[].phone'] = fields.phone;
     }
 
     if (typeof updates.profileImage === 'string') {
@@ -109,7 +107,7 @@ const UpdateUserProfile = async (userId, updates) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $set: fields },
-        { new: true, runValidators: true, select: '-password' }
+        { returnDocument: 'after', runValidators: true, select: '-password' }
     );
 
     if (!updatedUser) throw new Error('User not found');
@@ -185,160 +183,8 @@ const verifyEmailChangeOtp = async (userId, newEmail, otp) => {
 };
 
 
-const addUserAddress = async (userId, addressData) => {
-    const user = await User.findById(userId);
+// Worked by Codex: saved address management and its API service have been removed.
 
-
-    if (!user || user.role !== 'CUSTOMER') {
-        throw new Error('customer Account not found')
-    }
-
-    const requiredFields = [
-        'addressLine',
-        'city',
-        'state',
-        'postalCode'
-    ];
-
-    for (const field of requiredFields) {
-        if (
-            typeof addressData[field] !== 'string' || !addressData[field].trim()
-        ) {
-            throw new Error(`${field} required`)
-        }
-    }
-
-    const address = {
-        label: addressData.label || 'Home',
-        fullName: user.name,
-        phone: user.phone,
-        addressLine: addressData.addressLine.trim(),
-        city: addressData.city.trim(),
-        state: addressData.state.trim(),
-        postalCode: addressData.postalCode.trim(),
-        isDefault: user.addresses.length === 0
-
-    };
-    user.addresses.push(address);
-    await user.save();
-
-
-    return user.addresses[user.addresses.length - 1];
-}
-
-const getUserAddresses = async (userId) => {
-    const user = await User.findOne({
-        _id: userId,
-        role: 'CUSTOMER'
-    }).select('addresses');
-
-    if (!user) {
-        throw new Error('Customer account not found');
-    }
-
-    return user.addresses;
-};
-
-const updateAddress = async (userId, addressId, addressData) => {
-    const user = await User.findOne({
-        _id: userId,
-        role: 'CUSTOMER'
-    });
-
-    if (!user) {
-        throw new Error("Customer Account not found");
-    }
-
-
-    const address = user.addresses.id(addressId);
-
-    if (!address) {
-        throw new Error("Address not found")
-    }
-
-    const allowField = [
-        'addressLine',
-        'city',
-        'state',
-        'postalCode'
-    ];
-
-
-    for (const field of allowField) {
-        if (addressData[field] !== undefined) {
-            if (typeof addressData[field] !== 'string' || !addressData[field].trim()) {
-                throw new Error(`${field} is required`)
-            }
-            address[field] = addressData[field].trim()
-        }
-    }
-
-    if (addressData.label !== undefined && !['Home', 'Work', 'Other'].includes(addressData.label)) {
-        throw new Error('Invalid address Label');
-    }
-    if (addressData.label !== undefined) {
-        address.label = addressData.label;
-    }
-
-    await user.save();
-
-    return address
-}
-
-const deleteAddress = async (userId, addressId) => {
-    const user = await User.findOne({
-        _id: userId,
-        role: 'CUSTOMER'
-    });
-
-    if (!user) {
-        throw new Error('Customer account not found');
-    }
-
-    const address = user.addresses.id(addressId);
-
-    if (!address) {
-        throw new Error('Address not found');
-    }
-
-    const wasDefault = address.isDefault;
-
-    user.addresses.pull({ _id: addressId });
-
-    if (wasDefault && user.addresses.length > 0) {
-        user.addresses[0].isDefault = true;
-    }
-
-    await user.save();
-
-    return user.addresses;
-};
-
-
-const setDefaultAddress = async (userId, addressId) => {
-    const user = await User.findOne({
-        _id: userId,
-        role: 'CUSTOMER'
-    });
-
-    if (!user) {
-        throw new Error('Customer account not found');
-    }
-
-    const address = user.addresses.id(addressId);
-
-    if (!address) {
-        throw new Error('Address not found');
-    }
-
-    user.addresses.forEach(item => {
-        item.isDefault = item._id.equals(address._id);
-    });
-
-    await user.save();
-
-    return address;
-};
 export {
     UsersignUp,
     forgetPassword,
@@ -347,10 +193,5 @@ export {
     UpdateUserProfile,
     changeUserPassword,
     sendEmailChangeOtp,
-    verifyEmailChangeOtp,
-    addUserAddress,
-    getUserAddresses,
-    updateAddress,
-    deleteAddress,
-    setDefaultAddress
+    verifyEmailChangeOtp
 }

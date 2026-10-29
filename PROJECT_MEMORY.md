@@ -34,7 +34,7 @@ When changing code, add a concise `Worked by Codex` attribution comment beside t
 - Profile preview includes member summary, wallet preview, sample referral code with copy interaction, and a no-upcoming-appointment card.
 - The user asked to remove the Personal Information, Password, and Saved Address cards from the profile overview. Keep them removed unless asked otherwise.
 - Profile navigation was simplified; HOME and theme controls are grouped at the top.
-- Edit page has no sidebar. Personal details, email verification modal, address add/edit/remove UI, and password controls are in the details card. Password is masked by default and expands with a Change Password button.
+- Edit page has no sidebar. Personal details, email verification modal, and password controls are in the details card. Saved-address management was removed from the UI, API routes, service, and profile model. Password is masked by default and expands with a Change Password button.
 - The edit-profile email verification dialog has explicit fixed positioning and automatic margins to center it.
 - Edit Profile now sends a real 10-minute email-change OTP to the entered new address. Authenticated customer endpoints in `routes/UserRoute.js` send/resend and verify the code; the email changes in the database only after valid OTP verification. Duplicate and invalid addresses are rejected. This requires the existing `EMAIL_USER` and `EMAIL_PASS` mail configuration.
 - Edit-profile Save Changes sends name and phone as JSON to `PATCH /api/user/profile`, and shows the API response. The avatar picker currently previews locally; the API path does not persist uploaded photos.

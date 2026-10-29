@@ -42,6 +42,8 @@ block content
                 th(scope="col", class="px-5 py-4 font-normal") CONTACT
                 th(scope="col", class="px-5 py-4 font-normal") JOINED · NEWEST FIRST
                 th(scope="col", class="px-5 py-4 font-normal") STATUS
+                th(scope="col", class="px-5 py-4 font-normal") METHOD
+
                 th(scope="col", class="px-5 py-4 text-right font-normal") ACTION
             tbody#users-table-body
               tr
@@ -136,6 +138,7 @@ block content
         phone.className = 'mt-1 text-xs text-neutral-400';
         phone.textContent = user.phone || 'No phone added';
         contact.append(email, phone);
+
 
         const joined = document.createElement('td');
         joined.className = 'whitespace-nowrap px-5 py-4 text-sm text-neutral-500';
@@ -283,3 +286,4 @@ block content
     });
 
     loadUsers();
+

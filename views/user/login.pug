@@ -226,7 +226,7 @@ block content
           }
           throw new Error(message);
         }
-        window.location.assign('/');
+        window.location.replace('/');
       } catch (error) {
         loginError.textContent = error.message || 'Unable to log in. Please try again.';
         loginError.classList.remove('hidden');

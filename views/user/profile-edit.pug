@@ -10,6 +10,7 @@ block content
         button#profile-theme-toggle(type="button", aria-label="Switch theme", class="grid size-9 place-items-center rounded-full border border-neutral-200 text-base transition hover:border-[#00D06C] hover:bg-[#00D06C]") ◐
         //- Worked by Codex: provide direct customer logout from edit profile.
         form(action="/api/user/logout", method="POST")
+          button(type="submit", class="rounded-full border border-neutral-200 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") LOG OUT
         a(href="/profile", class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500 transition hover:text-[#00D06C]") ← PROFILE
 
     header(class="mb-8 sm:mb-10")
@@ -90,55 +91,7 @@ block content
                     button#save-password(type="button", class="rounded-full bg-neutral-950 px-5 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE PASSWORD
                 p#password-change-feedback(class="hidden max-w-sm rounded-xl border px-4 py-3 text-xs shadow-lg", role="status", aria-live="polite", style="position:fixed;top:1rem;right:1rem;z-index:1000;opacity:0;transform:translateY(-8px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none")
 
-        section#addresses(class="scroll-mt-6 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8")
-          div(class="mb-6 flex flex-wrap items-end justify-between gap-4")
-            div
-              p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") 02 / WHERE TO FIND YOU
-              h2(class="text-2xl font-bold tracking-[-0.04em]") Saved addresses
-            button#add-address(type="button", class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") + ADD ADDRESS
-          div#address-list(class="space-y-3")
-            article.address-card(class="rounded-2xl bg-neutral-50 p-5", data-address-card)
-              div(class="flex flex-wrap items-start justify-between gap-4")
-                div(class="flex gap-3")
-                  span(class="mt-1 grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm", aria-hidden="true") ⌂
-                  div
-                    div(class="mb-2 flex flex-wrap items-center gap-2")
-                      h3(class="text-sm font-bold") Home
-                      span(class="rounded-full bg-[#00D06C]/20 px-2 py-1 font-mono text-[8px] font-bold tracking-[0.1em]") DEFAULT
-                    p(class="text-sm font-medium")=user.name
-                    p(class="mt-1 max-w-md text-sm leading-relaxed text-neutral-500") 12 Beach Road, Near City Centre<br>Kozhikode, Kerala 673001
-                    p(class="mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400") +91 98765 43210
-                div(class="flex shrink-0 items-center gap-2")
-                  button(type="button", data-edit-address, class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-600 transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") EDIT
-                  button(type="button", data-remove-address, class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:border-red-500 hover:bg-red-50 hover:text-red-600") REMOVE
-          div#new-address-form(class="mt-4 hidden rounded-2xl border border-dashed border-neutral-300 p-5")
-            div(class="mb-5 flex items-center justify-between")
-              h3(class="font-bold") Add an address
-              button#close-address-form(type="button", aria-label="Close add address form", class="grid size-8 place-items-center rounded-full border border-neutral-200 transition hover:border-[#00D06C]") ×
-            div(class="grid gap-4 sm:grid-cols-2")
-              div(class="sm:col-span-2")
-                label(for="address-line", class=label) ADDRESS
-                input#address-line(type="text", placeholder="House, street, area", class=field)
-              div
-                label(for="address-city", class=label) CITY
-                input#address-city(type="text", placeholder="City", class=field)
-              div
-                label(for="address-state", class=label) STATE
-                input#address-state(type="text", placeholder="State", class=field)
-              div
-                label(for="address-postal", class=label) PIN CODE
-                input#address-postal(type="text", inputmode="numeric", placeholder="Postal code", class=field)
-              div
-                label(for="address-label", class=label) LABEL
-                select#address-label(class=field)
-                  option Home
-                  option Work
-                  option Other
-              div(class="flex items-center gap-2 sm:col-span-2")
-                input#address-default(type="checkbox", class="size-4 accent-[#00D06C]")
-                label(for="address-default", class="text-xs text-neutral-500") Set as my default address
-            button#save-address(type="button", class="mt-5 rounded-full bg-neutral-950 px-5 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE ADDRESS
-
+        //- Worked by Codex: saved-address management has been removed from profile settings.
         p#profile-save-note(class="hidden max-w-sm rounded-xl border px-4 py-3 text-xs shadow-lg", role="status", aria-live="polite", style="position:fixed;top:1rem;right:1rem;z-index:1000;opacity:0;transform:translateY(-8px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none")
         div(class="flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center")
           a(href="/profile", class="inline-flex h-12 items-center justify-center rounded-full px-5 font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-500 transition hover:text-neutral-950") CANCEL
@@ -160,22 +113,9 @@ block content
         p#otp-feedback(class="mt-4 hidden rounded-xl bg-[#00D06C]/10 px-4 py-3 text-xs", role="status", aria-live="polite")
         button#confirm-email-otp(type="button", class="mt-6 h-12 w-full rounded-full bg-neutral-950 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL →
 
-    dialog#remove-address-modal(class="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm", style="position:fixed;inset:0;margin:auto")
-      div(class="p-6")
-        p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") REMOVE ADDRESS
-        h2(class="text-2xl font-bold tracking-[-0.04em]") Are you sure?
-        p(class="mt-3 text-sm leading-relaxed text-neutral-500") This address will be removed from the preview.
-        div(class="mt-6 flex justify-end gap-3")
-          button#cancel-remove-address(type="button", class="rounded-full border border-neutral-200 px-4 py-3 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-neutral-950") KEEP IT
-          button#confirm-remove-address(type="button", class="rounded-full bg-neutral-950 px-4 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-red-600") REMOVE
 
   script.
     const emailModal = document.getElementById('email-verify-modal');
-    const removeModal = document.getElementById('remove-address-modal');
-    const addressForm = document.getElementById('new-address-form');
-    const addressList = document.getElementById('address-list');
-    let addressToRemove = null;
-    let addressBeingEdited = null;
     let otpTimer;
     let pendingEmail = '';
     const emailInput = document.getElementById('email');
@@ -376,219 +316,83 @@ block content
       otpTimer = window.setInterval(updateTimer, 1000);
     }
 
-    document.getElementById('add-address').addEventListener('click', () => {
-      addressBeingEdited = null;
-      addressForm.querySelector('h3').textContent = 'Add an address';
-      document.getElementById('save-address').textContent = 'SAVE ADDRESS';
-      addressForm.querySelectorAll('input:not([type="checkbox"])').forEach((input) => { input.value = ''; });
-      document.getElementById('address-label').value = 'Home';
-      document.getElementById('address-default').checked = false;
-      addressForm.classList.remove('hidden');
-      addressForm.scrollIntoView({behavior:'smooth',block:'center'});
-    });
-    document.getElementById('close-address-form').addEventListener('click', () => {
-      addressForm.classList.add('hidden');
-      addressBeingEdited = null;
-    });
-    document.getElementById('save-address').addEventListener('click',async () => {
-      const line = document.getElementById('address-line').value.trim();
-      const city = document.getElementById('address-city').value.trim();
-      const state = document.getElementById('address-state').value.trim();
-      const postal = document.getElementById('address-postal').value.trim();
-      const missingAddressField = [
-        ['address-line', 'Address line'],
-        ['address-city', 'City'],
-        ['address-state', 'State'],
-        ['address-postal', 'Postal code']
-      ].find(([id]) => !document.getElementById(id).value.trim());
-      if (missingAddressField) {
-        document.getElementById(missingAddressField[0]).focus();
-        showProfileToast(`${missingAddressField[1]} is required.`, true);
-        return;
-      }
-      const title = document.getElementById('address-label').value;
-      try {
-        const response = await fetch(
-          addressBeingEdited
-            ? `/api/user/addresses/${addressBeingEdited.dataset.addressId}`
-            : '/api/user/addresses',
-          {
-            method: addressBeingEdited ? 'PATCH' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              label: title,
-              addressLine: line,
-              city,
-              state,
-              postalCode: postal
-            })
-          }
-        );
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.message || 'Could not save address');
-        }
-
-        addressBeingEdited = null;
-        addressForm.classList.add('hidden');
-        addressForm.querySelector('h3').textContent = 'Add an address';
-        document.getElementById('save-address').textContent = 'SAVE ADDRESS';
-
-        showProfileToast('Address saved successfully.');
-
-        await loadUserAddresses();
-      } catch (error) {
-        showProfileToast(error.message || 'Could not save address.', true);
-      }
-    });
-
-    addressList.addEventListener('click', (event) => {
-      const card = event.target.closest('[data-address-card]');
-      if (!card) return;
-      if (event.target.closest('[data-remove-address]')) {
-        addressToRemove = card;
-        removeModal.showModal();
-      }
-      if (event.target.closest('[data-edit-address]')) {
-        addressBeingEdited = card;
-        if (!card.dataset.addressId) {
-          showProfileToast('Could not edit this address. Please refresh the page and try again.', true);
-          return;
-        }
-        addressForm.querySelector('h3').textContent = 'Edit address';
-        document.getElementById('save-address').textContent = 'UPDATE ADDRESS';
-        document.getElementById('address-label').value = card.dataset.label || 'Home';
-        document.getElementById('address-line').value = card.dataset.addressLine || '';
-        document.getElementById('address-city').value = card.dataset.city || '';
-        document.getElementById('address-state').value = card.dataset.state || '';
-        document.getElementById('address-postal').value = card.dataset.postalCode || '';
-        document.getElementById('address-default').checked = card.dataset.isDefault === 'true';
-        addressForm.classList.remove('hidden');
-        addressForm.scrollIntoView({behavior:'smooth',block:'center'});
-      }
-    });
-    document.getElementById('cancel-remove-address').addEventListener('click', () => removeModal.close());
-    document.getElementById('confirm-remove-address').addEventListener('click', async () => {
-      if (!addressToRemove?.dataset.addressId) {
-        showProfileToast('Could not remove this address. Please refresh the page and try again.', true);
-        removeModal.close();
-        return;
-      }
-      const addressId = addressToRemove.dataset.addressId;
-      const confirmButton = document.getElementById('confirm-remove-address');
-      confirmButton.disabled = true;
-      try {
-        const response = await fetch(`/api/user/addresses/${addressId}`, { method: 'DELETE' });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not remove address.');
-        removeModal.close();
-        addressToRemove = null;
-        showProfileToast('Address removed successfully.');
-        await loadUserAddresses();
-      } catch (error) {
-        showProfileToast(error.message || 'Could not remove address.', true);
-      } finally {
-        confirmButton.disabled = false;
-      }
-    });
-    removeModal.addEventListener('click', (event) => { if (event.target === removeModal) removeModal.close(); });
-
-      const loadUserAddresses = async () => {
-          try {
-          const response = await fetch('/api/user/addresses');
-          const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Could not load addresses');
-            }
-
-        addressList.innerHTML = '';
-
-        result.addresses.forEach((address) => {
-          const card = document.createElement('article');
-          card.className = 'address-card rounded-2xl bg-neutral-50 p-5';
-          card.dataset.addressCard = '';
-          card.dataset.addressId = address._id;
-          card.dataset.label = address.label || 'Home';
-          card.dataset.addressLine = address.addressLine || '';
-          card.dataset.city = address.city || '';
-          card.dataset.state = address.state || '';
-          card.dataset.postalCode = address.postalCode || '';
-          card.dataset.isDefault = String(Boolean(address.isDefault));
-
-        const heading = document.createElement('h3');
-        heading.className = 'text-sm font-bold';
-        heading.textContent = address.label || 'Home';
-        const headingRow = document.createElement('div');
-        headingRow.className = 'mb-2 flex flex-wrap items-center gap-2';
-        headingRow.appendChild(heading);
-
-        if (address.isDefault) {
-          const defaultBadge = document.createElement('span');
-          defaultBadge.className = 'rounded-full bg-[#00D06C]/20 px-2 py-1 font-mono text-[8px] font-bold tracking-[0.1em]';
-          defaultBadge.textContent = 'DEFAULT';
-          headingRow.appendChild(defaultBadge);
-        }
-
-        const name = document.createElement('p');
-        name.className = 'text-sm font-medium';
-        name.textContent = address.fullName;
-
-        const details = document.createElement('p');
-        details.className = 'mt-1 max-w-md text-sm leading-relaxed text-neutral-500';
-        details.textContent =
-        `${address.addressLine}, ${address.city}, ${address.state} ${address.postalCode}`;
-
-        const phone = document.createElement('p');
-          phone.className = 'mt-2 font-mono text-[9px] tracking-[0.08em] text-neutral-400';
-          phone.textContent = address.phone;
-
-          const actions = document.createElement('div');
-          actions.className = 'flex shrink-0 items-center gap-2';
-
-          const editButton = document.createElement('button');
-              editButton.type = 'button';
-              editButton.dataset.editAddress = '';
-              editButton.className = 'rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-600 transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black';
-              editButton.textContent = 'EDIT';
-
-          const removeButton = document.createElement('button');
-              removeButton.type = 'button';
-              removeButton.dataset.removeAddress = '';
-              removeButton.className = 'rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:border-red-500 hover:bg-red-50 hover:text-red-600';
-              removeButton.textContent = 'REMOVE';
-
-              actions.append(editButton, removeButton);
-              const content = document.createElement('div');
-              content.className = 'min-w-0';
-              content.append(headingRow, name, details, phone);
-              const cardLayout = document.createElement('div');
-              cardLayout.className = 'flex flex-wrap items-start justify-between gap-4';
-              cardLayout.append(content, actions);
-              card.appendChild(cardLayout);
-          addressList.appendChild(card);
-        });
-        } catch (error) {
-        console.error('Address loading failed:', error);
-        showProfileToast(error.message || 'Could not load saved addresses.', true);
-        }
-    };
-
-      loadUserAddresses();
-
     const photoInput = document.getElementById('photo');
     const profilePreview = document.getElementById('profile-preview');
     const profileInitials = document.getElementById('profile-initials');
+    let savedProfileImage = profilePreview.getAttribute('src') || '';
 
+    //- Worked by Codex: preview the chosen photo and save it with the profile form through the existing Multer route.
     photoInput.addEventListener('change', () => {
       const file = photoInput.files[0];
       if (!file) return;
 
-      profilePreview.src = URL.createObjectURL(file);
+      if (!file.type.startsWith('image/')) {
+        photoInput.value = '';
+        showProfileToast('Choose an image file for your profile photo.', true);
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        photoInput.value = '';
+        showProfileToast('Choose an image smaller than 2 MB.', true);
+        return;
+      }
+
+      if (profilePreview.dataset.previewUrl) URL.revokeObjectURL(profilePreview.dataset.previewUrl);
+      const previewUrl = URL.createObjectURL(file);
+      profilePreview.dataset.previewUrl = previewUrl;
+      profilePreview.src = previewUrl;
       profilePreview.classList.remove('hidden');
       profileInitials.classList.add('hidden');
+      showProfileToast('Photo selected. Click SAVE CHANGES to upload it.');
+    });
+
+    document.getElementById('profile-edit-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const saveButton = form.querySelector('button[type="submit"]');
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value.trim());
+      formData.append('phone', document.getElementById('phone').value.trim());
+      if (photoInput.files[0]) formData.append('profileImage', photoInput.files[0]);
+
+      try {
+        saveButton.disabled = true;
+        saveButton.textContent = 'SAVING…';
+        const response = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          body: formData
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not save your profile changes.');
+
+        if (result.user?.profileImage) {
+          savedProfileImage = result.user.profileImage;
+          profilePreview.src = savedProfileImage;
+          profilePreview.classList.remove('hidden');
+          profileInitials.classList.add('hidden');
+        }
+        if (profilePreview.dataset.previewUrl) {
+          URL.revokeObjectURL(profilePreview.dataset.previewUrl);
+          delete profilePreview.dataset.previewUrl;
+        }
+        const photoWasSaved = Boolean(formData.get('profileImage'));
+        photoInput.value = '';
+        showProfileToast(photoWasSaved ? 'Your profile and photo have been updated.' : 'Your profile has been updated.');
+      } catch (error) {
+        if (savedProfileImage) {
+          profilePreview.src = savedProfileImage;
+          profilePreview.classList.remove('hidden');
+          profileInitials.classList.add('hidden');
+        } else {
+          profilePreview.removeAttribute('src');
+          profilePreview.classList.add('hidden');
+          profileInitials.classList.remove('hidden');
+        }
+        showProfileToast(error.message || 'Could not save your profile changes.', true);
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'SAVE CHANGES →';
+      }
     });
 
     const savePasswordButton = document.getElementById('save-password');
@@ -664,5 +468,3 @@ block content
         savePasswordButton.textContent = 'SAVE PASSWORD';
       }
     });
-
-    
