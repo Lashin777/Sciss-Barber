@@ -68,4 +68,15 @@ const getAllUser = async (search, page, list, date) => {
     return users
 }
 
-export { adminLogin, blockUser, UnblockUser, getAllUser }
+const getCustomerById = async (userId) => {
+    const result = await User.findOne({ _id: userId, role: 'CUSTOMER' }).select('-password');
+
+    if (!result) {
+        throw new Error("Customer Id not found")
+    }
+
+    return result
+
+}
+
+export { adminLogin, blockUser, UnblockUser, getAllUser, getCustomerById }

@@ -7,7 +7,7 @@ block content
         span(class="grid size-9 place-items-center rounded-full bg-[#00D06C] text-base text-black", aria-hidden="true") S
         | SCISS’ ADMIN
       div(class="flex flex-wrap items-center gap-3 sm:gap-6")
-        a(href="/admin/users", aria-current="page", class="rounded-full bg-neutral-950 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") USERS
+        a(href="/admin/users", aria-current="page", class="rounded-full bg-neutral-950 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") CUSTOMERS
         a(href="/", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") VIEW SITE
         //- Worked by Codex: expose a real admin logout action in the dashboard navigation.
         form(action="/api/admin/logout", method="POST")
@@ -16,7 +16,7 @@ block content
     header(class="mb-10 border-b border-neutral-200 pb-6")
       div
         p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / CUSTOMER ACCOUNTS
-        h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") User management
+        h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Customer management
 
     section(class="flex flex-col gap-5")
       div(class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")
@@ -35,15 +35,19 @@ block content
 
       div(class="overflow-hidden border border-neutral-200 bg-white")
         div(class="overflow-x-auto")
-          table(class="w-full min-w-[800px] border-collapse text-left")
+          table(class="w-full min-w-[800px] table-fixed border-collapse text-left")
+            colgroup
+              col(width="20%")
+              col(width="32%")
+              col(width="18%")
+              col(width="15%")
+              col(width="15%")
             thead
               tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[10px] tracking-[0.15em] text-neutral-500")
-                th(scope="col", class="px-5 py-4 font-normal") CUSTOMER
-                th(scope="col", class="px-5 py-4 font-normal") CONTACT
-                th(scope="col", class="px-5 py-4 font-normal") JOINED · NEWEST FIRST
-                th(scope="col", class="px-5 py-4 font-normal") STATUS
-                th(scope="col", class="px-5 py-4 font-normal") METHOD
-
+                th(scope="col", class="px-5 py-4 text-left font-normal") CUSTOMER
+                th(scope="col", class="px-5 py-4 text-left font-normal") CONTACT
+                th(scope="col", class="px-5 py-4 text-left font-normal") JOINED
+                th(scope="col", class="px-5 py-4 text-left font-normal") STATUS
                 th(scope="col", class="px-5 py-4 text-right font-normal") ACTION
             tbody#users-table-body
               tr
@@ -125,6 +129,10 @@ block content
         const name = document.createElement('p');
         name.className = 'font-bold';
         name.textContent = user.name || 'Unnamed customer';
+        name.classList.add('cursor-pointer','hover:text-[#00D06C]');
+        name.addEventListener('click',()=>{
+          window.location.href = `/admin/users/${user._id}`;
+        });
         const role = document.createElement('p');
         role.className = 'mt-1 font-mono text-[9px] tracking-[0.12em] text-neutral-400';
         role.textContent = user.role || 'CUSTOMER';
