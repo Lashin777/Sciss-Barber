@@ -12,6 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const generateOtp = async (email, purpose) => {
+    await Otp.deleteMany({ email, purpose, isUsed: false });
     const otp = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -28,7 +29,7 @@ const generateOtp = async (email, purpose) => {
     return otp;
 }
 
-const verifyOtp = async (email, otp, purpose) => {
+const consumeOtp = async (email, otp, purpose) => {
     const record = await Otp.findOne({ email, otp, purpose });
 
     if (!record) {
@@ -41,10 +42,26 @@ const verifyOtp = async (email, otp, purpose) => {
         throw Error('OTP already Used')
     }
 
-    record.isUsed = true;
-    await record.save();
+    const consumedRecord = await Otp.findOneAndUpdate(
+        { _id: record._id, isUsed: false, expiresAt: { $gt: new Date() } },
+        { $set: { isUsed: true } },
+        { returnDocument: 'after' }
+    );
+    if (!consumedRecord) throw new Error('OTP already Used');
 
-    await User.updateOne({ email }, { isEmailVerified: true });
+    return consumedRecord;
+}
+
+const verifyOtp = async (email, otp, purpose) => {
+    await consumeOtp(email, otp, purpose);
+
+    if (purpose === 'EMAIL_VERIFICATION') {
+        await User.updateOne(
+            { email },
+            { isEmailVerified: true }
+        );
+    }
+
 
 }
 
@@ -53,4 +70,4 @@ const resendOtp = async (email, purpose) => {
     return await generateOtp(email, purpose);
 }
 
-export { generateOtp, verifyOtp, resendOtp };
+export { generateOtp, verifyOtp, resendOtp, consumeOtp };

@@ -1,0 +1,470 @@
+extends ../layouts/minimal
+
+block content
+  - const label = "mb-2 block font-mono text-[9px] font-bold tracking-[0.18em] text-neutral-500"
+  - const field = "w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-[#00D06C]"
+  section(class="mx-auto w-full max-w-6xl flex-1 py-5 sm:py-8")
+    nav(class="mb-8 flex items-center justify-between border-b border-neutral-200 pb-4")
+      a(href="/", class="font-mono text-sm font-bold tracking-[-0.08em] transition hover:text-[#00D06C]") SCISS’
+      div(class="flex items-center gap-4")
+        button#profile-theme-toggle(type="button", aria-label="Switch theme", class="grid size-9 place-items-center rounded-full border border-neutral-200 text-base transition hover:border-[#00D06C] hover:bg-[#00D06C]") ◐
+        //- Worked by Codex: provide direct customer logout from edit profile.
+        form(action="/api/user/logout", method="POST")
+          button(type="submit", class="rounded-full border border-neutral-200 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") LOG OUT
+        a(href="/profile", class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500 transition hover:text-[#00D06C]") ← PROFILE
+
+    header(class="mb-8 sm:mb-10")
+      p(class="mb-3 font-mono text-[10px] tracking-[0.28em] text-neutral-400") MEMBER SPACE / SETTINGS
+      h1(class="text-4xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl") Edit your details.
+      p(class="mt-4 max-w-xl text-sm leading-relaxed text-neutral-500 sm:text-base") A few details help us keep your visits easy. Verify a new email address before it replaces your current one.
+
+    div(class="mx-auto w-full max-w-3xl")
+      form#profile-edit-form(class="space-y-5")
+        section#personal(class="scroll-mt-6 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8")
+          div(class="mb-7 flex flex-wrap items-center justify-between gap-5")
+            div
+              p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") 01 / YOUR PROFILE
+              h2(class="text-2xl font-bold tracking-[-0.04em]") Personal details
+            div(class="flex items-center gap-3")
+              div(class="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-[#00D06C] font-mono text-lg font-bold text-black")
+                img#profile-preview(src=user.profileImage || "", alt="Profile picture", class="absolute inset-0 z-10 hidden h-full w-full rounded-full object-cover object-center")
+                span#profile-initials(class="relative z-0")= user.name.split(' ').map(part => part[0]).join('').toUpperCase()
+              label(for="photo", class="cursor-pointer font-mono text-[9px] font-bold tracking-[0.1em] transition hover:text-[#00D06C]") CHANGE PHOTO
+              input#photo(type="file", accept="image/*", class="sr-only")
+          div(class="grid gap-5 sm:grid-cols-2")
+            div
+              label(for="name", class=label) FULL NAME
+              input#name(type="text", value=user.name, autocomplete="name", required, class=field)
+            div
+              label(for="phone", class=label) PHONE NUMBER
+              input#phone(type="tel", value=user.phone, autocomplete="tel", required, class=field)
+            div(class="sm:col-span-2")
+              //- Worked by Codex: send and verify an OTP before updating the customer's email address.
+              label(for="email", class=label) EMAIL ADDRESS
+              div(class="flex flex-col gap-3 sm:flex-row")
+                input#email(type="email", value=user.email, autocomplete="email", required, class=field)
+                button#verify-email(type="button", class="h-12 shrink-0 rounded-xl border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL
+              p(class="mt-2 flex items-center gap-2 text-xs text-neutral-400")
+                span(class="size-1.5 rounded-full bg-[#00D06C]")
+                | Current email verified · New email requires a one-time code
+              p#email-change-feedback(class="mt-2 hidden text-xs", role="status", aria-live="polite")
+
+          div#security(class="mt-8 scroll-mt-6 border-t border-neutral-200 pt-6")
+            if user.googleId
+              p(class="text-sm text-neutral-500") This account uses Google sign-in. Manage your password through Google.
+            else
+              div(class="flex flex-wrap items-center justify-between gap-4")
+                div
+                  p(class="font-mono text-[9px] tracking-[0.18em] text-neutral-400") PASSWORD
+                  p(class="mt-1 text-sm font-semibold tracking-[0.2em]") ••••••••••
+                button#toggle-password-fields(type="button", aria-expanded="false", class="rounded-full border border-neutral-300 px-4 py-2.5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") CHANGE PASSWORD
+              //- Worked by Codex: hide password change for Google-linked accounts; password fields have accessible eye controls.
+              unless user.googleId
+                div#password-fields(class="mt-5 hidden gap-5 sm:grid-cols-2")
+                  div(class="sm:col-span-2")
+                    div(class="mb-2 flex items-center justify-between gap-3")
+                      label(for="current-password", class="font-mono text-[9px] font-bold tracking-[0.18em] text-neutral-500") CURRENT PASSWORD
+                      a(href="/login?returnTo=%2Fprofile%2Fedit%23security#forgot-password", class="text-xs font-semibold text-neutral-500 transition hover:text-[#00D06C]") Forgot current password?
+                    div(class="relative")
+                      input#current-password(type="password", placeholder="Enter current password", autocomplete="current-password", class=field + " pr-10")
+                      button(type="button", data-password-toggle="current-password", data-password-label="current password", aria-label="Show current password", style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+                        svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+                          path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+                          circle(cx="12", cy="12", r="2.5")
+                  div
+                    label(for="new-password", class=label) NEW PASSWORD
+                    div(class="relative")
+                      input#new-password(type="password", minlength="8", placeholder="At least 8 characters", autocomplete="new-password", class=field + " pr-10")
+                      button(type="button", data-password-toggle="new-password", data-password-label="new password", aria-label="Show new password", style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+                        svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+                          path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+                          circle(cx="12", cy="12", r="2.5")
+                  div
+                    label(for="confirm-password", class=label) CONFIRM NEW PASSWORD
+                    div(class="relative")
+                      input#confirm-password(type="password", minlength="8", placeholder="Enter it once more", autocomplete="new-password", class=field + " pr-10")
+                      button(type="button", data-password-toggle="confirm-password", data-password-label="confirm password", aria-label="Show confirm password", style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+                        svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+                          path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+                          circle(cx="12", cy="12", r="2.5")
+                  div(class="sm:col-span-2")
+                    button#save-password(type="button", class="rounded-full bg-neutral-950 px-5 py-3 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE PASSWORD
+                p#password-change-feedback(class="hidden max-w-sm rounded-xl border px-4 py-3 text-xs shadow-lg", role="status", aria-live="polite", style="position:fixed;top:1rem;right:1rem;z-index:1000;opacity:0;transform:translateY(-8px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none")
+
+        //- Worked by Codex: saved-address management has been removed from profile settings.
+        p#profile-save-note(class="hidden max-w-sm rounded-xl border px-4 py-3 text-xs shadow-lg", role="status", aria-live="polite", style="position:fixed;top:1rem;right:1rem;z-index:1000;opacity:0;transform:translateY(-8px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none")
+        div(class="flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center")
+          a(href="/profile", class="inline-flex h-12 items-center justify-center rounded-full px-5 font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-500 transition hover:text-neutral-950") CANCEL
+          button(type="submit", class="h-12 rounded-full bg-neutral-950 px-7 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") SAVE CHANGES →
+
+    dialog#email-verify-modal(class="w-[calc(100%-2rem)] max-w-md rounded-[1.75rem] border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm", style="position:fixed;inset:0;margin:auto")
+      div(class="p-6 sm:p-8")
+        div(class="mb-6 flex items-start justify-between")
+          div
+            p(class="mb-2 font-mono text-[9px] tracking-[0.22em] text-neutral-400") EMAIL VERIFICATION
+            h2(class="text-2xl font-bold tracking-[-0.04em]") Check your inbox.
+          button#close-email-modal(type="button", aria-label="Close dialog", class="grid size-9 place-items-center rounded-full border border-neutral-200 transition hover:border-[#00D06C]") ×
+        p(class="mb-5 text-sm leading-relaxed text-neutral-500") Enter the six-digit code sent to your new email address.
+        label(for="email-otp", class=label) ONE-TIME CODE
+        input#email-otp(type="text", inputmode="numeric", maxlength="6", autocomplete="one-time-code", placeholder="— — — — — —", class=field)
+        div(class="mt-4 flex items-center justify-between text-xs text-neutral-400")
+          span#otp-countdown Code expires in 10:00
+          button#resend-email-otp(type="button", disabled, class="font-bold transition hover:text-[#00D06C] disabled:cursor-not-allowed disabled:opacity-40") Resend code
+        p#otp-feedback(class="mt-4 hidden rounded-xl bg-[#00D06C]/10 px-4 py-3 text-xs", role="status", aria-live="polite")
+        button#confirm-email-otp(type="button", class="mt-6 h-12 w-full rounded-full bg-neutral-950 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL →
+
+
+  script.
+    const emailModal = document.getElementById('email-verify-modal');
+    let otpTimer;
+    let pendingEmail = '';
+    const emailInput = document.getElementById('email');
+    const currentEmail = emailInput.defaultValue.trim().toLowerCase();
+    const emailChangeFeedback = document.getElementById('email-change-feedback');
+    const otpFeedback = document.getElementById('otp-feedback');
+    const profileSaveNote = document.getElementById('profile-save-note');
+    let profileToastTimer;
+    let profileToastHideTimer;
+
+    const hideProfileToast = () => {
+      window.clearTimeout(profileToastTimer);
+      window.clearTimeout(profileToastHideTimer);
+      profileSaveNote.style.opacity = '0';
+      profileSaveNote.style.transform = 'translateY(-8px)';
+      profileSaveNote.classList.add('hidden');
+    };
+
+    const showProfileToast = (message, isError = false) => {
+      window.clearTimeout(profileToastTimer);
+      window.clearTimeout(profileToastHideTimer);
+      profileSaveNote.textContent = message;
+      profileSaveNote.style.borderColor = isError ? '#dc2626' : '#00D06C';
+      profileSaveNote.style.backgroundColor = isError ? '#fef2f2' : '#ecfdf5';
+      profileSaveNote.style.color = isError ? '#b91c1c' : '#525252';
+      profileSaveNote.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        profileSaveNote.style.opacity = '1';
+        profileSaveNote.style.transform = 'translateY(0)';
+      });
+      profileToastTimer = window.setTimeout(() => {
+        profileSaveNote.style.opacity = '0';
+        profileSaveNote.style.transform = 'translateY(-8px)';
+        profileToastHideTimer = window.setTimeout(() => profileSaveNote.classList.add('hidden'), 300);
+      }, 4000);
+    };
+
+    const showEmailFeedback = (message, isError = false) => {
+      emailChangeFeedback.textContent = message;
+      emailChangeFeedback.classList.remove('hidden', 'text-red-600', 'text-neutral-500');
+      emailChangeFeedback.classList.add(isError ? 'text-red-600' : 'text-neutral-500');
+    };
+
+    const requestEmailCode = async (email) => {
+      const response = await fetch('/api/user/email-change/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Could not send verification code.');
+      return result;
+    };
+
+    const profileThemeToggle = document.getElementById('profile-theme-toggle');
+    document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
+      const password = document.getElementById(toggle.dataset.passwordToggle);
+      const label = toggle.dataset.passwordLabel;
+      toggle.addEventListener('click', () => {
+        const showPassword = password.type === 'password';
+        password.type = showPassword ? 'text' : 'password';
+        toggle.setAttribute('aria-label', `${showPassword ? 'Hide' : 'Show'} ${label}`);
+      });
+    });
+    const syncProfileTheme = () => {
+      const isDark = document.documentElement.classList.contains('theme-dark');
+      profileThemeToggle.setAttribute('aria-pressed', String(isDark));
+      profileThemeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    };
+    syncProfileTheme();
+    profileThemeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('theme-dark');
+      try { localStorage.setItem('sciss-theme', isDark ? 'dark' : 'light'); } catch (error) {}
+      syncProfileTheme();
+    });
+
+    const passwordFields = document.getElementById('password-fields');
+    const passwordToggle = document.getElementById('toggle-password-fields');
+    if (passwordFields && passwordToggle) {
+      passwordToggle.addEventListener('click', () => {
+        const willOpen = passwordFields.classList.contains('hidden');
+        passwordFields.classList.toggle('hidden', !willOpen);
+        passwordFields.classList.toggle('grid', willOpen);
+        passwordToggle.setAttribute('aria-expanded', String(willOpen));
+        passwordToggle.textContent = willOpen ? 'CANCEL PASSWORD CHANGE' : 'CHANGE PASSWORD';
+        if (!willOpen) {
+          ['current-password', 'new-password', 'confirm-password'].forEach((id) => {
+            document.getElementById(id).value = '';
+          });
+          document.getElementById('password-change-feedback').classList.add('hidden');
+        }
+      });
+      if (window.location.hash === '#security') {
+        passwordFields.classList.remove('hidden');
+        passwordFields.classList.add('grid');
+        passwordToggle.setAttribute('aria-expanded', 'true');
+        passwordToggle.textContent = 'CANCEL PASSWORD CHANGE';
+      }
+    }
+
+    document.getElementById('verify-email').addEventListener('click', async (event) => {
+      if (!emailInput.reportValidity()) return;
+      const requestedEmail = emailInput.value.trim().toLowerCase();
+      if (requestedEmail === currentEmail) {
+        showEmailFeedback('This email address is already verified.');
+        return;
+      }
+
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'SENDING…';
+      emailChangeFeedback.classList.add('hidden');
+      try {
+        await requestEmailCode(requestedEmail);
+        pendingEmail = requestedEmail;
+        otpFeedback.textContent = `A code was sent to ${pendingEmail}.`;
+        otpFeedback.classList.remove('hidden', 'text-red-600');
+        emailModal.showModal();
+        startOtpTimer(600);
+      } catch (error) {
+        showEmailFeedback(error.message || 'Could not send verification code.', true);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'VERIFY EMAIL';
+      }
+    });
+    document.getElementById('close-email-modal').addEventListener('click', () => emailModal.close());
+    emailModal.addEventListener('click', (event) => { if (event.target === emailModal) emailModal.close(); });
+    document.getElementById('confirm-email-otp').addEventListener('click', async (event) => {
+      const otp = document.getElementById('email-otp').value.trim();
+      if (!/^\d{6}$/.test(otp)) {
+        otpFeedback.textContent = 'Enter the six-digit code.';
+        otpFeedback.classList.remove('hidden');
+        otpFeedback.classList.add('text-red-600');
+        return;
+      }
+
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'VERIFYING…';
+      try {
+        const response = await fetch('/api/user/email-change/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: pendingEmail, otp })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not verify this code.');
+
+        emailInput.value = result.email;
+        showEmailFeedback('Your email address has been updated and verified.');
+        emailModal.close();
+        window.clearInterval(otpTimer);
+      } catch (error) {
+        otpFeedback.textContent = error.message || 'Could not verify this code.';
+        otpFeedback.classList.remove('hidden');
+        otpFeedback.classList.add('text-red-600');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'VERIFY EMAIL →';
+      }
+    });
+    document.getElementById('resend-email-otp').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        await requestEmailCode(pendingEmail);
+        otpFeedback.textContent = `A new code was sent to ${pendingEmail}.`;
+        otpFeedback.classList.remove('hidden', 'text-red-600');
+        startOtpTimer(600);
+      } catch (error) {
+        button.disabled = false;
+        otpFeedback.textContent = error.message || 'Could not resend verification code.';
+        otpFeedback.classList.remove('hidden');
+        otpFeedback.classList.add('text-red-600');
+      }
+    });
+
+    function startOtpTimer(seconds) {
+      window.clearInterval(otpTimer);
+      const countdown = document.getElementById('otp-countdown');
+      const resend = document.getElementById('resend-email-otp');
+      let remaining = seconds;
+      resend.disabled = true;
+      const updateTimer = () => {
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        countdown.textContent = `Code expires in ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        if (remaining <= 0) {
+          window.clearInterval(otpTimer);
+          countdown.textContent = 'You can request a new code';
+          resend.disabled = false;
+          return;
+        }
+        remaining -= 1;
+      };
+      updateTimer();
+      otpTimer = window.setInterval(updateTimer, 1000);
+    }
+
+    const photoInput = document.getElementById('photo');
+    const profilePreview = document.getElementById('profile-preview');
+    const profileInitials = document.getElementById('profile-initials');
+    let savedProfileImage = profilePreview.getAttribute('src') || '';
+
+    //- Worked by Codex: preview the chosen photo and save it with the profile form through the existing Multer route.
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        photoInput.value = '';
+        showProfileToast('Choose an image file for your profile photo.', true);
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        photoInput.value = '';
+        showProfileToast('Choose an image smaller than 2 MB.', true);
+        return;
+      }
+
+      if (profilePreview.dataset.previewUrl) URL.revokeObjectURL(profilePreview.dataset.previewUrl);
+      const previewUrl = URL.createObjectURL(file);
+      profilePreview.dataset.previewUrl = previewUrl;
+      profilePreview.src = previewUrl;
+      profilePreview.classList.remove('hidden');
+      profileInitials.classList.add('hidden');
+      showProfileToast('Photo selected. Click SAVE CHANGES to upload it.');
+    });
+
+    document.getElementById('profile-edit-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const saveButton = form.querySelector('button[type="submit"]');
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value.trim());
+      formData.append('phone', document.getElementById('phone').value.trim());
+      if (photoInput.files[0]) formData.append('profileImage', photoInput.files[0]);
+
+      try {
+        saveButton.disabled = true;
+        saveButton.textContent = 'SAVING…';
+        const response = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          body: formData
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not save your profile changes.');
+
+        if (result.user?.profileImage) {
+          savedProfileImage = result.user.profileImage;
+          profilePreview.src = savedProfileImage;
+          profilePreview.classList.remove('hidden');
+          profileInitials.classList.add('hidden');
+        }
+        if (profilePreview.dataset.previewUrl) {
+          URL.revokeObjectURL(profilePreview.dataset.previewUrl);
+          delete profilePreview.dataset.previewUrl;
+        }
+        const photoWasSaved = Boolean(formData.get('profileImage'));
+        photoInput.value = '';
+        showProfileToast(photoWasSaved ? 'Your profile and photo have been updated.' : 'Your profile has been updated.');
+      } catch (error) {
+        if (savedProfileImage) {
+          profilePreview.src = savedProfileImage;
+          profilePreview.classList.remove('hidden');
+          profileInitials.classList.add('hidden');
+        } else {
+          profilePreview.removeAttribute('src');
+          profilePreview.classList.add('hidden');
+          profileInitials.classList.remove('hidden');
+        }
+        showProfileToast(error.message || 'Could not save your profile changes.', true);
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'SAVE CHANGES →';
+      }
+    });
+
+    const savePasswordButton = document.getElementById('save-password');
+    let passwordFeedbackTimer;
+    let passwordFeedbackHideTimer;
+    if (savePasswordButton) savePasswordButton.addEventListener('click', async () => {
+      const currentPassword = document.getElementById('current-password');
+      const newPassword = document.getElementById('new-password');
+      const confirmPassword = document.getElementById('confirm-password');
+      const feedback = document.getElementById('password-change-feedback');
+      const showFeedback = (message, isError = false) => {
+        window.clearTimeout(passwordFeedbackTimer);
+        window.clearTimeout(passwordFeedbackHideTimer);
+        feedback.textContent = message;
+        feedback.style.borderColor = isError ? '#dc2626' : '#00D06C';
+        feedback.style.backgroundColor = isError ? '#fef2f2' : '#ecfdf5';
+        feedback.style.color = isError ? '#b91c1c' : '#525252';
+        feedback.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          feedback.style.opacity = '1';
+          feedback.style.transform = 'translateY(0)';
+        });
+        passwordFeedbackTimer = window.setTimeout(() => {
+          feedback.style.opacity = '0';
+          feedback.style.transform = 'translateY(-8px)';
+          passwordFeedbackHideTimer = window.setTimeout(() => feedback.classList.add('hidden'), 300);
+        }, 4000);
+      };
+
+      if (!currentPassword.value) {
+        currentPassword.focus();
+        showFeedback('Enter your current password.', true);
+        return;
+      }
+      if (newPassword.value.length < 8) {
+        newPassword.focus();
+        showFeedback('Your new password must be at least 8 characters.', true);
+        return;
+      }
+      if (newPassword.value !== confirmPassword.value) {
+        confirmPassword.focus();
+        showFeedback('The new passwords do not match.', true);
+        return;
+      }
+
+      savePasswordButton.disabled = true;
+      savePasswordButton.textContent = 'SAVING…';
+      try {
+        const response = await fetch('/api/user/password', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: currentPassword.value,
+            newPassword: newPassword.value,
+            confirmPassword: confirmPassword.value
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not change your password.');
+
+        currentPassword.value = '';
+        newPassword.value = '';
+        confirmPassword.value = '';
+        passwordFields.classList.add('hidden');
+        passwordFields.classList.remove('grid');
+        passwordToggle.setAttribute('aria-expanded', 'false');
+        passwordToggle.textContent = 'CHANGE PASSWORD';
+        showFeedback(result.message || 'Password changed successfully.');
+      } catch (error) {
+        showFeedback(error.message || 'Could not change your password.', true);
+      } finally {
+        savePasswordButton.disabled = false;
+        savePasswordButton.textContent = 'SAVE PASSWORD';
+      }
+    });

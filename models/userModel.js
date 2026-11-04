@@ -28,10 +28,16 @@ const userSchema = new mongoose.Schema({
         enum: ['ACTIVE', 'BLOCKED'],
         default: 'ACTIVE'
     },
+    tokenVersion: {
+        type: Number,
+        default: 0
+    },
     phone: {
         type: String,
         trim: true
     },
+
+    // Worked by Codex: customer addresses are no longer part of the profile model.
     profileImage: {
         type: String,
         default: ''

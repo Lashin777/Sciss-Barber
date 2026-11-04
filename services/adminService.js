@@ -10,6 +10,10 @@ const adminLogin = async (email, password) => {
         throw new Error("Invalid admin credentials")
     }
 
+    if (user.status === 'BLOCKED') {
+        throw new Error('Your admin account is blocked');
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -17,7 +21,7 @@ const adminLogin = async (email, password) => {
     }
 
     const token = jwt.sign(
-        { id: user._id, role: user.role },
+        { id: user._id, role: user.role, tokenVersion: user.tokenVersion },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
     )
@@ -41,11 +45,21 @@ const UnblockUser = async (userId) => {
     return unblockedUser
 }
 
-const getAllUser = async (search, page, list) => {
+const getAllUser = async (search, page, list, date) => {
     let filter = {}
 
     if (search) {
         filter.name = ({ $regex: search, $options: 'i' });
+    }
+    if (date) {
+        const startDate = new Date(`${date}T00:00:00.000Z`);
+        const endDate = new Date(startDate);
+        endDate.setUTCDate(endDate.getUTCDate() + 1);
+        filter.createdAt = {
+            $gte: startDate,
+            $lt: endDate
+        }
+
     }
     const currentPage = page || 1;
     const perPage = list || 10;
@@ -54,4 +68,15 @@ const getAllUser = async (search, page, list) => {
     return users
 }
 
-export { adminLogin, blockUser, UnblockUser, getAllUser } 
+const getCustomerById = async (userId) => {
+    const result = await User.findOne({ _id: userId, role: 'CUSTOMER' }).select('-password');
+
+    if (!result) {
+        throw new Error("Customer Id not found")
+    }
+
+    return result
+
+}
+
+export { adminLogin, blockUser, UnblockUser, getAllUser, getCustomerById }
