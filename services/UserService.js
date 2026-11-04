@@ -183,7 +183,6 @@ const verifyEmailChangeOtp = async (userId, newEmail, otp) => {
 };
 
 
-// Worked by Codex: saved address management and its API service have been removed.
 
 export {
     UsersignUp,

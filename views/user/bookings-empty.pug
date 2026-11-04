@@ -1,0 +1,35 @@
+extends ../layouts/minimal.pug
+
+block content
+  //- Worked by Codex: add the designed empty state as a standalone Pug view without implying booking data exists.
+  section(class="mx-auto flex w-full max-w-7xl flex-1 flex-col py-6 sm:py-10")
+    nav(class="mb-12 flex items-center justify-between border-b border-neutral-200 pb-5", aria-label="Customer navigation")
+      a(href="/", class="flex items-center gap-3 text-neutral-950 transition hover:text-[#00D06C]")
+        span(class="grid size-10 place-items-center rounded-xl bg-neutral-950 font-mono text-xs font-bold text-white") SB
+        span
+          strong(class="block text-sm font-bold tracking-[-0.04em]") SCISS’ BARBER
+          small(class="font-mono text-[8px] tracking-[0.16em] text-neutral-500") ATELIER & GROOMING
+      a(href="/profile", class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-neutral-950")
+        span(aria-hidden="true") ←
+        |  BACK TO PROFILE
+
+    header(class="mb-8 flex flex-col gap-4 border-b border-neutral-200 pb-8 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+      div
+        p(class="mb-4 flex items-center gap-2 font-mono text-[9px] font-bold tracking-[0.2em] text-neutral-500")
+          span(class="size-2 rounded-full bg-[#00D06C]", aria-hidden="true")
+          | CLIENT ATELIER · RESERVATIONS
+        h1(class="text-[clamp(2.75rem,8vw,5rem)] font-bold leading-[0.9] tracking-[-0.07em]") MY BOOKINGS.
+        p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500 sm:text-base") View your appointments here once bookings are connected to your account.
+
+    section(aria-label="No bookings")
+      div(class="flex min-h-[28rem] flex-col items-center justify-center rounded-[1.75rem] px-6 py-14 text-center sm:px-10", style="background-color:#f4f1fc")
+        span(class="relative mb-8 grid size-24 place-items-center rounded-[1.5rem] bg-white/80 text-4xl text-neutral-950", aria-hidden="true")
+          | ✂
+          span(class="absolute -right-1 -top-1 size-3 rounded-full bg-[#00D06C]")
+        h2(class="text-2xl font-bold tracking-[-0.05em] sm:text-3xl") No bookings to show yet
+        p(class="mt-4 max-w-lg text-sm leading-relaxed text-neutral-600 sm:text-base") Once appointment booking is connected, your upcoming and past visits will appear here.
+        div(class="mt-8 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row")
+          a(href="/booking", class="inline-flex h-12 items-center justify-center gap-3 rounded-full bg-[#00D06C] px-7 font-mono text-[10px] font-bold tracking-[0.1em] text-black transition hover:bg-neutral-950 hover:text-white")
+            | BOOK AN APPOINTMENT
+            span(aria-hidden="true") →
+          a(href="/services", class="inline-flex h-12 items-center justify-center rounded-full bg-white/80 px-7 font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-700 transition hover:bg-white hover:text-neutral-950") VIEW SERVICE MENU
