@@ -1,0 +1,490 @@
+extends ./admin-layout.pug
+
+block page_header
+  style.
+    #services-listing { transition: opacity 160ms ease; }
+    #services-listing.is-loading { opacity: 0.55; }
+    @media (prefers-reduced-motion: reduce) { #services-listing { transition-duration: 1ms; } }
+    #service-form [aria-invalid="true"] { border-color: #ef4444 !important; }
+    #service-toast { position: fixed; inset: 1rem 1rem auto auto; z-index: 1000; margin: 0; width: min(24rem, calc(100vw - 2rem)); max-width: 24rem; padding: 1rem; border: 1px solid #fecaca; border-left: 4px solid #ef4444; background: #fff; color: #262626; box-shadow: 0 12px 32px rgb(0 0 0 / 18%); }
+    #service-toast::backdrop { background: transparent; }
+    #service-toast > div { display: flex; align-items: flex-start; gap: .75rem; }
+    #service-toast-icon { margin-top: .125rem; font: 700 12px/1 monospace; color: #dc2626; }
+    #service-category-filters button[aria-pressed="true"] { border-color: #00D06C; background: #00D06C; color: #101115; }
+    @media (min-width: 640px) { #service-toast { inset: 1.5rem 1.5rem auto auto; } }
+  header(class="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+    div
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / CATALOG
+      h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Services
+      p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Manage services, categories, prices, and appointment durations.
+    button#open-add-service(type="button", class="inline-flex h-11 shrink-0 items-center justify-center gap-2 bg-[#00D06C] px-5 font-mono text-[10px] font-bold tracking-[0.1em] text-black transition hover:bg-neutral-950 hover:text-white", aria-label="Add a service")
+      span(aria-hidden="true") +
+      | ADD SERVICE
+
+block page_content
+  - const serviceRows = Array.isArray(services) ? services : []
+  - const serviceCategories = Array.isArray(categories) ? categories : []
+  - const activeServiceCount = serviceRows.filter(service => service.isActive).length
+  - const inactiveServiceCount = serviceRows.length - activeServiceCount
+  - const totalPageValue = typeof totalPages !== 'undefined' ? totalPages : typeof totalpages !== 'undefined' ? totalpages : 0
+  - const paginationTotalPages = Number.isInteger(Number(totalPageValue)) && Number(totalPageValue) > 0 ? Number(totalPageValue) : 0
+  - const requestedPage = Number(page)
+  - const paginationPage = paginationTotalPages > 0 && Number.isInteger(requestedPage) && requestedPage > 0 ? Math.min(requestedPage, paginationTotalPages) : 1
+  - const requestedLimit = Number(limit)
+  - const paginationLimit = [10, 25, 50].includes(requestedLimit) ? requestedLimit : 10
+  - const selectedServiceCategory = typeof category === 'string' ? category : ''
+  - const serviceSearchTerm = typeof search === 'string' ? search : ''
+  - const paginationQuery = new URLSearchParams({ limit: String(paginationLimit) })
+  - if (selectedServiceCategory) paginationQuery.set('category', selectedServiceCategory)
+  - if (serviceSearchTerm) paginationQuery.set('search', serviceSearchTerm)
+  dialog#service-toast(class="fixed right-4 top-4 z-[100] m-0 w-[calc(100%-2rem)] max-w-sm border border-red-200 border-l-4 border-l-red-500 bg-white p-4 text-sm text-neutral-800 shadow-xl backdrop:bg-transparent sm:right-6 sm:top-6", aria-labelledby="service-toast-message", aria-live="assertive", aria-atomic="true")
+    div(class="flex items-start gap-3")
+      span#service-toast-icon(class="mt-0.5 font-mono text-xs font-bold text-red-600", aria-hidden="true") !
+      p#service-toast-message(class="min-w-0 flex-1 leading-relaxed")= servicePageError || ''
+      button#close-service-toast(type="button", class="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center text-lg text-neutral-400 transition hover:text-neutral-950", aria-label="Dismiss notification") ×
+  section#service-management(class="flex min-h-0 flex-1 flex-col gap-5", data-page-size=paginationLimit, aria-label="Service management")
+    div(class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", role="search", aria-label="Filter services")
+      div(class="min-w-0")
+        p(class="mb-2 font-mono text-[10px] font-bold tracking-[0.12em] text-neutral-500") CATEGORY
+        div#service-category-filters(class="flex flex-nowrap gap-1.5 overflow-x-auto pb-1", role="group", aria-label="Filter services by category")
+          button(type="button", data-service-category-filter="", aria-pressed=selectedServiceCategory === '', class="shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-neutral-600 transition hover:border-neutral-950") All
+          each category in serviceCategories
+            button(type="button", data-service-category-filter=category._id, aria-pressed=selectedServiceCategory === String(category._id), class="shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-neutral-600 transition hover:border-neutral-950")= category.name
+      div(class="sm:ml-auto sm:shrink-0")
+        label(for="service-search", class="sr-only") Search services
+        div(class="flex items-center gap-1.5")
+          input#service-search(type="search", autocomplete="off", value=serviceSearchTerm, placeholder="Search", class="h-9 w-32 rounded-full border border-neutral-200 bg-white px-3 text-xs text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950")
+          button#clear-service-filters(type="button", disabled=!(serviceSearchTerm || selectedServiceCategory), class="grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200 text-base text-neutral-500 transition hover:border-neutral-950 hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-40", aria-label="Clear search and category filters", title="Clear filters") ×
+    div#services-listing(class="flex min-h-0 flex-1 flex-col gap-5 transition duration-200 ease-out")
+      div(class="flex flex-wrap items-end justify-between gap-4")
+        div
+          p(class="font-mono text-[10px] tracking-[0.2em] text-neutral-400") SERVICE DIRECTORY
+          p(class="mt-2 text-sm text-neutral-500")
+            strong#service-row-count(class="font-semibold text-neutral-950")= serviceRows.length
+            |  services on this page
+            span#service-status-count(class="mt-1 block text-xs text-neutral-400") #{activeServiceCount} active · #{inactiveServiceCount} inactive
+        p(class="font-mono text-[9px] tracking-[0.12em] text-neutral-400") PRICES IN INDIAN RUPEES
+
+      div(class="min-h-0 flex-1 overflow-auto border border-neutral-200")
+        table(class="w-full min-w-[920px] border-collapse text-left")
+          thead(class="sticky top-0 z-10")
+            tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[10px] tracking-[0.15em] text-neutral-500")
+              th(scope="col", class="px-5 py-4 font-normal") SERVICE
+              th(scope="col", class="px-5 py-4 font-normal") CATEGORY
+              th(scope="col", class="px-5 py-4 font-normal") DESCRIPTION
+              th(scope="col", class="px-5 py-4 text-right font-normal") PRICE
+              th(scope="col", class="px-5 py-4 text-right font-normal") DURATION
+              th(scope="col", class="px-5 py-4 text-center font-normal") STATUS
+              th(scope="col", class="px-5 py-4 text-right font-normal") ACTIONS
+          tbody
+            if serviceRows.length
+              each service in serviceRows
+                tr(class="border-b border-neutral-100 last:border-0", data-service-row=service._id)
+                  td(class="px-5 py-4 text-sm font-bold text-neutral-950")= service.name
+                  td(class="px-5 py-4 text-sm text-neutral-600")= service.categoryId && service.categoryId.name ? service.categoryId.name : 'Uncategorized'
+                  td(class="max-w-[18rem] px-5 py-4 text-sm text-neutral-500")
+                    p(class="line-clamp-2")= service.description || '—'
+                  td(class="whitespace-nowrap px-5 py-4 text-right text-sm font-semibold text-neutral-950")= `₹${Number(service.price).toLocaleString('en-IN')}`
+                  td(class="whitespace-nowrap px-5 py-4 text-right text-sm text-neutral-600")= `${service.duration} min`
+                  td(class="px-5 py-4 text-center")
+                    if service.isActive
+                      span(class="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em] text-green-800")
+                        span(class="size-1.5 rounded-full bg-[#00D06C]", aria-hidden="true")
+                        | ACTIVE
+                    else
+                      span(class="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500")
+                        span(class="size-1.5 rounded-full bg-neutral-400", aria-hidden="true")
+                        | INACTIVE
+                  td(class="whitespace-nowrap px-5 py-4 text-right")
+                    div(class="inline-flex items-center gap-2")
+                      button(type="button", data-edit-service=service._id, class="border border-neutral-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-neutral-950", aria-label=`Edit ${service.name}`) EDIT
+                      if service.isActive
+                        button(type="button", data-deactivate-service=service._id, data-service-name=service.name, class="border border-red-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] text-red-700 transition hover:border-red-500 hover:bg-red-50", aria-label=`Deactivate ${service.name}`) DEACTIVATE
+                      else
+                        button(type="button", data-activate-service=service._id, class="border border-green-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] text-green-800 transition hover:border-green-500 hover:bg-green-50", aria-label=`Activate ${service.name}`) ACTIVATE
+            else if selectedServiceCategory || serviceSearchTerm
+              tr
+                td(colspan="7", class="px-5 py-12 text-center text-sm text-neutral-500") No services match these filters. Clear or adjust your filters.
+            else
+              tr
+                td(colspan="7", class="px-5 py-16 text-center")
+                  p(class="font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-400") NO SERVICES YET
+                  p(class="mt-2 text-sm text-neutral-500") Add a service to start building the shop menu.
+
+      if paginationTotalPages > 0
+        nav(class="flex flex-col gap-4 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between", aria-label="Service list pagination")
+          label(class="flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-neutral-500")
+            | ROWS PER PAGE
+            select#service-page-size(class="h-10 border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none focus:border-neutral-950")
+              option(value="10", selected=paginationLimit === 10) 10
+              option(value="25", selected=paginationLimit === 25) 25
+              option(value="50", selected=paginationLimit === 50) 50
+          div(class="flex items-center justify-between gap-4 sm:justify-end")
+            span(class="min-w-20 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.1em] text-neutral-500", aria-live="polite") PAGE #{paginationPage} OF #{paginationTotalPages}
+            div(class="flex items-center gap-2")
+              if paginationPage > 1
+                a(href=`/admin/services?page=${paginationPage - 1}&${paginationQuery.toString()}`, rel="prev", data-service-page-link, class="inline-flex h-10 items-center border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.12em] text-neutral-700 transition hover:border-neutral-950") ← PREVIOUS
+              else
+                span(class="inline-flex h-10 items-center cursor-not-allowed border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.12em] text-neutral-400 opacity-40", aria-disabled="true") ← PREVIOUS
+              if paginationPage < paginationTotalPages
+                a(href=`/admin/services?page=${paginationPage + 1}&${paginationQuery.toString()}`, rel="next", data-service-page-link, class="inline-flex h-10 items-center border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.12em] text-neutral-700 transition hover:border-neutral-950") NEXT →
+              else
+                span(class="inline-flex h-10 items-center cursor-not-allowed border border-neutral-200 px-4 font-mono text-[10px] font-bold tracking-[0.12em] text-neutral-400 opacity-40", aria-disabled="true") NEXT →
+
+  dialog#service-dialog(class="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto border border-neutral-200 bg-white p-0 shadow-2xl backdrop:bg-black/50", aria-labelledby="service-dialog-title")
+    form#service-form(action="/api/admin/services", method="POST", novalidate, class="p-5 sm:p-8")
+      div(class="mb-6 flex items-start justify-between gap-4 border-b border-neutral-200 pb-4")
+        div
+          p(class="mb-2 font-mono text-[10px] tracking-[0.2em] text-neutral-400") SERVICE CATALOG
+          h2#service-dialog-title(class="text-2xl font-bold tracking-[-0.05em]") Add service
+        button#close-service-dialog(type="button", class="grid size-9 shrink-0 place-items-center border border-neutral-200 text-lg text-neutral-500 transition hover:border-neutral-950 hover:text-neutral-950", aria-label="Close add service form") ×
+
+      div(class="grid gap-5 sm:grid-cols-2")
+        div(class="sm:col-span-2")
+          label(for="service-name", class="mb-2 block font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-500") SERVICE NAME
+          input#service-name(name="name", type="text", required, maxlength="120", autocomplete="off", class="h-11 w-full border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-neutral-950")
+        div
+          label(for="service-category", class="mb-2 block font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-500") CATEGORY
+          select#service-category(name="categoryId", required, class="h-11 w-full border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-neutral-950", disabled=serviceCategories.length === 0)
+            option(value="", selected, disabled) Select a category
+            each category in serviceCategories
+              option(value=category._id)= category.name
+          if !serviceCategories.length
+            p(class="mt-2 text-xs text-red-600") No service categories are available. Add a category before creating services.
+        div
+          label(for="service-price", class="mb-2 block font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-500") PRICE (₹)
+          input#service-price(name="price", type="number", required, min="0", step="0.01", inputmode="decimal", class="h-11 w-full border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-neutral-950")
+        div(class="sm:col-span-2")
+          label(for="service-duration", class="mb-2 block font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-500") DURATION (MINUTES)
+          input#service-duration(name="duration", type="number", required, min="1", step="1", inputmode="numeric", class="h-11 w-full border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-neutral-950 sm:w-1/2")
+        div(class="sm:col-span-2")
+          label(for="service-description", class="mb-2 block font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-500") DESCRIPTION
+          textarea#service-description(name="description", rows="4", maxlength="1000", class="w-full resize-y border border-neutral-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-950", placeholder="Optional service details")
+
+      div(class="mt-7 flex flex-col-reverse justify-end gap-3 sm:flex-row")
+        button#cancel-service-form(type="button", class="h-11 border border-neutral-200 px-5 font-mono text-[10px] font-bold tracking-[0.1em] transition hover:border-neutral-950") CANCEL
+        button#submit-service-form(type="submit", disabled=serviceCategories.length === 0, class="h-11 bg-[#00D06C] px-5 font-mono text-[10px] font-bold tracking-[0.1em] text-black transition hover:bg-neutral-950 hover:text-white disabled:cursor-not-allowed disabled:opacity-50") SAVE SERVICE
+
+  dialog#deactivate-service-dialog(class="m-auto w-[calc(100%-2rem)] max-w-md border border-neutral-200 bg-white p-0 shadow-2xl backdrop:bg-black/50", aria-labelledby="deactivate-service-title")
+    div(class="p-6 sm:p-8")
+      p(class="mb-2 font-mono text-[10px] tracking-[0.2em] text-neutral-400") SERVICE STATUS
+      h2#deactivate-service-title(class="text-2xl font-bold tracking-[-0.05em]") Deactivate service?
+      p#deactivate-service-copy(class="mt-3 text-sm leading-relaxed text-neutral-500") This service will be marked inactive and remain in the admin list.
+      div(class="mt-7 flex flex-col-reverse justify-end gap-3 sm:flex-row")
+        button#cancel-deactivate-service(type="button", class="h-11 border border-neutral-200 px-5 font-mono text-[10px] font-bold tracking-[0.1em] transition hover:border-neutral-950") CANCEL
+        button#confirm-deactivate-service(type="button", class="h-11 bg-red-600 px-5 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-red-700") DEACTIVATE
+
+  script.
+    const addServiceButton = document.getElementById('open-add-service');
+    const serviceDialog = document.getElementById('service-dialog');
+    const serviceForm = document.getElementById('service-form');
+    const serviceToast = document.getElementById('service-toast');
+    const serviceToastMessage = document.getElementById('service-toast-message');
+    const serviceToastIcon = document.getElementById('service-toast-icon');
+    const serviceSearch = document.getElementById('service-search');
+    const clearServiceFilters = document.getElementById('clear-service-filters');
+    const serviceCategoryFilters = document.getElementById('service-category-filters');
+    let selectedServiceCategory = serviceCategoryFilters.querySelector('[aria-pressed="true"]')?.dataset.serviceCategoryFilter || '';
+    const servicePageSize = document.getElementById('service-page-size');
+    const serviceManagement = document.getElementById('service-management');
+    let serviceToastTimer;
+    let serviceSearchTimer;
+
+    function showServiceToast(message, type = 'error') {
+      const isSuccess = type === 'success';
+      serviceToast.style.borderColor = isSuccess ? '#bbf7d0' : '#fecaca';
+      serviceToast.style.borderLeftColor = isSuccess ? '#00a854' : '#ef4444';
+      serviceToastIcon.style.color = isSuccess ? '#15803d' : '#dc2626';
+      serviceToastIcon.textContent = isSuccess ? '✓' : '!';
+      serviceToast.setAttribute('role', isSuccess ? 'status' : 'alert');
+      serviceToast.setAttribute('aria-live', isSuccess ? 'polite' : 'assertive');
+      serviceToastMessage.textContent = message;
+      if (!serviceToast.open) serviceToast.show();
+      window.clearTimeout(serviceToastTimer);
+      serviceToastTimer = window.setTimeout(() => {
+        if (serviceToast.open) serviceToast.close();
+      }, 6000);
+    }
+
+    function clearServiceToast() {
+      window.clearTimeout(serviceToastTimer);
+      if (serviceToast.open) serviceToast.close();
+      serviceToastMessage.textContent = '';
+    }
+    const serviceFormSubmit = document.getElementById('submit-service-form');
+    const serviceDialogTitle = document.getElementById('service-dialog-title');
+    const deactivateDialog = document.getElementById('deactivate-service-dialog');
+    const deactivateCopy = document.getElementById('deactivate-service-copy');
+    const confirmDeactivateButton = document.getElementById('confirm-deactivate-service');
+    let serviceToDeactivate = '';
+
+    function serviceFiltersUrl() {
+      const params = new URLSearchParams(window.location.search);
+      params.set('page', '1');
+      params.set('limit', servicePageSize?.value || serviceManagement.dataset.pageSize || '10');
+      if (selectedServiceCategory) params.set('category', selectedServiceCategory);
+      else params.delete('category');
+      const searchTerm = serviceSearch.value.trim();
+      if (searchTerm) params.set('search', searchTerm);
+      else params.delete('search');
+      return `${window.location.pathname}?${params.toString()}`;
+    }
+
+    function navigateServiceFilters() {
+      clearTimeout(serviceSearchTimer);
+      clearServiceFilters.disabled = !serviceSearch.value.trim() && !selectedServiceCategory;
+      loadServicePage(serviceFiltersUrl(), true);
+    }
+
+    serviceSearch.addEventListener('input', () => {
+      clearServiceFilters.disabled = !serviceSearch.value.trim() && !selectedServiceCategory;
+      clearTimeout(serviceSearchTimer);
+      serviceSearchTimer = window.setTimeout(navigateServiceFilters, 300);
+    });
+    clearServiceFilters.addEventListener('click', () => {
+      serviceSearch.value = '';
+      selectedServiceCategory = '';
+      serviceCategoryFilters.querySelectorAll('[data-service-category-filter]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.serviceCategoryFilter === ''));
+      });
+      navigateServiceFilters();
+      serviceSearch.focus();
+    });
+    serviceCategoryFilters.addEventListener('click', (event) => {
+      const categoryButton = event.target.closest('[data-service-category-filter]');
+      if (!categoryButton) return;
+
+      selectedServiceCategory = categoryButton.dataset.serviceCategoryFilter;
+      serviceCategoryFilters.querySelectorAll('[data-service-category-filter]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button === categoryButton));
+      });
+      navigateServiceFilters();
+    });
+    servicePageSize?.addEventListener('change', () => {
+      serviceManagement.dataset.pageSize = servicePageSize.value;
+      navigateServiceFilters();
+    });
+
+    function prepareAddServiceForm() {
+      serviceForm.reset();
+      serviceForm.querySelectorAll('[aria-invalid]').forEach((field) => field.removeAttribute('aria-invalid'));
+      serviceForm.dataset.serviceId = '';
+      serviceFormSubmit.disabled = serviceForm.elements.namedItem('categoryId').disabled;
+      serviceDialogTitle.textContent = 'Add service';
+      serviceFormSubmit.textContent = 'SAVE SERVICE';
+      clearServiceToast();
+    }
+
+    addServiceButton.addEventListener('click', () => {
+      prepareAddServiceForm();
+      serviceDialog.showModal();
+      serviceForm.elements.namedItem('name').focus();
+    });
+    document.getElementById('close-service-dialog').addEventListener('click', () => serviceDialog.close());
+    document.getElementById('cancel-service-form').addEventListener('click', () => serviceDialog.close());
+    document.getElementById('cancel-deactivate-service').addEventListener('click', () => deactivateDialog.close());
+    document.getElementById('close-service-toast').addEventListener('click', clearServiceToast);
+    serviceForm.addEventListener('input', (event) => {
+      if (event.target.matches('input, select, textarea') && event.target.checkValidity()) {
+        event.target.removeAttribute('aria-invalid');
+      }
+    });
+    serviceForm.addEventListener('change', (event) => {
+      if (event.target.matches('input, select, textarea') && event.target.checkValidity()) {
+        event.target.removeAttribute('aria-invalid');
+      }
+    });
+    if (serviceToastMessage.textContent.trim()) showServiceToast(serviceToastMessage.textContent);
+
+    confirmDeactivateButton.addEventListener('click', async () => {
+      if (!serviceToDeactivate) return;
+      confirmDeactivateButton.disabled = true;
+      confirmDeactivateButton.textContent = 'DEACTIVATING…';
+      clearServiceToast();
+
+      try {
+        const response = await fetch(`/api/admin/services/${encodeURIComponent(serviceToDeactivate)}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Could not deactivate this service.');
+        deactivateDialog.close();
+        await loadServicePage(window.location.href);
+        showServiceToast('Service deactivated.', 'success');
+      } catch (error) {
+        showServiceToast(error.message || 'Could not deactivate this service. Please try again.');
+      } finally {
+        confirmDeactivateButton.disabled = false;
+        confirmDeactivateButton.textContent = 'DEACTIVATE';
+      }
+    });
+
+    function bindServiceRowActions() {
+      document.querySelectorAll('[data-activate-service]').forEach((activateButton) => {
+        activateButton.addEventListener('click', async () => {
+          const serviceId = activateButton.dataset.activateService;
+          clearServiceToast();
+          activateButton.disabled = true;
+          activateButton.textContent = 'ACTIVATING…';
+
+          try {
+            const response = await fetch(`/api/admin/services/${encodeURIComponent(serviceId)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isActive: true })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Could not activate this service.');
+            await loadServicePage(window.location.href);
+            showServiceToast('Service activated.', 'success');
+          } catch (error) {
+            showServiceToast(error.message || 'Could not activate this service. Please try again.');
+            activateButton.disabled = false;
+            activateButton.textContent = 'ACTIVATE';
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-deactivate-service]').forEach((deactivateButton) => {
+        deactivateButton.addEventListener('click', () => {
+          serviceToDeactivate = deactivateButton.dataset.deactivateService;
+          deactivateCopy.textContent = `Deactivate “${deactivateButton.dataset.serviceName}”? It will stay visible in this list as inactive.`;
+          clearServiceToast();
+          deactivateDialog.showModal();
+        });
+      });
+
+      document.querySelectorAll('[data-edit-service]').forEach((editButton) => {
+        editButton.addEventListener('click', async () => {
+          prepareAddServiceForm();
+          serviceForm.dataset.serviceId = editButton.dataset.editService;
+          serviceDialogTitle.textContent = 'Loading service…';
+          serviceFormSubmit.disabled = true;
+          serviceDialog.showModal();
+
+          try {
+            const response = await fetch(`/api/services/${encodeURIComponent(editButton.dataset.editService)}`);
+            const result = await response.json();
+            if (!response.ok || !result.success || !result.service) {
+              throw new Error(result.message || 'Could not load this service.');
+            }
+
+            const service = result.service;
+            const categoryId = service.categoryId && typeof service.categoryId === 'object'
+              ? service.categoryId._id
+              : service.categoryId;
+            serviceForm.elements.namedItem('name').value = service.name || '';
+            serviceForm.elements.namedItem('categoryId').value = categoryId || '';
+            serviceForm.elements.namedItem('description').value = service.description || '';
+            serviceForm.elements.namedItem('price').value = service.price ?? '';
+            serviceForm.elements.namedItem('duration').value = service.duration ?? '';
+            serviceDialogTitle.textContent = 'Edit service';
+            serviceFormSubmit.disabled = false;
+            serviceForm.elements.namedItem('name').focus();
+          } catch (error) {
+            serviceDialogTitle.textContent = 'Edit service';
+            showServiceToast(error.message || 'Could not load this service. Please try again.');
+          }
+        });
+      });
+    }
+
+    bindServiceRowActions();
+
+    let servicePageRequest;
+
+    async function loadServicePage(url, updateHistory = false) {
+      servicePageRequest?.abort();
+      const request = new AbortController();
+      servicePageRequest = request;
+      const currentListing = document.getElementById('services-listing');
+      if (!currentListing) return;
+
+      currentListing.classList.add('is-loading');
+      currentListing.setAttribute('aria-busy', 'true');
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'X-Requested-With': 'fetch' },
+          signal: request.signal
+        });
+        if (!response.ok) throw new Error('Could not load this page of services.');
+
+        const pageDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const nextListing = pageDocument.getElementById('services-listing');
+        if (!nextListing) throw new Error('Could not display this page of services.');
+        if (servicePageRequest !== request) return;
+
+        currentListing.replaceWith(nextListing);
+        if (updateHistory) window.history.pushState({}, '', url);
+        clearServiceToast();
+        bindServiceRowActions();
+      } catch (error) {
+        if (error.name !== 'AbortError' && servicePageRequest === request) {
+          showServiceToast(error.message || 'Could not load this page of services.');
+          document.getElementById('services-listing')?.classList.remove('is-loading');
+          document.getElementById('services-listing')?.removeAttribute('aria-busy');
+        }
+      } finally {
+        if (servicePageRequest === request) servicePageRequest = null;
+      }
+    }
+
+    document.addEventListener('click', (event) => {
+      const pageLink = event.target.closest('[data-service-page-link]');
+      if (!pageLink || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      event.preventDefault();
+      loadServicePage(pageLink.href, true);
+    });
+
+    window.addEventListener('popstate', () => {
+      const params = new URLSearchParams(window.location.search);
+      serviceSearch.value = params.get('search') || '';
+      selectedServiceCategory = params.get('category') || '';
+      serviceCategoryFilters.querySelectorAll('[data-service-category-filter]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.serviceCategoryFilter === selectedServiceCategory));
+      });
+      const selectedLimit = ['10', '25', '50'].includes(params.get('limit')) ? params.get('limit') : '10';
+      serviceManagement.dataset.pageSize = selectedLimit;
+      if (servicePageSize) servicePageSize.value = selectedLimit;
+      clearServiceFilters.disabled = !serviceSearch.value.trim() && !selectedServiceCategory;
+      loadServicePage(window.location.href);
+    });
+
+    serviceForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearServiceToast();
+      const invalidFields = [...serviceForm.querySelectorAll(':invalid')];
+      if (invalidFields.length) {
+        invalidFields.forEach((field) => field.setAttribute('aria-invalid', 'true'));
+        showServiceToast('Please fill in the highlighted required fields.');
+        invalidFields[0].focus();
+        return;
+      }
+
+      serviceFormSubmit.disabled = true;
+      const serviceId = serviceForm.dataset.serviceId;
+      serviceFormSubmit.textContent = serviceId ? 'UPDATING…' : 'SAVING…';
+      const formData = new FormData(serviceForm);
+      const payload = Object.fromEntries(formData.entries());
+      payload.price = Number(payload.price);
+      payload.duration = Number(payload.duration);
+
+      try {
+        const response = await fetch(serviceId
+          ? `/api/admin/services/${encodeURIComponent(serviceId)}`
+          : '/api/admin/services', {
+          method: serviceId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || `Could not ${serviceId ? 'update' : 'save'} this service.`);
+        serviceDialog.close();
+        window.location.reload();
+      } catch (error) {
+        showServiceToast(error.message || 'Could not save this service. Please try again.');
+      } finally {
+        serviceFormSubmit.disabled = false;
+        serviceFormSubmit.textContent = serviceForm.dataset.serviceId ? 'UPDATE SERVICE' : 'SAVE SERVICE';
+      }
+    });

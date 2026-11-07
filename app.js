@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import UserRoutes from './routes/UserRoute.js';
 import adminRoutes from './routes/adminRoute.js';
+import serviceRoutes from'./routes/serviceRoute.js'
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
@@ -24,5 +25,7 @@ app.use(passport.initialize())
 
 app.use(UserRoutes);
 app.use(adminRoutes);
+app.use(serviceRoutes);
+
 
 export default app
