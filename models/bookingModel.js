@@ -12,6 +12,11 @@ const bookingSchema = new mongoose.Schema({
         ref: 'Service',
         required: true
     },
+    barberId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Barber',
+        required: true
+    },
     appointmentDate: {
         type: Date,
         required: true
@@ -21,6 +26,14 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         enum: ['PENDING', 'ACCEPTED', 'DECLINED', 'COMPLETED', 'CANCELLED'],
         default: 'PENDING',
+        required: true
+    },
+    appointmentStart: {
+        type: Date,
+        required: true
+    },
+    appointmentEnd: {
+        type: Date,
         required: true
     },
 

@@ -2,15 +2,7 @@ extends ../layouts/minimal.pug
 
 block content
   -
-    const serviceGroups = [
-      { title: 'Hair care', items: [['Hair cut', '₹150'], ['Hair styling', '₹200'], ['Hair wash', '₹100'], ['Beard shaping', '₹100'], ['Beard styling', '₹150'], ['Shave', '₹100'], ['Threading', '₹50'], ['Hair curling', '₹2,500']] },
-      { title: 'Face care', items: [['Skin toning', '₹100'], ['D-Tan', 'Ask in shop'], ['D-Tan hand', '₹400'], ['Bleach', '₹350'], ['Gold bleach', '₹450'], ['Face wash', '₹250'], ['Face scrub', '₹200'], ['Black mask', '₹350'], ['Peel-off mask', '₹500'], ['Clean up (basic)', '₹500'], ['Advanced clean up', '₹800'], ['Face waxing', '₹200']] },
-      { title: 'Facials', items: [['Brightening facial · basic', '₹1,000'], ['Fruit facial · basic', '₹1,500'], ['Papaya facial · mid level', '₹2,000'], ['Gold facial · mid level', '₹2,300'], ['Diamond facial · premium', '₹2,500']] },
-      { title: 'Hair colour', items: [['Basic colour', '₹350'], ['Without ammonia', '₹450'], ['Brown · starting at', '₹500'], ['Henna', '₹300'], ['Beard colour', '₹200'], ['Moustache colour', '₹100'], ['Cap highlighting', '₹1,700']] },
-      { title: 'Straightening & smoothening', items: [['Straightening · partial', '₹1,500'], ['Straightening · full', '₹2,500'], ['Hair ironing', '₹300'], ['Rebonding', '₹1,200'], ['Rebonding · full', '₹2,000'], ['Softening', '₹800'], ['Keratin treatment', '₹3,000']] },
-      { title: 'Hair spa & massage', items: [['Basic hair spa', '₹600'], ['Dandruff treatment', '₹800'], ['Dryness treatment', '₹700'], ['Oil massage', '₹250']] }
-    ];
-    const timeSlots = ['10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
+    const bookingServiceGroups = typeof serviceGroups !== 'undefined' && Array.isArray(serviceGroups) ? serviceGroups : [];
 
   div(class="mx-auto flex w-full max-w-6xl flex-1 flex-col py-8 sm:py-12")
     a(href="/", class="mb-8 w-fit font-mono text-xs font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK HOME
@@ -27,12 +19,16 @@ block content
           legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 01 / SELECT A SERVICE
           p(class="mb-4 text-xs text-neutral-500") Pick a category to see its services and prices.
           div#service-categories(class="flex flex-wrap gap-2")
-            each group, index in serviceGroups
-              button(type="button", data-service-category=group.title, class=index === 0 ? "booking-category-chip is-active" : "booking-category-chip")= group.title
+            each group, index in bookingServiceGroups
+              button(type="button", data-service-category=group.title, aria-pressed=index === 0, class=index === 0 ? "booking-category-chip is-active" : "booking-category-chip")= group.title
           div#service-options(class="mt-4 grid gap-3 sm:grid-cols-2")
-            p#service-prompt(class="rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2") Choose a service category to view the menu.
+            if bookingServiceGroups.length
+              p#service-prompt(class="rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2") Choose a service category to view the menu.
+            else
+              p#service-prompt(class="rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2") Services are currently unavailable.
           input#booking-service(type="hidden", name="service")
           input#booking-time(type="hidden", name="time")
+          input#booking-end-time(type="hidden", name="endTime")
           a(href="/services", class="mt-3 inline-flex text-xs font-semibold text-neutral-500 transition hover:text-[#00D06C]") View the full services & price list →
 
         fieldset
@@ -44,9 +40,8 @@ block content
             input#booking-date(type="date", name="date", required, class="w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm text-neutral-950 outline-none focus:border-[#00D06C] sm:w-auto")
           div(class="mt-6")
             p(class="mb-3 text-xs text-neutral-500") Choose a preferred time
-            div#time-choices(class="grid grid-cols-2 gap-2 sm:grid-cols-3")
-              each slot in timeSlots
-                button(type="button", data-time-slot=slot, class="booking-time-chip")= slot
+            div#time-choices(class="grid grid-cols-2 gap-2 sm:grid-cols-3", aria-live="polite")
+              p#time-slots-state(class="col-span-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-sm text-neutral-400", role="status") Choose a service and date to see available times.
 
         fieldset
           legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 03 / YOUR DETAILS
@@ -79,17 +74,19 @@ block content
           span(class="text-lg") →
         p#booking-status.mt-5.text-sm.leading-relaxed.text-neutral-300(role="status", aria-live="polite")
 
-  script#booking-service-data(type="application/json")!= JSON.stringify(serviceGroups)
+  script#booking-service-data(type="application/json")!= JSON.stringify(bookingServiceGroups).replace(/</g, '\\u003c')
 
   script.
     const bookingForm = document.getElementById('booking-form');
     const bookingDate = document.getElementById('booking-date');
     const bookingService = document.getElementById('booking-service');
     const bookingTime = document.getElementById('booking-time');
+    const bookingEndTime = document.getElementById('booking-end-time');
     const serviceGroups = JSON.parse(document.getElementById('booking-service-data').textContent);
     const serviceCategories = document.getElementById('service-categories');
     const serviceOptions = document.getElementById('service-options');
     const dateChoices = document.getElementById('date-choices');
+    const timeChoices = document.getElementById('time-choices');
     const summaryService = document.getElementById('summary-service');
     const summaryPrice = document.getElementById('summary-price');
     const summaryDateTime = document.getElementById('summary-datetime');
@@ -97,56 +94,99 @@ block content
     const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
     bookingDate.min = localToday;
 
+    function formatServicePrice(price) {
+      if (price === null || price === undefined || price === '') return 'Price unavailable';
+      const numericPrice = Number(price);
+      return Number.isFinite(numericPrice)
+        ? `₹${numericPrice.toLocaleString('en-IN')}`
+        : String(price);
+    }
+
     function updateBookingSummary() {
-      const selectedService = bookingService.value;
+      const selectedName = bookingService.dataset.name || '';
       const selectedPrice = bookingService.dataset.price || '';
       const selectedDate = bookingDate.value;
-      const selectedTime = bookingTime.value;
+      const selectedTime = bookingTime.dataset.label || bookingTime.value;
+      const selectedEndTime = bookingEndTime.dataset.label || bookingEndTime.value;
       const prettyDate = selectedDate
         ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
-      summaryService.textContent = selectedService || 'Choose a service';
-      summaryPrice.textContent = !selectedPrice ? '—' : selectedPrice === 'Ask in shop' ? 'Confirm in shop' : selectedPrice;
+      summaryService.textContent = selectedName || 'Choose a service';
+      summaryPrice.textContent = !selectedPrice
+        ? '—'
+        : selectedPrice === 'Ask in shop'
+          ? 'Confirm in shop'
+          : formatServicePrice(selectedPrice);
       summaryDateTime.textContent = prettyDate || selectedTime
-        ? (prettyDate || 'Choose a date') + (selectedTime ? ' · ' + selectedTime : '')
+        ? (prettyDate || 'Choose a date') + (selectedTime ? ' · ' + selectedTime : '') + (selectedEndTime ? ' – ' + selectedEndTime : '')
         : 'Select your date and time';
     }
 
     function setServiceCategory(categoryName) {
       serviceCategories.querySelectorAll('[data-service-category]').forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.serviceCategory === categoryName);
+        const isSelected = button.dataset.serviceCategory === categoryName;
+        button.classList.toggle('is-active', isSelected);
+        button.setAttribute('aria-pressed', String(isSelected));
       });
+
       const group = serviceGroups.find((item) => item.title === categoryName);
       serviceOptions.replaceChildren();
       bookingService.value = '';
+      bookingService.dataset.name = '';
       bookingService.dataset.price = '';
-      if (!group) {
-        updateBookingSummary();
+      bookingService.dataset.duration = '';
+      bookingTime.value = '';
+      bookingTime.dataset.label = '';
+      bookingEndTime.value = '';
+      bookingEndTime.dataset.label = '';
+      updateBookingSummary();
+      loadAvailableTimeSlots();
+
+      if (!group || !Array.isArray(group.items) || group.items.length === 0) {
+        const prompt = document.createElement('p');
+        prompt.className = 'rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2';
+        prompt.textContent = group ? 'No services are available in this category.' : 'Choose a service category to view the menu.';
+        serviceOptions.appendChild(prompt);
         return;
       }
-      group.items.forEach(([name, price]) => {
+
+      group.items.forEach((service) => {
         const option = document.createElement('button');
         option.type = 'button';
         option.className = 'booking-service-card';
-        option.dataset.serviceName = name;
-        option.dataset.price = price;
+        option.dataset.serviceId = service._id || '';
+        option.dataset.serviceName = service.name || '';
+        option.dataset.price = service.price ?? '';
+        option.dataset.duration = service.duration ?? '';
+
         const serviceName = document.createElement('span');
         serviceName.className = 'text-sm font-semibold';
-        serviceName.textContent = name;
+        serviceName.textContent = service.name || 'Unnamed service';
+
         const servicePrice = document.createElement('span');
         servicePrice.className = 'font-mono text-xs font-bold';
-        servicePrice.textContent = price;
+        servicePrice.textContent = formatServicePrice(service.price);
+
         option.append(serviceName, servicePrice);
         option.addEventListener('click', () => {
-          serviceOptions.querySelectorAll('.booking-service-card').forEach((card) => card.classList.remove('is-selected'));
+          serviceOptions.querySelectorAll('.booking-service-card').forEach((card) => {
+            card.classList.remove('is-selected');
+          });
           option.classList.add('is-selected');
-          bookingService.value = name;
-          bookingService.dataset.price = price;
+          bookingService.value = option.dataset.serviceId;
+          bookingService.dataset.name = option.dataset.serviceName;
+          bookingService.dataset.price = option.dataset.price;
+          bookingService.dataset.duration = option.dataset.duration;
+          bookingTime.value = '';
+          bookingTime.dataset.label = '';
+          bookingEndTime.value = '';
+          bookingEndTime.dataset.label = '';
           updateBookingSummary();
+          loadAvailableTimeSlots();
         });
+
         serviceOptions.appendChild(option);
       });
-      updateBookingSummary();
     }
 
     serviceCategories.addEventListener('click', (event) => {
@@ -154,11 +194,114 @@ block content
       if (categoryButton) setServiceCategory(categoryButton.dataset.serviceCategory);
     });
 
+    let timeSlotRequestId = 0;
+
+    function showTimeSlotState(state, message) {
+      const stateMessage = document.createElement('p');
+      const stateColor = state === 'error' ? 'text-red-600' : 'text-neutral-400';
+      stateMessage.className = `col-span-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-sm ${stateColor}`;
+      stateMessage.setAttribute('role', state === 'error' ? 'alert' : 'status');
+      stateMessage.textContent = message;
+      timeChoices.replaceChildren(stateMessage);
+    }
+
+    async function requestAvailableTimeSlots(serviceId, dateValue) {
+      const response = await fetch(
+        `/api/bookings/available-slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(dateValue)}`,
+        {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' }
+        }
+      );
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (error) {
+        throw new Error('The availability response could not be read.');
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to fetch available time slots.');
+      }
+
+      return data.slots;
+    }
+
+    function formatAvailableTime(value) {
+      const timeValue = String(value);
+      if (/^\d{1,2}:\d{2}$/.test(timeValue)) {
+        const [hour, minute] = timeValue.split(':').map(Number);
+        return new Date(2000, 0, 1, hour, minute).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+      }
+      const dateValue = new Date(timeValue);
+      return Number.isNaN(dateValue.getTime())
+        ? timeValue
+        : dateValue.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    async function loadAvailableTimeSlots() {
+      const requestId = ++timeSlotRequestId;
+      bookingTime.value = '';
+      bookingTime.dataset.label = '';
+      bookingEndTime.value = '';
+      bookingEndTime.dataset.label = '';
+
+      if (!bookingService.value || !bookingDate.value) {
+        showTimeSlotState('empty', 'Choose a service and date to see available times.');
+        updateBookingSummary();
+        return;
+      }
+
+      showTimeSlotState('loading', 'Checking available times…');
+      try {
+        const slots = await requestAvailableTimeSlots(bookingService.value, bookingDate.value);
+        if (requestId !== timeSlotRequestId) return;
+        if (!Array.isArray(slots)) throw new Error('The availability response is not a list of time slots.');
+        if (slots.length === 0) {
+          showTimeSlotState('empty', 'No available times for this service and date.');
+          return;
+        }
+
+        const slotButtons = slots.map((slot) => {
+          const startTime = slot?.startTime;
+          const endTime = slot?.endTime;
+          if (!startTime || !endTime) return null;
+          const slotButton = document.createElement('button');
+          slotButton.type = 'button';
+          slotButton.dataset.timeSlot = String(startTime);
+          slotButton.dataset.timeEnd = String(endTime);
+          slotButton.dataset.timeLabel = formatAvailableTime(startTime);
+          slotButton.dataset.timeEndLabel = formatAvailableTime(endTime);
+          slotButton.className = 'booking-time-chip';
+          slotButton.textContent = slotButton.dataset.timeLabel;
+          return slotButton;
+        }).filter(Boolean);
+
+        if (slotButtons.length === 0) {
+          showTimeSlotState('empty', 'No available times for this service and date.');
+          return;
+        }
+        timeChoices.replaceChildren(...slotButtons);
+      } catch (error) {
+        if (requestId === timeSlotRequestId) {
+          showTimeSlotState('error', `Unable to load available times. ${error.message || 'Please try again.'}`);
+        }
+      }
+    }
+
+    if (serviceGroups.length) setServiceCategory(serviceGroups[0].title);
+
     function setDate(dateValue, selectedButton) {
       bookingDate.value = dateValue;
       dateChoices.querySelectorAll('.booking-date-chip').forEach((button) => button.classList.remove('is-selected'));
       if (selectedButton) selectedButton.classList.add('is-selected');
+      bookingTime.value = '';
+      bookingTime.dataset.label = '';
+      bookingEndTime.value = '';
+      bookingEndTime.dataset.label = '';
       updateBookingSummary();
+      loadAvailableTimeSlots();
     }
 
     for (let offset = 0; offset < 7; offset += 1) {
@@ -186,15 +329,23 @@ block content
       dateChoices.querySelectorAll('.booking-date-chip').forEach((button) => {
         button.classList.toggle('is-selected', button.dataset.date === bookingDate.value);
       });
+      bookingTime.value = '';
+      bookingTime.dataset.label = '';
+      bookingEndTime.value = '';
+      bookingEndTime.dataset.label = '';
       updateBookingSummary();
+      loadAvailableTimeSlots();
     });
 
-    document.getElementById('time-choices').addEventListener('click', (event) => {
+    timeChoices.addEventListener('click', (event) => {
       const timeButton = event.target.closest('[data-time-slot]');
       if (!timeButton) return;
-      document.querySelectorAll('[data-time-slot]').forEach((button) => button.classList.remove('is-selected'));
+      timeChoices.querySelectorAll('[data-time-slot]').forEach((button) => button.classList.remove('is-selected'));
       timeButton.classList.add('is-selected');
       bookingTime.value = timeButton.dataset.timeSlot;
+      bookingTime.dataset.label = timeButton.dataset.timeLabel || timeButton.dataset.timeSlot;
+      bookingEndTime.value = timeButton.dataset.timeEnd;
+      bookingEndTime.dataset.label = timeButton.dataset.timeEndLabel || bookingEndTime.value;
       updateBookingSummary();
     });
 
@@ -211,6 +362,6 @@ block content
       }
       const values = new FormData(bookingForm);
       const selectedPrice = bookingService.dataset.price;
-      const priceMessage = selectedPrice === 'Ask in shop' ? 'Price to be confirmed in shop' : selectedPrice;
-      status.textContent = values.get('service') + ' · ' + priceMessage + ' · ' + values.get('date') + ' at ' + values.get('time') + '. Details ready for review; booking confirmation is not connected yet.';
+      const priceMessage = selectedPrice === 'Ask in shop' ? 'Price to be confirmed in shop' : formatServicePrice(selectedPrice);
+      status.textContent = bookingService.dataset.name + ' · ' + priceMessage + ' · ' + values.get('date') + ' at ' + values.get('time') + '. Details ready for review; booking confirmation is not connected yet.';
     });

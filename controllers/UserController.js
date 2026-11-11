@@ -1,15 +1,15 @@
 import User from '../models/userModel.js';
 import { UsersignUp,
-        forgetPassword, 
-        resetPassword, 
-        userLogin, 
-        UpdateUserProfile, 
-        changeUserPassword, 
-        sendEmailChangeOtp, 
-        verifyEmailChangeOtp 
+        forgetPassword,
+        resetPassword,
+        userLogin,
+        UpdateUserProfile,
+        changeUserPassword,
+        sendEmailChangeOtp,
+        verifyEmailChangeOtp
 } from '../services/UserService.js';
 import { getAllServices,
-    getAllServiceCategories 
+         getAllServiceCategories
 } from '../services/ServiceService.js';
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 import jwt from 'jsonwebtoken'
@@ -64,8 +64,32 @@ const renderServicesPageController = async(req, res) =>{
 
 const renderSignupPageController = (req, res) => res.render('user/signup', { title: 'signUp' });
 const renderAboutPageController = (req, res) => res.render('user/about', { title: 'About' });
-const renderBookingPageController = (req, res) => res.render('user/booking', { title: 'Book an appointment' });
+const renderBookingPageController = async (req, res) => {
+    try {
+        const [categories, services] = await Promise.all([
+            getAllServiceCategories(),
+            getAllServices()
+        ]);
 
+        const serviceGroups = categories
+            .map(category => ({
+                title: category.name,
+                items: services.filter(service =>
+                    service.categoryId.toString() === category._id.toString()
+                )
+            }))
+            .filter(group => group.items.length > 0);
+
+        return res.render('user/booking', {
+            title: 'Book an appointment',
+            serviceGroups
+        });
+
+    } catch (error) {
+        console.error('Error rendering booking page:', error);
+        return res.status(500).send('Unable to load booking page');
+    }
+};
 const renderProfilePageController = (req, res) => {
     if (!req.user) return res.redirect('/login');
     res.render('user/profile', { title: 'Your Profile', user: req.user });

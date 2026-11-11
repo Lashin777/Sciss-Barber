@@ -2,7 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import UserRoutes from './routes/UserRoute.js';
 import adminRoutes from './routes/adminRoute.js';
-import serviceRoutes from'./routes/serviceRoute.js'
+import serviceRoutes from'./routes/serviceRoute.js';
+import BarberUnavailabilityRoutes from'./routes/BarberUnavailabilityRoute.js';
+import BookingRoutes from './routes/BookingRoute.js';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
@@ -26,6 +28,8 @@ app.use(passport.initialize())
 app.use(UserRoutes);
 app.use(adminRoutes);
 app.use(serviceRoutes);
+app.use(BarberUnavailabilityRoutes);
+app.use(BookingRoutes);
 
 
 export default app
