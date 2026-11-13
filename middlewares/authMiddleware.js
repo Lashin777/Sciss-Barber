@@ -60,7 +60,7 @@ const optionalAuth = async (req, res, next) => {
 }
 
 const adminOnly = async (req, res, next) => {
-    if (req.user.role !== "ADMIN") {
+    if (!req.user || req.user.role !== "ADMIN") {
         return res.status(403).json({ message: "Admin Access Required" })
     }
     next()
@@ -99,7 +99,7 @@ const adminPageProtect = async (req, res, next) => {
 
 const customerOnly = (req, res, next) => {
 
-    if (req.user.role !== 'CUSTOMER') {
+    if (!req.user || req.user.role !== 'CUSTOMER') {
         return res.status(403).json({ message: 'Customer Access Required' });
     }
     next();

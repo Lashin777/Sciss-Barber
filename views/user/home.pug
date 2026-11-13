@@ -238,6 +238,101 @@ block content
           a(href="/services", class="transition hover:text-[#00D06C]") SERVICES & PRICES
         unless isLoggedIn
           a(href="/login", class="transition hover:text-[#00D06C]") LOGIN
+
+  unless isLoggedIn
+    div#guest-login-modal(
+      class="fixed inset-0 z-50 hidden flex items-center justify-center p-4"
+      style="background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="guest-modal-title"
+    )
+      div#guest-modal-card(
+        class="w-full max-w-md rounded-2xl border border-white/15 p-8 text-white shadow-2xl sm:p-10"
+        style="background-color: #080808;"
+      )
+        p(class="mb-8 font-mono text-[10px] tracking-[0.3em] text-[#00D06C]") SCISS' BARBER · KOZHIKODE
+
+        p(class="mb-3 font-mono text-[10px] tracking-[0.2em] text-neutral-400") YOUR NEXT VISIT STARTS HERE
+        h2#guest-modal-title(class="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl") Please login first.
+
+        p(class="mb-9 text-sm leading-relaxed text-neutral-400") Sign in to your account to book your appointment. We'll have the chair ready.
+
+        div(class="flex justify-end gap-3")
+          button#guest-modal-cancel(
+            type="button"
+            class="cursor-pointer rounded-full border border-white/20 bg-transparent px-6 py-3 font-mono text-xs tracking-widest text-white transition hover:bg-white/10"
+          ) CANCEL
+          a(
+            href="/login?returnTo=/booking"
+            class="rounded-full bg-[#00D06C] px-7 py-3 font-mono text-xs font-bold tracking-widest text-black transition hover:bg-[#00D06C]/90"
+          ) LOGIN →
+
+    style.
+      #guest-login-modal {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 220ms ease;
+      }
+      #guest-login-modal.is-open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #guest-modal-card {
+        transform: translateY(-8px) scale(0.97);
+        transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+        opacity: 0;
+      }
+      #guest-login-modal.is-open #guest-modal-card {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+
+    script.
+      (function() {
+        const guestModal = document.getElementById('guest-login-modal');
+        const cancelBtn = document.getElementById('guest-modal-cancel');
+        const bookNowLinks = document.querySelectorAll('a[href="/booking"]');
+        let closeTimer;
+
+        function openGuestModal() {
+          window.clearTimeout(closeTimer);
+          guestModal.classList.remove('hidden');
+          requestAnimationFrame(() => {
+            guestModal.classList.add('is-open');
+          });
+        }
+
+        function closeGuestModal() {
+          guestModal.classList.remove('is-open');
+          closeTimer = window.setTimeout(() => {
+            guestModal.classList.add('hidden');
+          }, 220);
+        }
+
+        bookNowLinks.forEach((link) => {
+          link.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openGuestModal();
+          });
+        });
+
+        cancelBtn?.addEventListener('click', closeGuestModal);
+
+        guestModal?.addEventListener('click', (event) => {
+          if (event.target === guestModal) {
+            closeGuestModal();
+          }
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && guestModal.classList.contains('is-open')) {
+            closeGuestModal();
+          }
+        });
+      })();
+
   script.
     window.addEventListener('pageshow', function (event) {
       if (event.persisted) {

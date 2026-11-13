@@ -21,7 +21,7 @@ import {
     renderProfileEditPageController,
     renderBookingPageController,
 } from '../controllers/UserController.js';
-import { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange, validationResetPassword } from '../middlewares/validation.js';
+import { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange, validationResetPassword,validationEmailChangeVerify,validationEmailChangeRequest} from '../middlewares/validation.js';
 import passport from 'passport';
 import { protect, customerOnly, optionalAuth, preventCache } from '../middlewares/authMiddleware.js';
 import googleAuthMiddleWare from '../middlewares/googleAuthMiddleware.js';
@@ -38,8 +38,8 @@ router.post('/api/user/login', validationLogin, userLoginController);
 router.post('/api/user/logout', protect, customerOnly, userLogoutController);
 router.patch('/api/user/profile', protect, customerOnly, upload.single('profileImage'), validationProfileUpdate, updateUserProfileController);
 router.patch('/api/user/password', protect, customerOnly, validationPasswordChange, changeUserPasswordController);
-router.post('/api/user/email-change/request', protect, customerOnly, sendEmailChangeOtpController);
-router.post('/api/user/email-change/verify', protect, customerOnly, verifyEmailChangeOtpController);
+router.post('/api/user/email-change/request', protect, customerOnly,validationEmailChangeRequest,sendEmailChangeOtpController);
+router.post('/api/user/email-change/verify', protect, customerOnly, validationEmailChangeVerify,verifyEmailChangeOtpController);
 
 //GOOGLE ROUTE
 router.get('/api/user/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
@@ -53,7 +53,7 @@ router.get('/about', renderAboutPageController);
 router.get('/services', renderServicesPageController);
 router.get('/profile', preventCache, optionalAuth, renderProfilePageController);
 router.get('/profile/edit', preventCache, optionalAuth, renderProfileEditPageController);
-router.get('/booking', preventCache, renderBookingPageController);
+router.get('/booking', preventCache,optionalAuth, renderBookingPageController);
 
 
 

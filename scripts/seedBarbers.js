@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
+import Barber from "../models/barberModel.js";
 import "dotenv/config";
 import connectDB from "../config/db.js";
-import Barber from "../models/Barber.js";
 
 const seedBarbers = async () => {
     try{

@@ -154,4 +154,128 @@ const validationResetPassword = (req, res, next) => {
     next();
 };
 
-export { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange, validationResetPassword }
+const validationEmailChangeRequest = (req, res, next) => {
+    const { email } = req.body;
+
+    if (typeof email !== 'string' || !email.trim()) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email.trim())) {
+        return res.status(400).json({ message: 'Enter a valid email address' });
+    }
+
+    next();
+};
+
+const validationEmailChangeVerify = (req, res, next) => {
+    const { email, otp } = req.body;
+
+    if (typeof email !== 'string' || !email.trim()) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email.trim())) {
+        return res.status(400).json({ message: 'Enter a valid email address' });
+    }
+
+    if (typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
+        return res.status(400).json({ message: 'Enter a valid 6-digit OTP' });
+    }
+
+    next();
+};
+
+
+const validationPaymentOrder = (req, res, next) => {
+    const { bookingId, serviceId } = req.body;
+
+    const isValidObjectId = (id) =>
+        typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
+
+    if (!isValidObjectId(bookingId)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid booking ID'
+        });
+    }
+
+    if (!isValidObjectId(serviceId)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid service ID'
+        });
+    }
+
+    next();
+};
+const validationMongoId = (req, res, next) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string' || !/^[0-9a-fA-F]{24}$/.test(id)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid user ID'
+        });
+    }
+
+    next();
+};
+
+const validationAdminUserQuery = (req, res, next) => {
+    const { search, page, list, date } = req.query;
+
+    if (search !== undefined && typeof search !== 'string') {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid search value'
+        });
+    }
+
+    if (page !== undefined && (!/^[1-9]\d*$/.test(page))) {
+        return res.status(400).json({
+            success: false,
+            message: 'Page must be a positive integer'
+        });
+    }
+
+    if (list !== undefined && (!/^[1-9]\d*$/.test(list))) {
+        return res.status(400).json({
+            success: false,
+            message: 'List must be a positive integer'
+        });
+    }
+
+    if (date !== undefined) {
+        const parsedDate = new Date(`${date}T00:00:00.000Z`);
+
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+            Number.isNaN(parsedDate.getTime()) ||
+            parsedDate.toISOString().slice(0, 10) !== date
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid date format. Use YYYY-MM-DD'
+            });
+        }
+    }
+
+    next();
+};
+
+export { validationSignup,
+         validationLogin,
+         validationProfileUpdate,
+         validationPasswordChange,
+         validationResetPassword,
+         validationEmailChangeVerify,
+         validationEmailChangeRequest,
+         validationPaymentOrder,
+         validationMongoId,
+         validationAdminUserQuery
+    }

@@ -34,7 +34,8 @@
     "nodemailer": "^10.0.13",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "pug": "^3.0.4"
+    "pug": "^3.0.4",
+    "razorpay": "^2.9.8"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

@@ -82,7 +82,8 @@ const renderBookingPageController = async (req, res) => {
 
         return res.render('user/booking', {
             title: 'Book an appointment',
-            serviceGroups
+            serviceGroups,
+            user:req.user
         });
 
     } catch (error) {

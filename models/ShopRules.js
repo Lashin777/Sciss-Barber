@@ -33,7 +33,12 @@ advancePayment: {
     required: true,
     default: 100,
     min: 1,
-}
+},
+bookingLockVersion: {
+    type: Number,
+    default: 0
+},
+
 });
 
 const ShopRules = mongoose.model("ShopRules", shopRulesSchema);

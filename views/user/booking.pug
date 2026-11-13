@@ -1,6 +1,25 @@
 extends ../layouts/minimal.pug
 
 block content
+  if !user
+    div#login-required-modal(
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style="background-color: rgba(0,0,0,0.70); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-required-title"
+    )
+      div(class="w-full max-w-md rounded-2xl border border-white/15 p-8 text-white shadow-2xl sm:p-10", style="background-color: #080808;")
+        p(class="mb-8 font-mono text-[10px] tracking-[0.3em]", style="color: #00D06C;") SCISS' BARBER · KOZHIKODE
+
+        p(class="mb-3 font-mono text-[10px] tracking-[0.2em] text-neutral-400") YOUR NEXT VISIT STARTS HERE
+        h2#login-required-title(class="mb-4 text-4xl font-bold tracking-tight text-white") Please login first.
+
+        p(class="mb-9 text-sm leading-relaxed text-neutral-400") Sign in to your account to book your appointment. We'll have the chair ready.
+
+        div(class="flex justify-end gap-3")
+          button#login-required-cancel(type="button", class="rounded-full border border-white/20 bg-transparent px-6 py-3 font-mono text-xs tracking-widest text-white transition hover:bg-white/10") CANCEL
+          a(href="/login?returnTo=/booking", class="rounded-full px-7 py-3 font-mono text-xs font-bold tracking-widest text-black transition", style="background-color: #00D06C;") LOGIN →
   -
     const bookingServiceGroups = typeof serviceGroups !== 'undefined' && Array.isArray(serviceGroups) ? serviceGroups : [];
 
@@ -16,8 +35,8 @@ block content
     form#booking-form(class="grid gap-10 lg:grid-cols-[1fr_0.72fr]")
       div(class="space-y-10")
         fieldset
-          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 01 / SELECT A SERVICE
-          p(class="mb-4 text-xs text-neutral-500") Pick a category to see its services and prices.
+          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 01 / CHOOSE YOUR SERVICE
+          p(class="mb-4 text-xs text-neutral-500") Choose the service you need. Select a category to see its services and prices.
           div#service-categories(class="flex flex-wrap gap-2")
             each group, index in bookingServiceGroups
               button(type="button", data-service-category=group.title, aria-pressed=index === 0, class=index === 0 ? "booking-category-chip is-active" : "booking-category-chip")= group.title
@@ -32,7 +51,7 @@ block content
           a(href="/services", class="mt-3 inline-flex text-xs font-semibold text-neutral-500 transition hover:text-[#00D06C]") View the full services & price list →
 
         fieldset
-          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 02 / DATE & TIME
+          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 02 / CHOOSE A DATE & TIME
           p(class="mb-3 text-xs text-neutral-500") Choose a day
           div#date-choices(class="grid grid-cols-3 gap-2 sm:grid-cols-7")
           label(class="mt-3 flex flex-col gap-2 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between")
@@ -42,19 +61,6 @@ block content
             p(class="mb-3 text-xs text-neutral-500") Choose a preferred time
             div#time-choices(class="grid grid-cols-2 gap-2 sm:grid-cols-3", aria-live="polite")
               p#time-slots-state(class="col-span-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-sm text-neutral-400", role="status") Choose a service and date to see available times.
-
-        fieldset
-          legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 03 / YOUR DETAILS
-          div(class="grid gap-4 sm:grid-cols-2")
-            label(class="block sm:col-span-2")
-              span(class="mb-2 block text-xs text-neutral-500") Full name
-              input(type="text", name="name", autocomplete="name", required, class="w-full border-0 border-b border-neutral-300 bg-transparent py-3 text-sm outline-none focus:border-[#00D06C]")
-            label(class="block")
-              span(class="mb-2 block text-xs text-neutral-500") Email
-              input(type="email", name="email", autocomplete="email", required, class="w-full border-0 border-b border-neutral-300 bg-transparent py-3 text-sm outline-none focus:border-[#00D06C]")
-            label(class="block")
-              span(class="mb-2 block text-xs text-neutral-500") Phone
-              input(type="tel", name="phone", autocomplete="tel", required, class="w-full border-0 border-b border-neutral-300 bg-transparent py-3 text-sm outline-none focus:border-[#00D06C]")
 
       aside(class="h-fit rounded-2xl bg-neutral-950 p-6 text-white sm:p-8")
         p(class="font-mono text-[10px] tracking-[0.25em] text-neutral-400") YOUR APPOINTMENT
@@ -73,6 +79,47 @@ block content
           span REVIEW APPOINTMENT
           span(class="text-lg") →
         p#booking-status.mt-5.text-sm.leading-relaxed.text-neutral-300(role="status", aria-live="polite")
+
+  div#booking-confirmation(
+    class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+    style="background-color: rgba(0,0,0,0.70); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="booking-confirmation-title"
+  )
+    div(class="w-full max-w-md rounded-2xl border border-white/15 p-8 text-white shadow-2xl sm:p-10", style="background-color: #080808;")
+      p(class="mb-2 font-mono text-[10px] tracking-[0.3em]", style="color: #00D06C;") SCISS' BARBER · KOZHIKODE
+      h2#booking-confirmation-title(class="mb-6 text-2xl font-bold tracking-tight text-white") Review your booking
+      div(class="mb-6 space-y-3 rounded-xl border border-white/10 p-4 text-sm")
+        div(class="flex items-center justify-between gap-4")
+          span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") SERVICE
+          span#confirm-service(class="text-right font-semibold text-white") —
+        div(class="flex items-center justify-between gap-4")
+          span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") DATE
+          span#confirm-date(class="text-right font-semibold text-white") —
+        div(class="flex items-center justify-between gap-4")
+          span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") TIME
+          span#confirm-time(class="text-right font-semibold text-white") —
+        div(class="flex items-center justify-between gap-4")
+          span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") PRICE
+          span#confirm-price(class="text-right font-bold", style="color: #00D06C;") —
+      p#confirm-status(class="mb-5 hidden text-sm leading-relaxed text-red-400", role="status", aria-live="polite")
+      div(class="flex gap-3")
+        button#confirm-cancel(type="button", class="flex-1 cursor-pointer rounded-full border border-white/20 bg-transparent py-3 font-mono text-xs tracking-widest text-white transition hover:bg-white/10") GO BACK
+        button#confirm-submit(type="button", class="flex-1 cursor-pointer rounded-full py-3 font-mono text-xs font-bold tracking-widest text-black transition", style="background-color: #00D06C;") CONFIRM BOOKING
+
+  style.
+    #booking-confirmation { display: none; }
+    #booking-confirmation.is-open { display: flex; }
+    #booking-confirmation > div {
+      transform: translateY(-10px) scale(0.97);
+      opacity: 0;
+      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
+    }
+    #booking-confirmation.is-open > div {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
 
   script#booking-service-data(type="application/json")!= JSON.stringify(bookingServiceGroups).replace(/</g, '\\u003c')
 
@@ -209,7 +256,7 @@ block content
       const response = await fetch(
         `/api/bookings/available-slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(dateValue)}`,
         {
-          method: 'POST',
+          method: 'GET',
           headers: { 'Accept': 'application/json' }
         }
       );
@@ -356,12 +403,134 @@ block content
         status.textContent = 'Choose a service to continue.';
         return;
       }
+      if (!bookingDate.value) {
+        status.textContent = 'Choose a date to continue.';
+        return;
+      }
       if (!bookingTime.value) {
         status.textContent = 'Choose a preferred time to continue.';
         return;
       }
-      const values = new FormData(bookingForm);
-      const selectedPrice = bookingService.dataset.price;
-      const priceMessage = selectedPrice === 'Ask in shop' ? 'Price to be confirmed in shop' : formatServicePrice(selectedPrice);
-      status.textContent = bookingService.dataset.name + ' · ' + priceMessage + ' · ' + values.get('date') + ' at ' + values.get('time') + '. Details ready for review; booking confirmation is not connected yet.';
+      status.textContent = '';
+      openConfirmationModal();
     });
+
+    const bookingConfirmation = document.getElementById('booking-confirmation');
+    const confirmService = document.getElementById('confirm-service');
+    const confirmDate = document.getElementById('confirm-date');
+    const confirmTime = document.getElementById('confirm-time');
+    const confirmPrice = document.getElementById('confirm-price');
+    const confirmStatus = document.getElementById('confirm-status');
+    const confirmCancel = document.getElementById('confirm-cancel');
+    const confirmSubmit = document.getElementById('confirm-submit');
+
+    function openConfirmationModal() {
+      const selectedName = bookingService.dataset.name || '';
+      const selectedPrice = bookingService.dataset.price || '';
+      const selectedDate = bookingDate.value;
+
+      // Read the selected time chip directly for the most reliable label
+      const selectedTimeChip = timeChoices.querySelector('[data-time-slot].is-selected');
+      const startLabel = selectedTimeChip
+        ? (selectedTimeChip.dataset.timeLabel || selectedTimeChip.textContent.trim())
+        : (bookingTime.dataset.label || formatAvailableTime(bookingTime.value));
+      const endLabel = selectedTimeChip && selectedTimeChip.dataset.timeEndLabel
+        ? ' \u2013 ' + selectedTimeChip.dataset.timeEndLabel
+        : (bookingEndTime.dataset.label ? ' \u2013 ' + bookingEndTime.dataset.label : '');
+
+      const prettyDate = selectedDate
+        ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : '\u2014';
+
+      confirmService.textContent = selectedName || '\u2014';
+      confirmDate.textContent = prettyDate || '\u2014';
+      confirmTime.textContent = startLabel ? startLabel + endLabel : '\u2014';
+      confirmPrice.textContent = !selectedPrice
+        ? '\u2014'
+        : selectedPrice === 'Ask in shop'
+          ? 'Ask in shop'
+          : formatServicePrice(selectedPrice);
+      confirmStatus.textContent = '';
+      confirmStatus.classList.add('hidden');
+
+      bookingConfirmation.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeConfirmationModal() {
+      bookingConfirmation.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    confirmCancel.addEventListener('click', closeConfirmationModal);
+
+    bookingConfirmation.addEventListener('click', (event) => {
+      if (event.target === bookingConfirmation) closeConfirmationModal();
+    });
+
+    confirmSubmit.addEventListener('click', async () => {
+      confirmSubmit.disabled = true;
+      confirmSubmit.textContent = 'PROCESSING...';
+
+      confirmStatus.classList.remove('hidden');
+      confirmStatus.classList.remove('text-red-400');
+      confirmStatus.classList.add('text-neutral-300');
+      confirmStatus.textContent = 'Creating your booking...';
+
+      try {
+        const response = await fetch('/api/bookings', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          serviceId: bookingService.value,
+          date: bookingDate.value,
+          startTime: bookingTime.value
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Booking failed');
+      }
+
+      confirmStatus.classList.remove('text-neutral-300', 'text-red-400');
+      confirmStatus.classList.add('text-[#00D06C]');
+      confirmStatus.textContent = 'Booking created successfully!';
+
+      confirmSubmit.textContent = 'BOOKING CONFIRMED';
+
+      } catch (error) {
+        confirmStatus.classList.remove('text-neutral-300');
+        confirmStatus.classList.add('text-red-400');
+        confirmStatus.textContent = error.message || 'Something went wrong.';
+
+      confirmSubmit.disabled = false;
+      confirmSubmit.textContent = 'CONFIRM BOOKING';
+      }
+    });
+
+    const loginRequiredModal = document.getElementById('login-required-modal');
+    const loginRequiredCancel = document.getElementById('login-required-cancel');
+
+    if (loginRequiredModal) {
+      document.body.style.overflow = 'hidden';
+
+      loginRequiredCancel?.addEventListener('click', () => {
+        loginRequiredModal.style.display = 'none';
+        document.body.style.overflow = '';
+        window.location.href = '/';
+      });
+
+      loginRequiredModal.addEventListener('click', (event) => {
+        if (event.target === loginRequiredModal) {
+          loginRequiredModal.style.display = 'none';
+          document.body.style.overflow = '';
+          window.location.href = '/';
+        }
+      });
+    }

@@ -21,10 +21,24 @@ const bookingSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-
+    servicePrice: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+    serviceDuration: {
+        type: Number,
+        required: true,
+        min: 1
+    },
+    advanceAmount: {
+        type: Number,
+        required: true,
+        min: 0
+    },
     status: {
         type: String,
-        enum: ['PENDING', 'ACCEPTED', 'DECLINED', 'COMPLETED', 'CANCELLED'],
+        enum: ['PENDING', 'CONFIRMED','ACCEPTED', 'DECLINED', 'COMPLETED', 'CANCELLED'],
         default: 'PENDING',
         required: true
     },

@@ -1,0 +1,200 @@
+extends ../layouts/minimal.pug
+
+block content
+  style.
+    body > header { display: none; }
+    body > main.flex {
+      display: grid;
+      grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      width: 100%;
+      height: 100dvh;
+      min-width: 0;
+      padding: 0;
+      overflow: hidden;
+      transition: grid-template-columns 360ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    body > main.flex.admin-sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+    #admin-sidebar {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      width: 220px;
+      min-width: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #191a20;
+      color: white;
+      transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #admin-sidebar > * { width: 220px; min-width: 220px; transition: opacity 180ms ease 90ms; }
+    body > main.admin-sidebar-collapsed #admin-sidebar { width: 0; }
+    body > main.admin-sidebar-collapsed #admin-sidebar > * { opacity: 0; pointer-events: none; transition-delay: 0ms; }
+    #admin-sidebar-toggle {
+      position: fixed;
+      top: 50%;
+      left: 202px;
+      z-index: 60;
+      display: flex;
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transform: translateY(-50%);
+      border: 1px solid rgb(255 255 255 / 16%);
+      border-left: 0;
+      border-radius: 0 10px 10px 0;
+      background: #191a20;
+      color: #00D06C;
+      box-shadow: 0 5px 16px rgb(17 18 22 / 15%);
+      transition: left 360ms cubic-bezier(0.22, 1, 0.36, 1), background-color 140ms ease;
+    }
+    body > main.admin-sidebar-collapsed #admin-sidebar-toggle { left: 0; }
+    #admin-sidebar-toggle .sidebar-toggle-mark { font: 700 9px/1 'Space Mono', monospace; letter-spacing: -.04em; }
+    #admin-sidebar-toggle .sidebar-toggle-arrow { width: 10px; height: 10px; opacity: .55; transition: transform 240ms ease-in-out; }
+    body > main.admin-sidebar-collapsed #admin-sidebar-toggle .sidebar-toggle-arrow { transform: rotate(180deg); }
+    #admin-page-content {
+      grid-column: 2;
+      grid-row: 1;
+      width: auto;
+      max-width: none;
+      min-width: 0;
+      margin: 0;
+      overflow: auto;
+      padding: 2rem clamp(1.25rem, 4vw, 4rem);
+    }
+    #admin-page-content nav a.active { border-radius: .375rem; background: #2b2c33; color: #42e990; }
+    @media (max-width: 1023px) {
+      body > main.flex { grid-template-columns: minmax(0, min(220px, 85vw)) minmax(0, 1fr); }
+      body > main.flex.admin-sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+      #admin-sidebar { width: min(220px, 85vw); }
+      #admin-sidebar > * { width: min(220px, 85vw); min-width: min(220px, 85vw); }
+      #admin-sidebar-toggle { left: calc(min(220px, 85vw) - 18px); }
+      body > main.admin-sidebar-collapsed #admin-sidebar-toggle { left: 0; }
+      #admin-page-content { padding: 1.5rem 1.25rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body > main.flex, #admin-sidebar, #admin-sidebar > *, #admin-sidebar-toggle, #admin-sidebar-toggle .sidebar-toggle-arrow { transition: none !important; }
+    }
+
+  svg(class="hidden", xmlns="http://www.w3.org/2000/svg", aria-hidden="true")
+    symbol#admin-icon-overview(viewBox="0 0 24 24")
+      rect(x="3" y="3" width="7" height="7" rx="1" fill="currentColor")
+      rect(x="14" y="3" width="7" height="7" rx="1" fill="currentColor" opacity=".55")
+      rect(x="3" y="14" width="7" height="7" rx="1" fill="currentColor" opacity=".55")
+      rect(x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity=".55")
+    symbol#admin-icon-booking(viewBox="0 0 24 24")
+      rect(x="6" y="3" width="12" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8")
+      path(d="M9 7h6M9 11h6M9 15h3", fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round")
+    symbol#admin-icon-calendar(viewBox="0 0 24 24")
+      rect(x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8")
+      path(d="M7 3v4M17 3v4M3 10h18", fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round")
+    symbol#admin-icon-customers(viewBox="0 0 24 24")
+      circle(cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8")
+      path(d="M3 20v-1a6 6 0 0 1 12 0v1M16 5.5a3 3 0 0 1 0 5.8M18 14a4 4 0 0 1 3 4v2", fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round")
+    symbol#admin-icon-services(viewBox="0 0 24 24")
+      circle(cx="6" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.8")
+      circle(cx="18" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8")
+      path(d="m8 8 11 11M16 8l-4 4M8 16l-3 3", fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round")
+    symbol#admin-icon-payments(viewBox="0 0 24 24")
+      rect(x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8")
+      path(d="M3 10h18M7 15h4", fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round")
+    symbol#admin-icon-revenue(viewBox="0 0 24 24")
+      path(d="m3 17 6-6 4 3 8-8M15 6h6v6", fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round")
+    symbol#admin-icon-profile(viewBox="0 0 24 24")
+      rect(x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8")
+      circle(cx="12" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6")
+      path(d="M8 17a4 4 0 0 1 8 0", fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round")
+
+  aside#admin-sidebar(aria-label="Admin navigation")
+    div(class="flex min-h-[60px] items-center gap-3 border-b border-white/10 px-5 py-2 sm:px-6")
+      a(href="/admin/dashboard", class="flex min-w-0 items-center gap-4")
+        span(class="grid size-9 shrink-0 place-items-center rounded-md bg-[#00D06C] font-mono text-sm font-bold text-[#101115]", aria-hidden="true") SB
+        span
+          strong(class="block text-sm font-bold tracking-[0.09em]") SCISS BARBER
+          span(class="mt-1 block font-mono text-[10px] tracking-[0.18em] text-white/45") ADMIN STUDIO
+    div(class="px-3 pb-4 pt-4 sm:px-4")
+      p(class="mb-3 px-3 font-mono text-[10px] font-bold tracking-[0.18em] text-white/45") MANAGEMENT
+      nav(class="flex flex-col gap-1", aria-label="Management")
+        a(href="/admin/dashboard", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-overview")
+          span Dashboard
+        a(href="/admin/booking", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-booking")
+          span Booking
+        a(href="/admin/calendar", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-calendar")
+          span Calendar
+        a(href="/admin/users", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-customers")
+          span Customers
+        a(href="/admin/services", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-services")
+          span Services
+        a(href="/admin/payments", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-payments")
+          span Payments
+        a(href="/admin/revenue", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-revenue")
+          span Revenue
+        a(href="/admin/profile", data-admin-link, class="flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/5 hover:text-white")
+          svg(class="size-5 shrink-0", aria-hidden="true")
+            use(href="#admin-icon-profile")
+          span Profile
+    div(class="mt-auto border-t border-white/10 px-5 py-3 sm:px-6")
+      p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-white/45") LOCATION UNIT
+      p(class="mt-1 text-xs font-bold tracking-[0.05em]") KOZHIKODE STUDIO
+      p(class="mt-1 font-mono text-[9px] tracking-[0.08em] text-white/45") SCISS BARBER
+
+  button#admin-sidebar-toggle(type="button", aria-label="Close sidebar", aria-controls="admin-sidebar", aria-expanded="true")
+    span.sidebar-toggle-mark(aria-hidden="true") SB
+    svg(class="size-3 sidebar-toggle-arrow", viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.5", aria-hidden="true")
+      path(d="m9 18 6-6-6-6", stroke-linecap="round", stroke-linejoin="round")
+
+  section#admin-page-content(class="mx-auto flex w-full max-w-7xl flex-1 flex-col")
+    nav(class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4", aria-label="Admin actions")
+      span(class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-400") ADMIN MANAGEMENT
+      div(class="flex flex-wrap items-center gap-3 sm:gap-6")
+        a(href="/", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") VIEW SITE
+        form(action="/api/admin/logout", method="POST")
+          button(type="submit", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-red-600") LOG OUT
+    block page_header
+    block page_content
+
+  script.
+    const adminPageMain = document.querySelector('body > main');
+    const adminPageSidebar = document.getElementById('admin-sidebar');
+    const adminSidebarToggle = document.getElementById('admin-sidebar-toggle');
+
+    document.querySelectorAll('[data-admin-link]').forEach((link) => {
+      const linkPath = new URL(link.href).pathname;
+      if (window.location.pathname !== linkPath && !window.location.pathname.startsWith(`${linkPath}/`)) return;
+      link.classList.add('active', 'border-l-2', 'border-[#00D06C]', 'font-bold');
+      link.setAttribute('aria-current', 'page');
+    });
+
+    adminSidebarToggle.addEventListener('click', () => {
+      const isOpen = !adminPageMain.classList.contains('admin-sidebar-collapsed');
+      adminPageMain.classList.toggle('admin-sidebar-collapsed', isOpen);
+      adminPageSidebar.inert = isOpen;
+      adminSidebarToggle.setAttribute('aria-expanded', String(!isOpen));
+      adminSidebarToggle.setAttribute('aria-label', isOpen ? 'Open sidebar' : 'Close sidebar');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && adminSidebarToggle.getAttribute('aria-expanded') === 'true') {
+        adminSidebarToggle.click();
+        adminSidebarToggle.focus();
+      }
+    });
+
+  block auth_actions
