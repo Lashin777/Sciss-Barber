@@ -255,6 +255,12 @@ block page_content
       const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       document.getElementById('walkin-date').min = localToday;
     });
+    const bookingPageUrl = new URL(window.location.href);
+    if (bookingPageUrl.searchParams.get('walkin') === '1') {
+      bookingPageUrl.searchParams.delete('walkin');
+      window.history.replaceState({}, '', `${bookingPageUrl.pathname}${bookingPageUrl.search}${bookingPageUrl.hash}`);
+      document.getElementById('open-walkin-modal').click();
+    }
     walkinDismissButtons.forEach((button) => button.addEventListener('click', () => {
       if (!walkinSubmitting) walkinDialog.close();
     }));

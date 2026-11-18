@@ -1,11 +1,23 @@
 import User from '../models/userModel.js';
 import { adminLogin, blockUser, UnblockUser, getAllUser, getCustomerById } from '../services/adminService.js';
+import { getAdminDashboardData } from '../services/AdminDashboardService.js';
 import { setAdminSessionCookie, clearAdminSessionCookie } from '../utils/session.js';
 
 // Worked by Codex: keep admin page response logic in the admin controller.
 const renderAdminLoginPageController = (req, res) => res.render('admin/login', { title: 'Login' });
 const renderAdminUsersPageController = (req, res) => res.render('admin/users', { title: 'Admin Customer management' });
-const renderAdminDashboardController = (req, res) => res.render('admin/dashboard', { title: 'Admin Dashboard' })
+const renderAdminDashboardController = async (req, res) => {
+    try {
+        const dashboard = await getAdminDashboardData();
+        return res.render('admin/dashboard', { title: 'Admin Dashboard', dashboard, dashboardError: null });
+    } catch (error) {
+        return res.status(500).render('admin/dashboard', {
+            title: 'Admin Dashboard',
+            dashboard: { dailyGross: '—', totalBookings: '—', completedBookings: '—', cancelledBookings: '—', appointments: [] },
+            dashboardError: error.message || 'Could not load dashboard data.'
+        });
+    }
+};
 const renderCustomerDetailsPageController = async (req, res) => {
     try {
         const customer = await getCustomerById(req.params.id);
