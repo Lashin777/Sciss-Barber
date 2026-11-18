@@ -1,15 +1,8 @@
 import crypto from 'crypto';
 import Otp from '../models/otpmodel.js';
-import nodemailer from 'nodemailer';
+import { sendEmail } from './emailService.js';
 import User from '../models/userModel.js'
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
 
 const generateOtp = async (email, purpose) => {
     await Otp.deleteMany({ email, purpose, isUsed: false });
@@ -18,14 +11,11 @@ const generateOtp = async (email, purpose) => {
 
 
     await Otp.create({ email, otp, purpose, expiresAt });
-    await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+    await sendEmail({
         to: email,
-        subject: 'your Sciss baber OTP',
-        text: `Your OTP is ${otp}. it expires in 10 minutes`
-
+        subject: 'Your Sciss Barber OTP',
+        text: `Your OTP is ${otp}. It expires in 10 minutes`
     });
-
     return otp;
 }
 

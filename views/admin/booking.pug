@@ -1,0 +1,352 @@
+extends ./admin-layout.pug
+
+block page_header
+  style.
+    #booking-toast { position: fixed; inset: 1rem 1rem auto auto; z-index: 1000; margin: 0; width: min(24rem, calc(100vw - 2rem)); max-width: 24rem; padding: 1rem; border: 1px solid #fecaca; border-left: 4px solid #ef4444; background: #fff; color: #262626; box-shadow: 0 12px 32px rgb(0 0 0 / 18%); }
+    #booking-toast::backdrop { background: transparent; }
+    #booking-toast > div { display: flex; align-items: flex-start; gap: .75rem; }
+    @media (min-width: 640px) { #booking-toast { inset: 1.5rem 1.5rem auto auto; } }
+  header(class="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+    div
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / APPOINTMENTS
+      h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Bookings
+      p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Review customer appointments, services, and booking status.
+    div(class="flex flex-col gap-2 sm:flex-row")
+      button#open-walkin-modal(type="button", class="inline-flex h-11 shrink-0 items-center justify-center bg-[#00D06C] px-5 font-mono text-[10px] font-bold tracking-[0.1em] text-black transition hover:bg-[#00bd61]") ADD WALK-IN CUSTOMER
+      a(href="/admin/dashboard", class="inline-flex h-11 shrink-0 items-center justify-center border border-neutral-200 px-5 font-mono text-[10px] font-bold tracking-[0.1em] transition hover:border-neutral-950") ADMIN DASHBOARD
+
+block page_content
+  - const bookingRows = Array.isArray(bookings) ? bookings : []
+  - const totalPageCount = Number(totalPages) || 0
+  - const currentPage = Number(page) || 1
+  - const pageSize = Number(limit) || 10
+  - const stats = bookingStats || {}
+  - const firstVisibleBooking = totalBookings ? ((currentPage - 1) * pageSize) + 1 : 0
+  - const lastVisibleBooking = Math.min(currentPage * pageSize, totalBookings || 0)
+  - const paginationQuery = new URLSearchParams({ limit: String(pageSize) })
+  - if (status) paginationQuery.set('status', status)
+  - if (search) paginationQuery.set('search', search)
+
+  dialog#booking-toast(class="fixed right-4 top-4 z-[100] m-0 w-[calc(100%-2rem)] max-w-sm border border-red-200 border-l-4 border-l-red-500 bg-white p-4 text-sm text-neutral-800 shadow-xl backdrop:bg-transparent", aria-live="polite")
+    div(class="flex items-start gap-3")
+      span#booking-toast-icon(class="mt-0.5 font-mono text-xs font-bold text-red-600", aria-hidden="true") !
+      p#booking-toast-message(class="min-w-0 flex-1 leading-relaxed")
+      button#close-booking-toast(type="button", class="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center text-lg text-neutral-400 transition hover:text-neutral-950", aria-label="Dismiss notification") ×
+
+  dialog#walkin-dialog(class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-0 text-neutral-950 shadow-2xl backdrop:bg-black/60", aria-labelledby="walkin-title", aria-describedby="walkin-description")
+    div(class="border-b border-neutral-100 p-5 sm:p-7")
+      div(class="flex items-start justify-between gap-4")
+        div
+          p(class="mb-2 font-mono text-[9px] font-bold tracking-[0.2em] text-[#00a854]") ADMIN / WALK-IN
+          h2#walkin-title(class="text-2xl font-bold tracking-[-0.05em] sm:text-3xl") Add walk-in customer
+          p#walkin-description(class="mt-2 text-sm leading-relaxed text-neutral-500") Enter customer and appointment details.
+        button#close-walkin-modal(type="button", class="grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200 text-xl text-neutral-500 transition hover:border-neutral-950 hover:text-neutral-950", aria-label="Close walk-in form") ×
+    form#walkin-form(class="space-y-5 p-5 sm:p-7")
+      div(class="grid gap-4 sm:grid-cols-2")
+        div(class="sm:col-span-2")
+          label(for="walkin-customer-name", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") CUSTOMER NAME
+          input#walkin-customer-name(name="name", type="text", required, minlength="2", maxlength="100", autocomplete="name", class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950", placeholder="Enter customer name")
+        div
+          label(for="walkin-phone", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") PHONE NUMBER
+          input#walkin-phone(name="phone", type="tel", required, maxlength="20", autocomplete="tel", class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950", placeholder="Enter phone number")
+        div
+          label(for="walkin-service", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") SERVICE
+          select#walkin-service(name="serviceId", required, class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition focus:border-neutral-950")
+            option(value="") Loading services…
+          p#walkin-service-error(class="mt-2 hidden text-xs text-red-700", role="alert")
+        div(class="sm:col-span-2 rounded-lg bg-neutral-50 px-4 py-3")
+          p(class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-400") SERVICE PRICE
+          p#walkin-service-price(class="mt-1 text-sm font-bold text-neutral-900", aria-live="polite") Select a service to see its price.
+        div
+          label(for="walkin-date", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") DATE
+          input#walkin-date(name="date", type="date", required, class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition focus:border-neutral-950")
+        div
+          label(for="walkin-time", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") TIME
+          input#walkin-time(name="startTime", type="time", required, class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition focus:border-neutral-950")
+      p#walkin-feedback(class="hidden rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-600", role="status", aria-live="polite")
+      div(class="flex flex-col-reverse gap-3 border-t border-neutral-100 pt-5 sm:flex-row sm:justify-end")
+        button#cancel-walkin-modal(type="button", class="h-11 rounded-full border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-700 transition hover:border-neutral-950") CANCEL
+        button#walkin-submit(type="submit", class="h-11 rounded-full bg-[#00D06C] px-5 font-mono text-[9px] font-bold tracking-[0.1em] text-black transition hover:bg-[#00bd61] disabled:cursor-not-allowed disabled:opacity-50") ADD WALK-IN CUSTOMER
+
+  section(class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4", aria-label="Booking totals")
+    article(class="border border-neutral-200 bg-white p-4 sm:p-5")
+      p(class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") ALL BOOKINGS
+      p(class="mt-2 text-3xl font-bold tracking-[-0.05em] text-neutral-950")= allBookingsCount
+    article(class="border border-neutral-200 bg-white p-4 sm:p-5")
+      p(class="font-mono text-[9px] font-bold tracking-[0.14em] text-orange-700") PENDING
+      p(class="mt-2 text-3xl font-bold tracking-[-0.05em] text-orange-700")= stats.PENDING || 0
+    article(class="border border-neutral-200 bg-white p-4 sm:p-5")
+      p(class="font-mono text-[9px] font-bold tracking-[0.14em] text-green-700") CONFIRMED
+      p(class="mt-2 text-3xl font-bold tracking-[-0.05em] text-green-700")= (stats.CONFIRMED || 0) + (stats.ACCEPTED || 0)
+    article(class="border border-neutral-200 bg-white p-4 sm:p-5")
+      p(class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") COMPLETED
+      p(class="mt-2 text-3xl font-bold tracking-[-0.05em] text-neutral-950")= stats.COMPLETED || 0
+
+  section(class="flex min-h-0 flex-1 flex-col", aria-label="Booking directory")
+    div(class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between")
+      div
+        p(class="font-mono text-[10px] tracking-[0.2em] text-neutral-400") APPOINTMENT DIRECTORY
+        p(class="mt-1 text-xs text-neutral-500") Dates and times are shown in India Standard Time.
+      form(action="/admin/booking", method="GET", class="flex flex-col gap-2 sm:flex-row")
+        label(for="booking-search", class="sr-only") Search bookings
+        input#booking-search(type="search", name="search", autocomplete="off", value=search, placeholder="Search customer, service, token, or ID", class="h-10 w-full border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 sm:w-64")
+        label(for="booking-status-filter", class="sr-only") Filter by status
+        select#booking-status-filter(name="status", class="h-10 border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none focus:border-neutral-950")
+          option(value="", selected=!status) All statuses
+          option(value="PENDING", selected=status === 'PENDING') Pending
+          option(value="CONFIRMED", selected=status === 'CONFIRMED') Confirmed
+          option(value="ACCEPTED", selected=status === 'ACCEPTED') Accepted
+          option(value="COMPLETED", selected=status === 'COMPLETED') Completed
+          option(value="CANCELLED", selected=status === 'CANCELLED') Cancelled
+          option(value="DECLINED", selected=status === 'DECLINED') Declined
+        select#booking-page-size(name="limit", class="h-10 border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none focus:border-neutral-950", aria-label="Rows per page")
+          option(value="10", selected=pageSize === 10) 10 / page
+          option(value="25", selected=pageSize === 25) 25 / page
+          option(value="50", selected=pageSize === 50) 50 / page
+        button(type="submit", class="h-10 border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-neutral-950") FILTER
+
+    if bookingPageError
+      div(class="border border-red-200 bg-red-50 p-5 text-sm text-red-800", role="alert")= bookingPageError
+
+    div(class="min-h-0 flex-1 overflow-auto border border-neutral-200")
+      table(class="w-full min-w-[980px] border-collapse text-left")
+        thead(class="sticky top-0 z-10")
+          tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[10px] tracking-[0.15em] text-neutral-500")
+            th(scope="col", class="px-4 py-4 font-normal") APPOINTMENT
+            th(scope="col", class="px-4 py-4 font-normal") CUSTOMER
+            th(scope="col", class="px-4 py-4 font-normal") SERVICE / BARBER
+            th(scope="col", class="px-4 py-4 text-right font-normal") PRICE
+            th(scope="col", class="px-4 py-4 text-center font-normal") STATUS
+            th(scope="col", class="sticky right-0 z-20 bg-neutral-50 px-4 py-4 text-right font-normal") ACTION
+        tbody#booking-table-body
+          if bookingPageError
+            tr
+              td(colspan="6", class="px-5 py-12 text-center text-sm text-red-700") Bookings could not be loaded. Refresh the page to try again.
+          else if bookingRows.length
+            each booking in bookingRows
+              - const start = booking.appointmentStart ? new Date(booking.appointmentStart) : null
+              - const end = booking.appointmentEnd ? new Date(booking.appointmentEnd) : null
+              - const validStart = start && !Number.isNaN(start.getTime())
+              - const validEnd = end && !Number.isNaN(end.getTime())
+              - const bookingStatus = String(booking.status || 'UNKNOWN').toUpperCase()
+              - const statusClass = bookingStatus === 'PENDING' ? 'border-orange-200 bg-orange-50 text-orange-800' : ['CONFIRMED', 'ACCEPTED'].includes(bookingStatus) ? 'border-green-200 bg-green-50 text-green-800' : ['CANCELLED', 'DECLINED'].includes(bookingStatus) ? 'border-red-200 bg-red-50 text-red-700' : 'border-neutral-200 bg-neutral-100 text-neutral-600'
+              - const customerName = booking.userId && booking.userId.name ? booking.userId.name : 'Customer unavailable'
+              tr(data-booking-row, class="border-b border-neutral-100 last:border-0")
+                td(class="whitespace-nowrap px-4 py-4")
+                  if validStart
+                    strong(class="block text-sm font-bold")= start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
+                    span(class="mt-1 block text-xs text-neutral-500") #{start.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}#{validEnd ? ` – ${end.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}` : ''}
+                  else
+                    strong(class="text-sm font-bold") Date unavailable
+                  span(class="mt-1 block font-mono text-[9px] text-neutral-400")= booking.bookingToken || String(booking._id)
+                td(class="max-w-56 px-4 py-4")
+                  strong(class="block truncate text-sm font-semibold")= customerName
+                  span(class="mt-1 block truncate text-xs text-neutral-500")= booking.userId && booking.userId.email ? booking.userId.email : 'No email available'
+                td(class="max-w-56 px-4 py-4")
+                  strong(class="block truncate text-sm font-semibold")= booking.serviceId && booking.serviceId.name ? booking.serviceId.name : 'Service unavailable'
+                  span(class="mt-1 block truncate text-xs text-neutral-500")= booking.barberId && booking.barberId.name ? `with ${booking.barberId.name}` : 'Barber unavailable'
+                td(class="whitespace-nowrap px-4 py-4 text-right")
+                  strong(class="block text-sm font-semibold")= booking.servicePrice !== null && booking.servicePrice !== undefined ? `₹${Number(booking.servicePrice).toLocaleString('en-IN')}` : '—'
+                  span(class="mt-1 block text-xs text-neutral-500")= booking.serviceDuration ? `${booking.serviceDuration} min` : 'Duration unavailable'
+                td(class="px-4 py-4 text-center")
+                  span(class=`inline-flex whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] ${statusClass}`)= bookingStatus
+                td(class="sticky right-0 whitespace-nowrap bg-white px-4 py-4 text-right shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]")
+                  div(class="inline-flex items-center gap-2")
+                    if bookingStatus === 'CONFIRMED'
+                      button(type="button", data-complete-booking=booking._id, class="border border-neutral-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.08em] transition hover:border-neutral-950") MARK COMPLETE
+          else
+            tr#booking-empty-row
+              td(colspan="6", class="px-5 py-16 text-center")
+                p(class="font-mono text-[10px] font-bold tracking-[0.15em] text-neutral-400")= search || status ? 'NO MATCHING BOOKINGS' : 'NO BOOKINGS YET'
+                p(class="mt-2 text-sm text-neutral-500")= search || status ? 'Try changing the search text or status filter.' : 'Customer appointments will appear here once they are booked.'
+
+    if totalPageCount > 1
+      nav(class="flex flex-col gap-4 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between", aria-label="Booking list pagination")
+        p(class="font-mono text-[10px] tracking-[0.1em] text-neutral-500") Showing #{firstVisibleBooking}–#{lastVisibleBooking} of #{totalBookings} bookings
+        div(class="flex items-center justify-between gap-3 sm:justify-end")
+          span(class="whitespace-nowrap font-mono text-[10px] tracking-[0.1em] text-neutral-500", aria-live="polite") PAGE #{currentPage} OF #{totalPageCount}
+          div(class="flex items-center gap-2")
+            if currentPage > 1
+              a(href=`/admin/booking?page=${currentPage - 1}&${paginationQuery.toString()}`, rel="prev", class="inline-flex h-10 items-center border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-700 transition hover:border-neutral-950") ← PREVIOUS
+            else
+              span(class="inline-flex h-10 cursor-not-allowed items-center border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-400 opacity-40", aria-disabled="true") ← PREVIOUS
+            if currentPage < totalPageCount
+              a(href=`/admin/booking?page=${currentPage + 1}&${paginationQuery.toString()}`, rel="next", class="inline-flex h-10 items-center border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-700 transition hover:border-neutral-950") NEXT →
+            else
+              span(class="inline-flex h-10 cursor-not-allowed items-center border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-400 opacity-40", aria-disabled="true") NEXT →
+
+  script.
+    const bookingToast = document.getElementById('booking-toast');
+    const bookingToastMessage = document.getElementById('booking-toast-message');
+    const bookingToastIcon = document.getElementById('booking-toast-icon');
+    let bookingToastTimer;
+
+    function showBookingToast(message, type = 'error') {
+      const isSuccess = type === 'success';
+      bookingToastMessage.textContent = message;
+      bookingToastIcon.textContent = isSuccess ? '✓' : '!';
+      bookingToastIcon.classList.toggle('text-green-700', isSuccess);
+      bookingToastIcon.classList.toggle('text-red-600', !isSuccess);
+      bookingToast.style.borderColor = isSuccess ? '#bbf7d0' : '#fecaca';
+      bookingToast.style.borderLeftColor = isSuccess ? '#16a34a' : '#ef4444';
+      if (!bookingToast.open) bookingToast.show();
+      window.clearTimeout(bookingToastTimer);
+      bookingToastTimer = window.setTimeout(() => bookingToast.close(), 6000);
+    }
+
+    document.getElementById('close-booking-toast').addEventListener('click', () => bookingToast.close());
+
+    const walkinDialog = document.getElementById('walkin-dialog');
+    const walkinForm = document.getElementById('walkin-form');
+    const walkinServiceSelect = document.getElementById('walkin-service');
+    const walkinServicePrice = document.getElementById('walkin-service-price');
+    const walkinServiceError = document.getElementById('walkin-service-error');
+    const walkinFeedback = document.getElementById('walkin-feedback');
+    const walkinSubmitButton = document.getElementById('walkin-submit');
+    const walkinDismissButtons = [
+      document.getElementById('close-walkin-modal'),
+      document.getElementById('cancel-walkin-modal')
+    ];
+    let walkinSubmitting = false;
+    let walkinServicesLoaded = false;
+
+    const formatWalkinPrice = (value) => {
+      const amount = Number(value);
+      return Number.isFinite(amount)
+        ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount)
+        : 'Price unavailable';
+    };
+
+    const loadWalkinServices = async () => {
+      if (walkinServicesLoaded) return;
+      walkinServiceError.classList.add('hidden');
+      walkinServiceSelect.disabled = true;
+      try {
+        const response = await fetch('/api/services', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        const result = await response.json();
+        if (!response.ok || result?.success !== true || !Array.isArray(result.services)) {
+          throw new Error(result?.message || 'Could not load services. Please close and try again.');
+        }
+        walkinServiceSelect.replaceChildren(new Option('Choose a service', ''));
+        result.services.forEach((service) => {
+          if (!service?._id || !service?.name) return;
+          const option = new Option(service.name, service._id);
+          option.dataset.price = service.price ?? '';
+          walkinServiceSelect.add(option);
+        });
+        if (walkinServiceSelect.options.length === 1) {
+          walkinServiceError.textContent = 'No active services are available.';
+          walkinServiceError.classList.remove('hidden');
+        }
+        walkinServicesLoaded = true;
+      } catch (error) {
+        walkinServiceSelect.replaceChildren(new Option('Services unavailable', ''));
+        walkinServiceError.textContent = error.message || 'Could not load services.';
+        walkinServiceError.classList.remove('hidden');
+      } finally {
+        walkinServiceSelect.disabled = false;
+      }
+    };
+
+    document.getElementById('open-walkin-modal').addEventListener('click', () => {
+      walkinDialog.showModal();
+      loadWalkinServices();
+      const today = new Date();
+      const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      document.getElementById('walkin-date').min = localToday;
+    });
+    walkinDismissButtons.forEach((button) => button.addEventListener('click', () => {
+      if (!walkinSubmitting) walkinDialog.close();
+    }));
+    walkinDialog.addEventListener('click', (event) => {
+      if (event.target === walkinDialog && !walkinSubmitting) walkinDialog.close();
+    });
+    walkinDialog.addEventListener('cancel', (event) => {
+      if (walkinSubmitting) event.preventDefault();
+    });
+    walkinDialog.addEventListener('close', () => {
+      if (walkinSubmitting) return;
+      walkinForm.reset();
+      walkinServicePrice.textContent = 'Select a service to see its price.';
+      walkinFeedback.textContent = '';
+      walkinFeedback.classList.add('hidden');
+    });
+    walkinServiceSelect.addEventListener('change', () => {
+      const selectedOption = walkinServiceSelect.selectedOptions[0];
+      walkinServicePrice.textContent = selectedOption?.value
+        ? formatWalkinPrice(selectedOption.dataset.price)
+        : 'Select a service to see its price.';
+    });
+    walkinForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (walkinSubmitting || !walkinForm.reportValidity()) return;
+
+      const payload = {
+        name: document.getElementById('walkin-customer-name').value.trim(),
+        phone: document.getElementById('walkin-phone').value.trim(),
+        serviceId: walkinServiceSelect.value,
+        date: document.getElementById('walkin-date').value,
+        startTime: document.getElementById('walkin-time').value
+      };
+
+      walkinSubmitting = true;
+      walkinSubmitButton.disabled = true;
+      walkinSubmitButton.textContent = 'ADDING…';
+      walkinDismissButtons.forEach((button) => { button.disabled = true; });
+      walkinFeedback.classList.add('hidden');
+      walkinFeedback.classList.remove('border-red-200', 'bg-red-50', 'text-red-700');
+
+      fetch('/api/admin/bookings/walk-in', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(async (response) => {
+          const result = await response.json().catch(() => ({}));
+          if (response.status !== 201 || result?.success === false) {
+            throw new Error(result?.message || 'Could not add the walk-in booking. Please check the details and try again.');
+          }
+
+          walkinDialog.close();
+          showBookingToast(result.message || 'Walk-in booking added successfully.', 'success');
+          window.setTimeout(() => window.location.reload(), 1200);
+        })
+        .catch((error) => {
+          walkinFeedback.textContent = error.message || 'Could not add the walk-in booking. Please try again.';
+          walkinFeedback.classList.remove('hidden');
+          walkinFeedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+        })
+        .finally(() => {
+          walkinSubmitting = false;
+          walkinSubmitButton.disabled = false;
+          walkinSubmitButton.textContent = 'ADD WALK-IN CUSTOMER';
+          walkinDismissButtons.forEach((button) => { button.disabled = false; });
+        });
+    });
+
+    document.querySelectorAll('[data-complete-booking]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const bookingId = button.dataset.completeBooking;
+        button.disabled = true;
+        button.textContent = 'UPDATING…';
+        try {
+          const response = await fetch(`/api/admin/bookings/${encodeURIComponent(bookingId)}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'COMPLETED' })
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.message || 'Could not update the booking.');
+          window.location.reload();
+        } catch (error) {
+          showBookingToast(error.message || 'Could not update the booking. Please try again.');
+          button.disabled = false;
+          button.textContent = 'MARK COMPLETE';
+        }
+      });
+    });
+

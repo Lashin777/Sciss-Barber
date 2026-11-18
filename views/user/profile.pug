@@ -6,6 +6,7 @@ block content
       a(href="/", class="font-mono text-base font-bold tracking-[-0.08em] transition hover:text-[#00D06C]") SCISS’
       div(class="flex items-center gap-3")
         span(class="hidden font-mono text-[9px] tracking-[0.18em] text-neutral-400 sm:block") MEMBER SPACE
+        a(href="/services", class="inline-flex h-9 items-center rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") SERVICES
         button#profile-theme-toggle(type="button", aria-label="Switch theme", class="grid size-9 place-items-center rounded-full border border-neutral-200 text-base transition hover:border-[#00D06C] hover:bg-[#00D06C]") ◐
         //- Worked by Codex: provide direct customer logout from the profile header.
         form(action="/api/user/logout", method="POST")
@@ -79,14 +80,35 @@ block content
             button#copy-referral-code(type="button", class="font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") COPY
           p#referral-copy-feedback(class="mt-3 hidden text-xs font-medium text-green-700", role="status") Referral code copied.
 
-    article(class="mt-5 flex flex-col gap-5 rounded-[1.75rem] border border-neutral-200 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8")
-      div(class="flex items-start gap-4")
-        span(class="grid size-12 shrink-0 place-items-center rounded-full bg-[#00D06C] text-xl text-black", aria-hidden="true") ✳
+    section#profile-appointments(class="mt-5 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8", aria-labelledby="appointments-heading")
+      div(class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between")
         div
           p(class="mb-2 font-mono text-[9px] tracking-[0.24em] text-neutral-400") YOUR NEXT VISIT
-          h2(class="text-2xl font-bold tracking-[-0.04em]") No appointment booked yet
-          p(class="mt-2 text-sm text-neutral-500") Whenever you’re ready, choose a service and find a time that works.
-      a(href="/booking", class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.12em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") BOOK AN APPOINTMENT →
+          h2#appointments-heading(class="text-2xl font-bold tracking-[-0.04em]") Upcoming appointments
+        a(href="/bookings/history", class="w-fit font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-500 transition hover:text-[#00D06C]") VIEW BOOKING HISTORY →
+
+      p#appointments-loading(class="text-sm text-neutral-500", role="status", aria-live="polite") Loading your appointments…
+      div#appointments-error(class="hidden rounded-xl border border-neutral-200 bg-red-50 p-5", role="alert")
+        p#appointments-error-message(class="text-sm text-red-700") We couldn’t load your appointments.
+        button#appointments-retry(type="button", class="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-neutral-300 px-4 font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-700 transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") TRY AGAIN
+      div#appointments-list(class="hidden grid gap-3 sm:grid-cols-2")
+      article#appointments-empty(class="hidden flex-col gap-5 rounded-[1.5rem] border border-neutral-200 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6")
+        div(class="flex items-start gap-4")
+          span(class="grid size-12 shrink-0 place-items-center rounded-full bg-[#00D06C] text-xl text-black", aria-hidden="true") ✳
+          div
+            h3(class="text-xl font-bold tracking-[-0.04em]") No appointment booked yet
+            p(class="mt-2 text-sm text-neutral-500") Whenever you’re ready, choose a service and find a time that works.
+        a(href="/booking", class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.12em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") BOOK AN APPOINTMENT →
+
+      dialog#cancel-booking-dialog(class="m-auto w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl backdrop:bg-black/60", aria-labelledby="cancel-booking-title", aria-describedby="cancel-booking-message")
+        div(class="p-6 sm:p-8")
+          p(class="mb-3 font-mono text-[9px] font-bold tracking-[0.2em] text-red-600") BOOKING CANCELLATION
+          h2#cancel-booking-title(class="text-2xl font-bold tracking-[-0.05em]") Cancel this booking?
+          p#cancel-booking-message(class="mt-3 text-sm leading-relaxed text-neutral-500") Are you sure you want to cancel this appointment?
+          p#cancel-booking-error(class="mt-4 hidden rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700", role="alert")
+          div(class="mt-7 flex flex-col-reverse justify-end gap-3 sm:flex-row")
+            button#keep-booking(type="button", class="h-11 rounded-full border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-neutral-950") KEEP BOOKING
+            button#confirm-cancel-booking(type="button", class="h-11 rounded-full bg-red-600 px-5 font-mono text-[9px] font-bold tracking-[0.1em] text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50") CONFIRM CANCELLATION
 
     footer(class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4 font-mono text-[9px] tracking-[0.12em] text-neutral-400")
       span SCISS’ BARBER · KOZHIKODE
@@ -115,6 +137,227 @@ block content
         feedback.textContent = `Your referral code: ${code}`;
       }
       feedback.classList.remove('hidden');
+    });
+
+    const appointmentsLoading = document.getElementById('appointments-loading');
+    const appointmentsError = document.getElementById('appointments-error');
+    const appointmentsErrorMessage = document.getElementById('appointments-error-message');
+    const appointmentsList = document.getElementById('appointments-list');
+    const appointmentsEmpty = document.getElementById('appointments-empty');
+    const appointmentsRetry = document.getElementById('appointments-retry');
+    const cancelBookingDialog = document.getElementById('cancel-booking-dialog');
+    const cancelBookingMessage = document.getElementById('cancel-booking-message');
+    const cancelBookingError = document.getElementById('cancel-booking-error');
+    const keepBookingButton = document.getElementById('keep-booking');
+    const confirmCancelBookingButton = document.getElementById('confirm-cancel-booking');
+    let bookingToCancel = null;
+    let cancelButtonInProgress = null;
+
+    const formatAppointmentDate = (value) => {
+      if (!value) return 'Date unavailable';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Date unavailable';
+      return date.toLocaleDateString('en-IN', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+
+    const formatAppointmentTime = (value) => {
+      if (!value) return 'Time unavailable';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Time unavailable';
+      return date.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+
+    const setAppointmentsState = (state) => {
+      appointmentsLoading.classList.toggle('hidden', state !== 'loading');
+      appointmentsError.classList.toggle('hidden', state !== 'error');
+      appointmentsList.classList.toggle('hidden', state !== 'list');
+      appointmentsEmpty.classList.toggle('hidden', state !== 'empty');
+      appointmentsEmpty.classList.toggle('flex', state === 'empty');
+    };
+
+    const createAppointmentCard = (booking) => {
+      const card = document.createElement('article');
+      card.className = 'min-w-0 rounded-2xl border border-neutral-200 p-5 sm:p-6';
+
+      const header = document.createElement('div');
+      header.className = 'flex flex-wrap items-start justify-between gap-3';
+
+      const service = document.createElement('h3');
+      service.className = 'min-w-0 break-words text-xl font-bold tracking-[-0.04em]';
+      service.textContent = booking.serviceId?.name || 'Service unavailable';
+
+      const status = document.createElement('span');
+      status.className = 'shrink-0 rounded-full px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em]';
+      status.textContent = booking.status || 'STATUS UNAVAILABLE';
+      const statusKey = String(booking.status || '').toUpperCase();
+      const statusColors = {
+        PENDING: { backgroundColor: '#ffedd5', color: '#9a3412' },
+        CONFIRMED: { backgroundColor: '#dcfce7', color: '#166534' },
+        ACCEPTED: { backgroundColor: '#dcfce7', color: '#166534' },
+        COMPLETED: { backgroundColor: '#dcfce7', color: '#166534' },
+        CANCELLED: { backgroundColor: '#fee2e2', color: '#b91c1c' },
+        DECLINED: { backgroundColor: '#fee2e2', color: '#b91c1c' }
+      };
+      Object.assign(status.style, statusColors[statusKey] || { backgroundColor: '#f5f5f5', color: '#404040' });
+      header.append(service, status);
+
+      const details = document.createElement('div');
+      details.className = 'mt-4 grid min-w-0 gap-3 sm:grid-cols-2';
+
+      const addDetail = (label, value) => {
+        const item = document.createElement('div');
+        item.className = 'min-w-0';
+        const title = document.createElement('p');
+        title.className = 'font-mono text-[9px] tracking-[0.18em] text-neutral-400';
+        title.textContent = label;
+        const text = document.createElement('p');
+        text.className = 'mt-1 break-words text-sm font-medium';
+        text.textContent = value;
+        item.append(title, text);
+        details.appendChild(item);
+      };
+
+      addDetail('DATE', formatAppointmentDate(booking.appointmentDate || booking.appointmentStart));
+      addDetail('TIME', `${formatAppointmentTime(booking.appointmentStart)} — ${formatAppointmentTime(booking.appointmentEnd)}`);
+      addDetail('BARBER', booking.barberId?.name || 'To be confirmed');
+
+      const actions = document.createElement('div');
+      actions.className = 'mt-5 flex flex-wrap gap-2';
+
+      const link = document.createElement('a');
+      link.className = 'inline-flex h-10 items-center rounded-full border border-neutral-300 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.12em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black';
+      link.href = `/bookings/${encodeURIComponent(booking._id)}`;
+      link.textContent = 'VIEW DETAILS →';
+      actions.appendChild(link);
+
+      const appointmentStart = new Date(booking?.appointmentStart).getTime();
+      const bookingIsCancellable = !['COMPLETED', 'CANCELLED', 'DECLINED'].includes(statusKey);
+      if (bookingIsCancellable) {
+        const canCancel = Number.isFinite(appointmentStart)
+          && appointmentStart - Date.now() > 3 * 60 * 60 * 1000;
+        const cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = canCancel
+          ? 'inline-flex h-10 items-center rounded-full bg-red-600 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.12em] text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50'
+          : 'inline-flex h-10 cursor-not-allowed items-center rounded-full bg-neutral-200 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-500';
+        cancelButton.textContent = 'CANCEL BOOKING';
+        cancelButton.disabled = !canCancel;
+        if (!canCancel) {
+          cancelButton.title = 'Cancellation is available until 3 hours before the appointment.';
+          cancelButton.setAttribute('aria-label', 'Cancel booking unavailable within 3 hours of the appointment');
+        }
+
+        cancelButton.addEventListener('click', () => {
+          if (cancelButton.disabled || cancelBookingDialog.open) return;
+          bookingToCancel = booking;
+          cancelButtonInProgress = cancelButton;
+          cancelBookingError.classList.add('hidden');
+          cancelBookingError.textContent = '';
+          cancelBookingMessage.textContent = `Cancel ${booking.serviceId?.name || 'this service'} on ${formatAppointmentDate(booking.appointmentStart)} at ${formatAppointmentTime(booking.appointmentStart)}? This action can’t be undone.`;
+          cancelBookingDialog.showModal();
+        });
+
+        actions.appendChild(cancelButton);
+      }
+
+      card.append(header, details, actions);
+      return card;
+    };
+
+    const loadAppointments = async () => {
+      setAppointmentsState('loading');
+      appointmentsErrorMessage.textContent = 'We couldn’t load your appointments.';
+      appointmentsList.replaceChildren();
+
+      try {
+        const response = await fetch('/api/bookings/my-bookings', {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' }
+        });
+        const result = await response.json();
+        if (!response.ok || result?.success !== true || !Array.isArray(result.bookings)) {
+          throw new Error(result?.message || 'We couldn’t load your appointments. Please try again.');
+        }
+
+        const now = Date.now();
+        const upcomingBookings = result.bookings
+          .filter((booking) => {
+            const start = new Date(booking?.appointmentStart).getTime();
+            const status = String(booking?.status || '').toUpperCase();
+            return booking?._id && Number.isFinite(start) && start >= now && !['CANCELLED', 'COMPLETED', 'DECLINED'].includes(status);
+          })
+          .sort((a, b) => new Date(a.appointmentStart).getTime() - new Date(b.appointmentStart).getTime());
+
+        if (upcomingBookings.length === 0) {
+          setAppointmentsState('empty');
+          return;
+        }
+
+        upcomingBookings.forEach((booking) => appointmentsList.appendChild(createAppointmentCard(booking)));
+        setAppointmentsState('list');
+      } catch (error) {
+        appointmentsErrorMessage.textContent = error.message || 'We couldn’t load your appointments. Please try again.';
+        setAppointmentsState('error');
+      }
+    };
+
+    appointmentsRetry.addEventListener('click', loadAppointments);
+    loadAppointments();
+
+    keepBookingButton.addEventListener('click', () => cancelBookingDialog.close());
+    cancelBookingDialog.addEventListener('click', (event) => {
+      if (event.target === cancelBookingDialog) cancelBookingDialog.close();
+    });
+    cancelBookingDialog.addEventListener('close', () => {
+      bookingToCancel = null;
+      cancelButtonInProgress = null;
+    });
+    confirmCancelBookingButton.addEventListener('click', async () => {
+      if (!bookingToCancel || confirmCancelBookingButton.disabled) return;
+
+      confirmCancelBookingButton.disabled = true;
+      confirmCancelBookingButton.textContent = 'CANCELLING…';
+      if (cancelButtonInProgress) {
+        cancelButtonInProgress.disabled = true;
+        cancelButtonInProgress.textContent = 'CANCELLING…';
+      }
+      cancelBookingError.classList.add('hidden');
+      cancelBookingError.textContent = '';
+
+      try {
+        const response = await fetch(`/api/bookings/${encodeURIComponent(bookingToCancel._id)}/cancel`, {
+          method: 'PATCH',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' }
+        });
+        const result = await response.json();
+        if (!response.ok || result?.success !== true) {
+          throw new Error(result?.message || 'Could not cancel this booking. Please try again.');
+        }
+        cancelBookingDialog.close();
+        await loadAppointments();
+      } catch (error) {
+        cancelBookingError.textContent = error.message || 'Could not cancel this booking. Please try again.';
+        cancelBookingError.classList.remove('hidden');
+        if (cancelButtonInProgress) {
+          cancelButtonInProgress.disabled = false;
+          cancelButtonInProgress.textContent = 'CANCEL BOOKING';
+        }
+      } finally {
+        confirmCancelBookingButton.disabled = false;
+        confirmCancelBookingButton.textContent = 'CONFIRM CANCELLATION';
+      }
     });
 
     window.addEventListener('pageshow', function (event) {

@@ -5,6 +5,10 @@ import adminRoutes from './routes/adminRoute.js';
 import serviceRoutes from'./routes/serviceRoute.js';
 import BarberUnavailabilityRoutes from'./routes/BarberUnavailabilityRoute.js';
 import BookingRoutes from './routes/BookingRoute.js';
+import PaymentRoutes from'./routes/PaymentRoute.js';
+import notFoundMiddleware from './middlewares/notFoundMiddleware.js';
+import AdminBookingRoutes from './routes/AdminBookingRoute.js';
+import errorMiddleware from './middlewares/errorMiddleware.js';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
@@ -30,6 +34,11 @@ app.use(adminRoutes);
 app.use(serviceRoutes);
 app.use(BarberUnavailabilityRoutes);
 app.use(BookingRoutes);
+app.use(AdminBookingRoutes);
+app.use(PaymentRoutes);
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 
 export default app

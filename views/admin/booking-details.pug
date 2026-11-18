@@ -1,0 +1,185 @@
+extends ../layouts/minimal.pug
+
+block content
+  -
+    const displayValue = value => value === undefined || value === null || value === '' ? 'Not available' : value;
+    const formatDate = value => {
+      if (!value) return 'Not available';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Not available';
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+    const formatTime = value => {
+      if (!value) return 'Not available';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Not available';
+      return date.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+    const formatDateTime = value => {
+      if (!value) return 'Not available';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Not available';
+      return date.toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+    const formatAmount = value => {
+      if (value === undefined || value === null || value === '') return 'Not available';
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return 'Not available';
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 2
+      }).format(amount);
+    };
+    const bookingStatus = typeof booking?.status === 'string' ? booking.status.toUpperCase() : '';
+    const bookingStatusStyles = {
+      PENDING: 'bg-orange-50 text-orange-800',
+      CONFIRMED: 'bg-green-50 text-green-800',
+      ACCEPTED: 'bg-green-50 text-green-800',
+      COMPLETED: 'bg-neutral-100 text-neutral-700',
+      CANCELLED: 'bg-red-50 text-red-700',
+      DECLINED: 'bg-red-50 text-red-700'
+    };
+    const bookingStatusClass = bookingStatusStyles[bookingStatus] || 'bg-neutral-100 text-neutral-600';
+    const payment = booking?.payment || null;
+    const paymentStatus = typeof payment?.status === 'string' ? payment.status.toUpperCase() : '';
+    const paymentStatusStyles = {
+      PENDING: 'bg-orange-50 text-orange-800',
+      SUCCESS: 'bg-green-50 text-green-800',
+      FAILED: 'bg-red-50 text-red-700'
+    };
+    const paymentStatusClass = paymentStatusStyles[paymentStatus] || 'bg-neutral-100 text-neutral-600';
+    const appointmentDate = booking?.appointmentDate || booking?.appointmentStart;
+
+  section(class="mx-auto flex w-full max-w-7xl flex-1 flex-col py-8 sm:py-12")
+    nav(class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4", aria-label="Admin navigation")
+      a(href="/admin/booking", class="flex items-center gap-3 font-mono text-sm font-bold tracking-[0.12em] transition hover:text-[#00D06C]")
+        span(class="grid size-9 place-items-center rounded-full bg-[#00D06C] text-base text-black", aria-hidden="true") S
+        | SCISS’ ADMIN
+      div(class="flex flex-wrap items-center gap-3 sm:gap-6")
+        a(href="/admin/booking", aria-current="page", class="rounded-full bg-neutral-950 px-4 py-2.5 font-mono text-[10px] font-bold tracking-[0.1em] text-white transition hover:bg-[#00D06C] hover:text-black") ← BACK TO BOOKINGS
+        a(href="/", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-[#00D06C]") VIEW SITE
+        form(action="/api/admin/logout", method="POST")
+          button(type="submit", class="font-mono text-[10px] font-bold tracking-[0.1em] text-neutral-500 transition hover:text-red-600") LOG OUT
+
+    main(class="min-w-0 flex-1")
+      header(class="mb-8 border-b border-neutral-200 pb-6 sm:mb-10")
+        p(class="mb-3 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / BOOKINGS
+        h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") BOOKING DETAILS
+        p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Review the appointment, customer, service, and payment record.
+
+      if booking
+        section(class="space-y-5", aria-label="Booking details")
+          article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+            div(class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between")
+              div(class="min-w-0")
+                p(class="mb-2 font-mono text-[9px] font-bold tracking-[0.18em] text-neutral-400") BOOKING TOKEN
+                p(class="break-all font-mono text-xl font-bold tracking-[0.02em] sm:text-2xl")= displayValue(booking.bookingToken)
+              span(class=`w-fit rounded-full px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em] ${bookingStatusClass}`)= displayValue(bookingStatus || booking.status)
+
+          div(class="grid gap-5 lg:grid-cols-2")
+            article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+              div(class="mb-6 border-b border-neutral-100 pb-4")
+                p(class="mb-2 font-mono text-[9px] tracking-[0.2em] text-neutral-400") APPOINTMENT
+                h2(class="text-xl font-bold tracking-tight") Booking overview
+              dl(class="grid gap-5 sm:grid-cols-2")
+                div(class="min-w-0")
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") DATE
+                  dd(class="text-sm text-neutral-700")= formatDate(appointmentDate)
+                div
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") CREATED
+                  dd(class="text-sm text-neutral-700")= formatDateTime(booking.createdAt)
+                div
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") START TIME
+                  dd(class="text-sm text-neutral-700")= formatTime(booking.appointmentStart)
+                div
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") END TIME
+                  dd(class="text-sm text-neutral-700")= formatTime(booking.appointmentEnd)
+
+            article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+              div(class="mb-6 border-b border-neutral-100 pb-4")
+                p(class="mb-2 font-mono text-[9px] tracking-[0.2em] text-neutral-400") CUSTOMER
+                h2(class="text-xl font-bold tracking-tight") Customer information
+              dl(class="grid gap-5")
+                div(class="min-w-0")
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") NAME
+                  dd(class="break-words text-sm text-neutral-700")= displayValue(booking.userId?.name)
+                div(class="min-w-0")
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") EMAIL
+                  dd(class="break-all text-sm text-neutral-700")= displayValue(booking.userId?.email)
+                div
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") PHONE
+                  dd(class="text-sm text-neutral-700")= displayValue(booking.userId?.phone)
+
+            article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+              div(class="mb-6 border-b border-neutral-100 pb-4")
+                p(class="mb-2 font-mono text-[9px] tracking-[0.2em] text-neutral-400") SERVICE
+                h2(class="text-xl font-bold tracking-tight") Service information
+              dl(class="grid gap-5 sm:grid-cols-2")
+                div(class="min-w-0 sm:col-span-2")
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") SERVICE NAME
+                  dd(class="break-words text-sm font-semibold text-neutral-900")= displayValue(booking.serviceId?.name)
+                div
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") SERVICE PRICE
+                  dd(class="text-sm text-neutral-700")= formatAmount(booking.servicePrice)
+                div
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") DURATION
+                  dd(class="text-sm text-neutral-700")= booking.serviceDuration === null || booking.serviceDuration === undefined || booking.serviceDuration === '' ? 'Not available' : `${booking.serviceDuration} minutes`
+                div(class="sm:col-span-2")
+                  dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") BARBER
+                  dd(class="text-sm text-neutral-700")= displayValue(booking.barberId?.name)
+
+            article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
+              div(class="mb-6 border-b border-neutral-100 pb-4")
+                p(class="mb-2 font-mono text-[9px] tracking-[0.2em] text-neutral-400") PAYMENT
+                h2(class="text-xl font-bold tracking-tight") Payment information
+              if payment
+                div(class="mb-6 flex flex-wrap items-center justify-between gap-3")
+                  p(class="text-sm text-neutral-500") Payment status
+                  span(class=`rounded-full px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em] ${paymentStatusClass}`)= displayValue(paymentStatus || payment.status)
+                dl(class="grid gap-5 sm:grid-cols-2")
+                  div
+                    dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") ADVANCE AMOUNT
+                    dd(class="text-sm text-neutral-700")= formatAmount(booking.advanceAmount)
+                  div
+                    dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") PAYMENT AMOUNT
+                    dd(class="text-sm font-semibold text-neutral-900")= formatAmount(payment.amount)
+                  div
+                    dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") CURRENCY
+                    dd(class="text-sm text-neutral-700")= displayValue(payment.currency)
+                  div(class="min-w-0")
+                    dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") PAYMENT CREATED
+                    dd(class="text-sm text-neutral-700")= formatDateTime(payment.createdAt)
+                  div(class="min-w-0 sm:col-span-2")
+                    dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") RAZORPAY ORDER ID
+                    dd(class="break-all font-mono text-xs leading-relaxed text-neutral-700")= displayValue(payment.razorpayOrderId)
+                  div(class="min-w-0 sm:col-span-2")
+                    dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") RAZORPAY PAYMENT ID
+                    dd(class="break-all font-mono text-xs leading-relaxed text-neutral-700")= displayValue(payment.razorpayPaymentId)
+              else
+                div(class="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-5 py-8 text-center")
+                  p(class="font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-400") NO PAYMENT RECORD
+                  p(class="mt-2 text-sm text-neutral-600") No payment record found.
+      else
+        section(class="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-14 text-center sm:px-10", aria-label="Booking unavailable")
+          span(class="mx-auto grid size-14 place-items-center rounded-full bg-white font-mono text-xl text-neutral-400", aria-hidden="true") —
+          h2(class="mt-5 text-xl font-bold tracking-tight") Booking unavailable
+          p(class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-neutral-500") Booking information could not be found.

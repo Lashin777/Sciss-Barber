@@ -3,6 +3,10 @@ import Booking from "../models/bookingModel.js";
 import Service from "../models/Service.js";
 import ShopRules from "../models/ShopRules.js";
 import Barber from "../models/barberModel.js";
+import User from "../models/userModel.js";
+import Counter from "../models/counterModel.js";
+import WalkInCustomer from "../models/walkInCustomerModel.js";
+import { sendBookingNotification } from "./emailService.js";
 import BarberUnavailability from "../models/barberUnavailabilityModel.js";
 
 
@@ -225,6 +229,7 @@ const getAvailableSlotsService = async (serviceId, date, session=null) => {
 };
 
 
+
 const getCustomerAvailableSlotsService = async (serviceId, date) => {
     const slots = await getAvailableSlotsService(serviceId, date);
 
@@ -296,7 +301,7 @@ const createBookingService = async ({ userId, serviceId, date, startTime }) => {
                 throw new Error("Invalid service price");
             }
 
-            if (!Number.isFinite(advanceAmount) || advanceAmount < 0 || advanceAmount>servicePrice) {
+            if (!Number.isFinite(advanceAmount) || advanceAmount <=0 || advanceAmount>servicePrice) {
                 throw new Error("Invalid advance payment configuration");
             }
 
@@ -339,6 +344,12 @@ const createBookingService = async ({ userId, serviceId, date, startTime }) => {
 
             const selectedBarber = matchingSlots[0];
 
+            const counter = await Counter.findByIdAndUpdate(
+                "bookingToken",
+                { $inc: { sequence: 1 } },
+                { new: true, upsert: true, session }
+            );
+
             // 11. Create booking
             const createdBookings = await Booking.create([{
                 userId,
@@ -350,18 +361,139 @@ const createBookingService = async ({ userId, serviceId, date, startTime }) => {
                 advanceAmount,
                 status: "PENDING",
                 appointmentStart: selectedBarber.startTime,
-                appointmentEnd: selectedBarber.endTime
+                appointmentEnd: selectedBarber.endTime,
+                bookingToken: `SB-${String(counter.sequence).padStart(4, "0")}`,
             }], { session });
 
             booking = createdBookings[0];
         });
+        try {
+            const bookingDetails = await Booking.findById(booking._id)
+                .populate("userId", "name email")
+                .populate("serviceId", "name")
+                .populate("barberId", "name");
+
+        if (
+            !bookingDetails ||
+            !bookingDetails.userId ||
+            !bookingDetails.serviceId ||
+            !bookingDetails.barberId
+        ) {
+            throw new Error("Booking notification details are incomplete");
+        }
+
+        const admin = await User.findOne({ role: "ADMIN" }).select("email");
+
+        if (!admin?.email) {
+            throw new Error("Admin email not found");
+        }
+
+        await sendBookingNotification({
+            adminEmail: admin.email,
+            customerName: bookingDetails.userId.name,
+            serviceName: bookingDetails.serviceId.name,
+            barberName: bookingDetails.barberId.name,
+            appointmentStart: bookingDetails.appointmentStart,
+            appointmentEnd: bookingDetails.appointmentEnd,
+            advanceAmount: bookingDetails.advanceAmount,
+            status: bookingDetails.status
+        });
+
+    } catch (emailError) {
+        console.error("Booking notification failed:", emailError.message);
+    }
 
         return booking;
+
 
     } finally {
         // 12. Always close the session
         await session.endSession();
     }
+};
+const createWalkInBookingService = async ({name,phone,serviceId,date,startTime}) => {
+    // 1. Validate required inputs
+    if (!name || !phone || !serviceId || !date || !startTime) {
+        throw new Error("Missing required booking details");
+    }
+
+    // 2. Validate and normalize name
+    const normalizedName = name.trim();
+
+    if (!/^[a-zA-Z\s]+$/.test(normalizedName)) {
+        throw new Error("Name should contain only letters and spaces");
+    }
+
+    // 3. Validate and normalize phone
+    const normalizedPhone = phone.trim();
+
+    if (!/^[6-9]\d{9}$/.test(normalizedPhone)) {
+        throw new Error("Enter a valid 10-digit phone number");
+    }
+
+    // 4. Find or create walk-in customer
+    const walkInCustomer = await WalkInCustomer.findOneAndUpdate(
+        { phone: normalizedPhone },
+        { name: normalizedName, phone: normalizedPhone },
+        { new: true, upsert: true, runValidators: true }
+    );
+
+    // 5. Find active service
+    const service = await Service.findOne({
+        _id: serviceId,
+        isActive: true
+    });
+
+    if (!service) {
+        throw new Error("Service not found or inactive");
+    }
+
+    // 6. Validate service duration
+    if (!Number.isFinite(service.duration) || service.duration <= 0) {
+        throw new Error("Invalid service duration");
+    }
+
+    // 7. Validate appointment date
+    const appointmentDate = new Date(date);
+
+    if (Number.isNaN(appointmentDate.getTime())) {
+        throw new Error("Invalid appointment date");
+    }
+
+    // 8. Calculate appointment start and end
+    const appointmentStart = new Date(`${date}T${startTime}:00`);
+
+    if (Number.isNaN(appointmentStart.getTime())) {
+        throw new Error("Invalid appointment start time");
+    }
+
+    const appointmentEnd = new Date(
+        appointmentStart.getTime() + service.duration * 60000
+    );
+
+    // 9. Generate booking token
+    const counter = await Counter.findByIdAndUpdate(
+        "bookingToken",
+        { $inc: { sequence: 1 } },
+        { new: true, upsert: true }
+    );
+
+    // 10. Create completed booking
+    const booking = await Booking.create({
+        bookingType: "WALK_IN",
+        walkInCustomerId: walkInCustomer._id,
+        serviceId: service._id,
+        appointmentDate,
+        servicePrice: service.price,
+        serviceDuration: service.duration,
+        advanceAmount: 0,
+        status: "COMPLETED",
+        appointmentStart,
+        appointmentEnd,
+        bookingToken: `SB-${String(counter.sequence).padStart(4, "0")}`
+    });
+
+    return booking;
 };
 
 const getMyBookingsService = async (userId) => {
@@ -376,13 +508,62 @@ const getBookingDetailsService = async(bookingId,userId)=>{
         _id:bookingId,
         userId
     })
-
+    .select('bookingToken userId serviceId barberId appointmentDate servicePrice serviceDuration advanceAmount status appointmentStart appointmentEnd')
     .populate('serviceId')
     .populate('barberId')
-}
+};
+
+
+
+const getBookingHistoryService = async(userId)=>{
+    const now = new Date();
+    return await Booking.find({
+        userId:userId,
+        $or: [
+            { appointmentStart: { $lt: now } },
+            { status: 'COMPLETED' }
+        ]
+    }).sort({appointmentStart:-1})
+
+    .populate('serviceId', 'name')
+    .populate('barberId', 'name');
+};
+
+const cancelBookingService = async (bookingId, userId) => {
+    const booking = await Booking.findOne({
+        _id:bookingId,
+        userId:userId
+    });
+
+    if(!booking){
+        const error = new Error("Booking Not Found");
+            error.statusCode = 404;
+            throw error;
+    }
+    if (["CANCELLED", "COMPLETED"].includes(booking.status)) {
+        throw new Error("This booking cannot be cancelled");
+    }
+
+    const currentTime = new Date();
+    const appointmentTime = new Date(booking.appointmentStart);
+    const timeDifference = appointmentTime - currentTime;
+
+    if(timeDifference<=3*60*60*1000){
+        throw new Error("Cancelation is not allowed  within 3 hours of  the appoimnet ")
+    }
+
+    booking.status = "CANCELLED";
+    await booking.save();
+     return booking
+};
+
+
 export {getAvailableSlotsService,
         getCustomerAvailableSlotsService,
         createBookingService,
         getMyBookingsService,
-        getBookingDetailsService
+        getBookingDetailsService,
+        getBookingHistoryService,
+        cancelBookingService,
+        createWalkInBookingService
         };

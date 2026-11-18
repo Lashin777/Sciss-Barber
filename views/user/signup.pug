@@ -3,7 +3,7 @@ extends ../layouts/minimal
 block content
   - const label = "block font-mono text-[11px] tracking-[0.2em] text-neutral-500"
   - const hint = "text-xs text-neutral-400"
-  - const input = "w-full border-0 border-b border-neutral-300 dark:border-neutral-700 bg-transparent pb-2 pt-2.5 text-base font-medium text-neutral-950 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none focus:border-neutral-950 dark:focus:border-white"
+  - const input = "signup-input w-full border-0 border-b border-neutral-300 bg-transparent pb-2 pt-2.5 text-base font-medium outline-none focus:border-neutral-950"
   section(class="mx-auto my-auto w-full max-w-sm py-4")
     p(class="mb-3 font-mono text-[11px] tracking-[0.3em] text-neutral-400") NEW MEMBER
     h1(class="mb-6 text-[clamp(2.25rem,6vw,3rem)] font-bold leading-[0.95] tracking-[-0.05em] transition-colors hover:text-green-600")
@@ -242,51 +242,4 @@ block auth_actions
         resendButton.textContent = 'RESEND CODE';
         resendButton.disabled = false;
       }
-    });
-
-    // Worked by Codex: Restore the signup typing animation.
-   signupForm.querySelectorAll('input:not([type="checkbox"])').forEach((field) => {
-      // Keep password visibility smooth without the typing overlay.
-     if (field.id === 'password') return;
-
-     const wrapper = document.createElement('div');
-    wrapper.className = 'signup-type-wrap';
-    field.parentNode.insertBefore(wrapper, field);
-    wrapper.appendChild(field);
-
-      const echo = document.createElement('span');
-      echo.className = 'signup-typing-echo';
-      echo.setAttribute('aria-hidden', 'true');
-      wrapper.appendChild(echo);
-
-      const updateEcho = () => {
-        const isTyping =
-          document.activeElement === field && field.value.length > 0;
-
-          echo.replaceChildren();
-         echo.classList.toggle('visible', isTyping);
-        field.classList.toggle('typing-overlay-active', isTyping);
-        echo.style.transform = `translateX(${-field.scrollLeft}px)`;
-
-        if (!isTyping) return;
-
-    const value = field.value;
-
-    Array.from(value).forEach((character, index) => {
-      const letter = document.createElement('span');
-      letter.textContent = character;
-
-      if (index === value.length - 1) {
-        letter.className = 'latest-char';
-      }
-
-        echo.appendChild(letter);
-      });
-    };
-
-      field.addEventListener('input', updateEcho);
-      field.addEventListener('focus', updateEcho);
-      field.addEventListener('blur', updateEcho);
-      field.addEventListener('scroll', updateEcho);
-      field.addEventListener('change', updateEcho);
     });

@@ -12,43 +12,32 @@
     margin: 0 auto 1rem;
 }
 
-.signup-type-wrap {
-    position: relative;
-    width: 100%;
-}
-
-.signup-typing-echo {
-    position: absolute;
-    inset: 0;
-    display: none;
-    align-items: center;
-    overflow: hidden;
+.signup-input {
     color: #171717;
-    font: inherit;
-    white-space: pre;
-    pointer-events: none;
+    border-color: #d4d4d4;
+    -webkit-text-fill-color: #171717 !important;
 }
 
-.signup-typing-echo.visible {
-    display: flex;
+.signup-input::placeholder {
+    color: #a3a3a3;
 }
 
-.signup-typing-echo span {
-    flex: none;
+.signup-input:focus {
+    border-color: #171717;
 }
 
-.signup-typing-echo .latest-char {
-    color: #16a34a;
+html.theme-dark .signup-input {
+    color: #ffffff !important;
+    border-color: #404040;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
-.signup-type-wrap input.typing-overlay-active {
-    color: transparent !important;
-    -webkit-text-fill-color: transparent !important;
+html.theme-dark .signup-input::placeholder {
+    color: #737373;
 }
 
-.signup-type-wrap input.typing-overlay-active::selection {
-    color: transparent;
-    background: transparent;
+html.theme-dark .signup-input:focus {
+    border-color: #ffffff;
 }
 
 .liquid-text {
@@ -383,6 +372,14 @@ html.theme-dark .home-logo-mark[data-color-step="3"] {
     color: #111;
 }
 
+.booking-date-chip.is-closed,
+.booking-date-chip.is-closed:hover,
+.booking-date-chip.is-closed.is-selected {
+    border-color: #f87171;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
 html.theme-dark .booking-category-chip,
 html.theme-dark .booking-time-chip,
 html.theme-dark .booking-service-card,
@@ -409,6 +406,14 @@ html.theme-dark .booking-date-chip.is-selected {
     border-color: #00D06C;
     background-color: #00D06C;
     color: #111;
+}
+
+html.theme-dark .booking-date-chip.is-closed,
+html.theme-dark .booking-date-chip.is-closed:hover,
+html.theme-dark .booking-date-chip.is-closed.is-selected {
+    border-color: #f87171;
+    background-color: #3b1717;
+    color: #fca5a5;
 }
 
 @keyframes booking-page-tear-top {

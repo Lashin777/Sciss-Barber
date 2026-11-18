@@ -54,9 +54,7 @@ block content
           legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 02 / CHOOSE A DATE & TIME
           p(class="mb-3 text-xs text-neutral-500") Choose a day
           div#date-choices(class="grid grid-cols-3 gap-2 sm:grid-cols-7")
-          label(class="mt-3 flex flex-col gap-2 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between")
-            span Or pick another date
-            input#booking-date(type="date", name="date", required, class="w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm text-neutral-950 outline-none focus:border-[#00D06C] sm:w-auto")
+          input#booking-date(type="hidden", name="date")
           div(class="mt-6")
             p(class="mb-3 text-xs text-neutral-500") Choose a preferred time
             div#time-choices(class="grid grid-cols-2 gap-2 sm:grid-cols-3", aria-live="polite")
@@ -103,6 +101,9 @@ block content
         div(class="flex items-center justify-between gap-4")
           span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") PRICE
           span#confirm-price(class="text-right font-bold", style="color: #00D06C;") —
+        div#confirm-advance-container(class="hidden items-center justify-between gap-4 border-t border-white/10 pt-3")
+          span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") ADVANCE DUE NOW
+          span#confirm-advance(class="text-right font-mono text-xs font-bold", style="color: #00D06C;") —
       p#confirm-status(class="mb-5 hidden text-sm leading-relaxed text-red-400", role="status", aria-live="polite")
       div(class="flex gap-3")
         button#confirm-cancel(type="button", class="flex-1 cursor-pointer rounded-full border border-white/20 bg-transparent py-3 font-mono text-xs tracking-widest text-white transition hover:bg-white/10") GO BACK
@@ -121,7 +122,10 @@ block content
       opacity: 1;
     }
 
+  script(src="https://checkout.razorpay.com/v1/checkout.js")
   script#booking-service-data(type="application/json")!= JSON.stringify(bookingServiceGroups).replace(/</g, '\\u003c')
+  script#booking-shop-data(type="application/json")!= JSON.stringify({ weeklyOff: weeklyOff || '' }).replace(/</g, '\\u003c')
+  script#booking-user-data(type="application/json")!= JSON.stringify(user ? { name: user.name || '', email: user.email || '', phone: user.phone || '' } : null).replace(/</g, '\\u003c')
 
   script.
     const bookingForm = document.getElementById('booking-form');
@@ -130,6 +134,8 @@ block content
     const bookingTime = document.getElementById('booking-time');
     const bookingEndTime = document.getElementById('booking-end-time');
     const serviceGroups = JSON.parse(document.getElementById('booking-service-data').textContent);
+    const shopRules = JSON.parse(document.getElementById('booking-shop-data').textContent);
+    const userData = JSON.parse(document.getElementById('booking-user-data')?.textContent || 'null');
     const serviceCategories = document.getElementById('service-categories');
     const serviceOptions = document.getElementById('service-options');
     const dateChoices = document.getElementById('date-choices');
@@ -137,9 +143,53 @@ block content
     const summaryService = document.getElementById('summary-service');
     const summaryPrice = document.getElementById('summary-price');
     const summaryDateTime = document.getElementById('summary-datetime');
+    const confirmAdvanceContainer = document.getElementById('confirm-advance-container');
+    const confirmAdvance = document.getElementById('confirm-advance');
+    const confirmStatus = document.getElementById('confirm-status');
+    const confirmCancel = document.getElementById('confirm-cancel');
+    const confirmSubmit = document.getElementById('confirm-submit');
     const today = new Date();
-    const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-    bookingDate.min = localToday;
+    const weeklyOffDay = String(shopRules.weeklyOff || '').toUpperCase();
+
+    function isShopClosed(date) {
+      return Boolean(weeklyOffDay) && date.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase() === weeklyOffDay;
+    }
+
+    let activeBooking = null;
+    let activeOrder = null;
+    let pendingVerification = null;
+    let currentSelectionKey = '';
+
+    function getSelectionKey() {
+      return `${bookingService.value}|${bookingDate.value}|${bookingTime.value}`;
+    }
+
+    function resetBookingState() {
+      activeBooking = null;
+      activeOrder = null;
+      pendingVerification = null;
+      currentSelectionKey = '';
+      if (confirmAdvanceContainer) {
+        confirmAdvanceContainer.classList.add('hidden');
+        confirmAdvanceContainer.classList.remove('flex');
+      }
+      if (confirmAdvance) {
+        confirmAdvance.textContent = '—';
+      }
+      if (confirmStatus) {
+        confirmStatus.textContent = '';
+        confirmStatus.classList.add('hidden');
+        confirmStatus.classList.remove('text-[#00D06C]', 'text-neutral-300', 'text-neutral-400');
+        confirmStatus.classList.add('text-red-400');
+      }
+      if (confirmSubmit) {
+        confirmSubmit.disabled = false;
+        confirmSubmit.textContent = 'CONFIRM BOOKING';
+      }
+      if (confirmCancel) {
+        confirmCancel.textContent = 'GO BACK';
+      }
+    }
 
     function formatServicePrice(price) {
       if (price === null || price === undefined || price === '') return 'Price unavailable';
@@ -188,6 +238,7 @@ block content
       bookingEndTime.dataset.label = '';
       updateBookingSummary();
       loadAvailableTimeSlots();
+      resetBookingState();
 
       if (!group || !Array.isArray(group.items) || group.items.length === 0) {
         const prompt = document.createElement('p');
@@ -349,6 +400,7 @@ block content
       bookingEndTime.dataset.label = '';
       updateBookingSummary();
       loadAvailableTimeSlots();
+      resetBookingState();
     }
 
     for (let offset = 0; offset < 7; offset += 1) {
@@ -358,6 +410,11 @@ block content
       dayButton.type = 'button';
       dayButton.className = 'booking-date-chip';
       dayButton.dataset.date = isoDate;
+      if (isShopClosed(date)) {
+        dayButton.classList.add('is-closed');
+        dayButton.title = 'Shop closed';
+        dayButton.setAttribute('aria-label', `${date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}, shop closed`);
+      }
       const dayName = document.createElement('span');
       dayName.className = 'font-mono text-[9px] tracking-[0.08em]';
       dayName.textContent = offset === 0 ? 'TODAY' : date.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase();
@@ -372,18 +429,6 @@ block content
       dateChoices.appendChild(dayButton);
     }
 
-    bookingDate.addEventListener('change', () => {
-      dateChoices.querySelectorAll('.booking-date-chip').forEach((button) => {
-        button.classList.toggle('is-selected', button.dataset.date === bookingDate.value);
-      });
-      bookingTime.value = '';
-      bookingTime.dataset.label = '';
-      bookingEndTime.value = '';
-      bookingEndTime.dataset.label = '';
-      updateBookingSummary();
-      loadAvailableTimeSlots();
-    });
-
     timeChoices.addEventListener('click', (event) => {
       const timeButton = event.target.closest('[data-time-slot]');
       if (!timeButton) return;
@@ -394,6 +439,7 @@ block content
       bookingEndTime.value = timeButton.dataset.timeEnd;
       bookingEndTime.dataset.label = timeButton.dataset.timeEndLabel || bookingEndTime.value;
       updateBookingSummary();
+      resetBookingState();
     });
 
     bookingForm.addEventListener('submit', (event) => {
@@ -420,14 +466,17 @@ block content
     const confirmDate = document.getElementById('confirm-date');
     const confirmTime = document.getElementById('confirm-time');
     const confirmPrice = document.getElementById('confirm-price');
-    const confirmStatus = document.getElementById('confirm-status');
-    const confirmCancel = document.getElementById('confirm-cancel');
-    const confirmSubmit = document.getElementById('confirm-submit');
 
     function openConfirmationModal() {
       const selectedName = bookingService.dataset.name || '';
       const selectedPrice = bookingService.dataset.price || '';
       const selectedDate = bookingDate.value;
+
+      const newSelectionKey = getSelectionKey();
+      if (newSelectionKey !== currentSelectionKey) {
+        resetBookingState();
+        currentSelectionKey = newSelectionKey;
+      }
 
       // Read the selected time chip directly for the most reliable label
       const selectedTimeChip = timeChoices.querySelector('[data-time-slot].is-selected');
@@ -450,14 +499,22 @@ block content
         : selectedPrice === 'Ask in shop'
           ? 'Ask in shop'
           : formatServicePrice(selectedPrice);
-      confirmStatus.textContent = '';
-      confirmStatus.classList.add('hidden');
+
+      if (activeOrder && activeOrder.amount && confirmAdvanceContainer && confirmAdvance) {
+        confirmAdvance.textContent = `₹${(activeOrder.amount / 100).toLocaleString('en-IN')}`;
+        confirmAdvanceContainer.classList.remove('hidden');
+        confirmAdvanceContainer.classList.add('flex');
+      }
 
       bookingConfirmation.classList.add('is-open');
       document.body.style.overflow = 'hidden';
     }
 
     function closeConfirmationModal() {
+      if (confirmSubmit.textContent.includes('CONFIRMED')) {
+        window.location.href = '/profile';
+        return;
+      }
       bookingConfirmation.classList.remove('is-open');
       document.body.style.overflow = '';
     }
@@ -468,17 +525,37 @@ block content
       if (event.target === bookingConfirmation) closeConfirmationModal();
     });
 
-    confirmSubmit.addEventListener('click', async () => {
+    function loadRazorpaySdk() {
+      return new Promise((resolve, reject) => {
+        if (typeof window.Razorpay === 'function') {
+          return resolve(window.Razorpay);
+        }
+        const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve(window.Razorpay));
+          existingScript.addEventListener('error', () => reject(new Error('Failed to load Razorpay SDK.')));
+          if (typeof window.Razorpay === 'function') {
+            return resolve(window.Razorpay);
+          }
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve(window.Razorpay);
+        script.onerror = () => reject(new Error('Failed to load Razorpay SDK.'));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function verifyPayment(paymentDetails) {
       confirmSubmit.disabled = true;
-      confirmSubmit.textContent = 'PROCESSING...';
-
-      confirmStatus.classList.remove('hidden');
-      confirmStatus.classList.remove('text-red-400');
+      confirmSubmit.textContent = 'VERIFYING...';
+      confirmStatus.classList.remove('hidden', 'text-red-400', 'text-neutral-400');
       confirmStatus.classList.add('text-neutral-300');
-      confirmStatus.textContent = 'Creating your booking...';
+      confirmStatus.textContent = 'Verifying payment with server...';
 
-      try {
-        const response = await fetch('/api/bookings', {
+      const verifyResponse = await fetch('/api/payments/verify', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -486,31 +563,211 @@ block content
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          serviceId: bookingService.value,
-          date: bookingDate.value,
-          startTime: bookingTime.value
+          razorpay_order_id: paymentDetails.razorpay_order_id,
+          razorpay_payment_id: paymentDetails.razorpay_payment_id,
+          razorpay_signature: paymentDetails.razorpay_signature
         })
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Booking failed');
+      let verifyData;
+      try {
+        verifyData = await verifyResponse.json();
+      } catch (err) {
+        throw new Error('Unable to parse verification response.');
       }
 
-      confirmStatus.classList.remove('text-neutral-300', 'text-red-400');
-      confirmStatus.classList.add('text-[#00D06C]');
-      confirmStatus.textContent = 'Booking created successfully!';
+      if (!verifyResponse.ok || !verifyData.success) {
+        throw new Error(verifyData.message || 'Payment verification failed.');
+      }
 
-      confirmSubmit.textContent = 'BOOKING CONFIRMED';
+      pendingVerification = null;
+      confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-red-400', 'text-neutral-400');
+      confirmStatus.classList.add('text-[#00D06C]');
+      confirmStatus.textContent = 'Payment verified and booking confirmed successfully!';
+
+      confirmSubmit.textContent = 'BOOKING CONFIRMED ✓';
+      confirmSubmit.disabled = true;
+      confirmCancel.textContent = 'VIEW PROFILE →';
+
+      setTimeout(() => {
+        window.location.href = '/profile';
+      }, 2500);
+    }
+
+    function openRazorpayCheckout(RazorpayConstructor, order) {
+      const options = {
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        name: "SCISS' BARBER",
+        description: `${confirmService.textContent} - Booking Advance`,
+        order_id: order.orderId,
+        prefill: {
+          name: userData?.name || '',
+          email: userData?.email || '',
+          contact: userData?.phone || ''
+        },
+        theme: {
+          color: '#00D06C'
+        },
+        modal: {
+          ondismiss: function () {
+            confirmSubmit.disabled = false;
+            confirmSubmit.textContent = 'PAY NOW';
+            confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
+            confirmStatus.classList.add('text-neutral-400');
+            confirmStatus.textContent = 'Payment window was closed. Click "PAY NOW" to complete payment and confirm your booking.';
+          }
+        },
+        handler: async function (response) {
+          pendingVerification = {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          };
+
+          try {
+            await verifyPayment(pendingVerification);
+          } catch (error) {
+            confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-[#00D06C]');
+            confirmStatus.classList.add('text-red-400');
+            confirmStatus.textContent = error.message || 'Payment verification failed. Please try again or contact support.';
+            confirmSubmit.disabled = false;
+            confirmSubmit.textContent = 'RETRY VERIFICATION';
+          }
+        }
+      };
+
+      const rzpInstance = new RazorpayConstructor(options);
+
+      rzpInstance.on('payment.failed', function (failureResponse) {
+        const errorDesc = failureResponse.error?.description || failureResponse.error?.reason || 'Payment transaction failed.';
+        confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-[#00D06C]');
+        confirmStatus.classList.add('text-red-400');
+        confirmStatus.textContent = `Payment failed: ${errorDesc} You can retry payment.`;
+        confirmSubmit.disabled = false;
+        confirmSubmit.textContent = 'RETRY PAYMENT';
+      });
+
+      rzpInstance.open();
+    }
+
+    confirmSubmit.addEventListener('click', async () => {
+      if (!userData && loginRequiredModal) {
+        bookingConfirmation.classList.remove('is-open');
+        loginRequiredModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        return;
+      }
+
+      confirmSubmit.disabled = true;
+
+      if (pendingVerification) {
+        try {
+          await verifyPayment(pendingVerification);
+        } catch (error) {
+          confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-[#00D06C]');
+          confirmStatus.classList.add('text-red-400');
+          confirmStatus.textContent = error.message || 'Payment verification failed. Please try again.';
+          confirmSubmit.disabled = false;
+          confirmSubmit.textContent = 'RETRY VERIFICATION';
+        }
+        return;
+      }
+
+      try {
+        if (!activeBooking) {
+          confirmSubmit.textContent = 'CREATING BOOKING...';
+          confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
+          confirmStatus.classList.add('text-neutral-300');
+          confirmStatus.textContent = 'Creating your appointment booking...';
+
+          const bookingResponse = await fetch('/api/bookings', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              serviceId: bookingService.value,
+              date: bookingDate.value,
+              startTime: bookingTime.value
+            })
+          });
+
+          let bookingData;
+          try {
+            bookingData = await bookingResponse.json();
+          } catch (e) {
+            throw new Error('Failed to read booking response from server.');
+          }
+
+          if (!bookingResponse.ok || !bookingData.success || !bookingData.booking?._id) {
+            throw new Error(bookingData.message || 'Booking creation failed.');
+          }
+
+          activeBooking = bookingData.booking;
+        }
+
+        if (!activeOrder) {
+          confirmSubmit.textContent = 'INITIALIZING PAYMENT...';
+          confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
+          confirmStatus.classList.add('text-neutral-300');
+          confirmStatus.textContent = 'Setting up payment order...';
+
+          const orderResponse = await fetch('/api/payments/create-order', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              bookingId: activeBooking._id,
+              serviceId: bookingService.value
+            })
+          });
+
+          let orderData;
+          try {
+            orderData = await orderResponse.json();
+          } catch (e) {
+            throw new Error('Failed to read payment order response from server.');
+          }
+
+          if (!orderResponse.ok || !orderData.success || !orderData.order) {
+            throw new Error(orderData.message || 'Failed to initialize payment.');
+          }
+
+          activeOrder = orderData.order;
+
+          if (confirmAdvanceContainer && confirmAdvance && activeOrder.amount) {
+            confirmAdvance.textContent = `₹${(activeOrder.amount / 100).toLocaleString('en-IN')}`;
+            confirmAdvanceContainer.classList.remove('hidden');
+            confirmAdvanceContainer.classList.add('flex');
+          }
+        }
+
+        confirmSubmit.textContent = 'OPENING CHECKOUT...';
+        confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
+        confirmStatus.classList.add('text-neutral-300');
+        confirmStatus.textContent = 'Opening Razorpay checkout...';
+
+        const RazorpayConstructor = await loadRazorpaySdk();
+        if (!RazorpayConstructor) {
+          throw new Error('Razorpay SDK could not be loaded. Please check your connection.');
+        }
+
+        openRazorpayCheckout(RazorpayConstructor, activeOrder);
 
       } catch (error) {
-        confirmStatus.classList.remove('text-neutral-300');
+        confirmStatus.classList.remove('text-neutral-300', 'text-[#00D06C]');
         confirmStatus.classList.add('text-red-400');
         confirmStatus.textContent = error.message || 'Something went wrong.';
 
-      confirmSubmit.disabled = false;
-      confirmSubmit.textContent = 'CONFIRM BOOKING';
+        confirmSubmit.disabled = false;
+        confirmSubmit.textContent = activeBooking ? 'RETRY PAYMENT' : 'CONFIRM BOOKING';
       }
     });
 

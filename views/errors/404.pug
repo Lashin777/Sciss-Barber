@@ -1,0 +1,37 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    meta(name="theme-color", content="#ffffff")
+    title 404 | Sciss Barber
+    link(rel="preconnect", href="https://fonts.googleapis.com")
+    link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin)
+    link(href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap", rel="stylesheet")
+    link(rel="stylesheet", href="/css/output.css")
+  body(class="flex min-h-dvh flex-col bg-white font-sans text-neutral-950")
+    main(class="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-5 py-12 sm:px-8 lg:px-16")
+      section(class="grid items-center gap-8 border-y border-neutral-200 py-10 sm:py-14 lg:grid-cols-[1fr_auto]")
+        div
+          p(class="mb-5 font-mono text-[10px] font-bold tracking-[0.28em] text-neutral-400") SCISS’ BARBER · KOZHIKODE
+          h1(class="font-bold leading-[0.72] tracking-[-0.1em]", style="font-size: clamp(8rem, 28vw, 22rem)") 404
+          div(class="mt-10 max-w-xl")
+            p(class="mb-3 font-mono text-[10px] font-bold tracking-[0.18em] text-[#00D06C]") WRONG TURN
+            h2(class="text-3xl font-bold tracking-[-0.06em] sm:text-5xl") This page is out of style.
+            if isAdminPage
+              p(class="mt-4 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base") This admin page isn’t here. Return to the dashboard or open booking management.
+            else
+              p(class="mt-4 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base") The page you’re looking for isn’t here. Head back home or browse our services.
+            div(class="mt-7 flex flex-wrap gap-3")
+              if isAdminPage
+                a(href="/admin/dashboard", class="inline-flex h-12 items-center justify-center rounded-full bg-neutral-950 px-6 font-mono text-[10px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") BACK TO ADMIN
+                a(href="/admin/booking", class="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 px-6 font-mono text-[10px] font-bold tracking-[0.12em] transition hover:border-[#00D06C] hover:bg-[#00D06C]") ADMIN BOOKINGS ↗
+              else
+                a(href="/", class="inline-flex h-12 items-center justify-center rounded-full bg-neutral-950 px-6 font-mono text-[10px] font-bold tracking-[0.12em] text-white transition hover:bg-[#00D06C] hover:text-black") BACK TO HOME
+                a(href="/services", class="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 px-6 font-mono text-[10px] font-bold tracking-[0.12em] transition hover:border-[#00D06C] hover:bg-[#00D06C]") VIEW SERVICES ↗
+        div(class="hidden size-32 items-center justify-center rounded-full border border-neutral-200 sm:flex lg:size-44")
+          span(class="size-20 rounded-full bg-[#00D06C] lg:size-28", aria-hidden="true")
+
+    footer(class="flex flex-wrap items-center justify-between gap-3 px-5 py-5 font-mono text-[9px] tracking-[0.12em] text-neutral-400 sm:px-8 lg:px-16")
+      span SCISS’ BARBER · KOZHIKODE
+      span PRECISION GROOMING

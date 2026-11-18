@@ -1,0 +1,146 @@
+
+extends ../layouts/minimal.pug
+
+block content
+  -
+    const formatDate = (value) => {
+      if (!value) return 'Date unavailable';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Date unavailable';
+      return date.toLocaleDateString('en-IN', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+    const formatTime = (value) => {
+      if (!value) return 'Time unavailable';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Time unavailable';
+      return date.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    };
+    const formatAmount = (value) => {
+      if (value === null || value === undefined || value === '') return '—';
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return '—';
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(amount);
+    };
+    const appointmentDate = booking?.appointmentDate || booking?.appointmentStart;
+    const formattedDate = formatDate(appointmentDate);
+    const formattedStart = formatTime(booking?.appointmentStart);
+    const formattedEnd = formatTime(booking?.appointmentEnd);
+    const serviceName = booking?.serviceId?.name || 'Service unavailable';
+    const barberName = booking?.barberId?.name || 'Barber to be confirmed';
+    const status = booking?.status || 'Status unavailable';
+    const statusPalette = {
+      PENDING: { background: '#ffedd5', foreground: '#9a3412', darkForeground: '#fb923c' },
+      CONFIRMED: { background: '#dcfce7', foreground: '#166534', darkForeground: '#00D06C' },
+      ACCEPTED: { background: '#dcfce7', foreground: '#166534', darkForeground: '#00D06C' },
+      COMPLETED: { background: '#dcfce7', foreground: '#166534', darkForeground: '#00D06C' },
+      CANCELLED: { background: '#fee2e2', foreground: '#b91c1c', darkForeground: '#f87171' },
+      DECLINED: { background: '#fee2e2', foreground: '#b91c1c', darkForeground: '#f87171' }
+    };
+    const statusColors = statusPalette[String(status).toUpperCase()] || {
+      background: '#f5f5f5',
+      foreground: '#404040',
+      darkForeground: '#dedede'
+    };
+    const statusBadgeStyle = `background-color:${statusColors.background};color:${statusColors.foreground}`;
+    const duration = booking?.serviceDuration === null || booking?.serviceDuration === undefined || booking?.serviceDuration === ''
+      ? 'Duration unavailable'
+      : `${booking.serviceDuration} minutes`;
+    const bookingReference = booking?.bookingToken || 'Unavailable';
+    const servicePrice = formatAmount(booking?.servicePrice);
+    const advanceAmount = formatAmount(booking?.advanceAmount);
+    const servicePriceValue = Number(booking?.servicePrice);
+    const advanceAmountValue = Number(booking?.advanceAmount);
+    const hasPaymentAmounts = booking?.servicePrice !== null && booking?.servicePrice !== undefined && booking?.servicePrice !== ''
+      && booking?.advanceAmount !== null && booking?.advanceAmount !== undefined && booking?.advanceAmount !== '';
+    const remainingBalance = hasPaymentAmounts && Number.isFinite(servicePriceValue) && Number.isFinite(advanceAmountValue)
+      ? formatAmount(Math.max(0, servicePriceValue - advanceAmountValue))
+      : '—';
+
+  div(class="mx-auto flex w-full max-w-6xl flex-1 flex-col py-8 sm:py-12")
+
+    a(href="/profile", class="mb-10 w-fit font-mono text-xs font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK TO PROFILE
+
+    div(class="mb-10 border-b border-neutral-200 pb-8 sm:mb-12")
+      p(class="mb-4 font-mono text-[10px] tracking-[0.3em] text-neutral-400") SCISS’ BARBER · KOZHIKODE
+      h1(class="text-[clamp(3rem,9vw,6.5rem)] font-bold leading-[0.88] tracking-[-0.08em]") YOUR APPOINTMENT.
+      p(class="mt-5 max-w-md text-sm leading-relaxed text-neutral-500") Here's everything you need to know about your upcoming visit.
+
+    div(class="grid gap-8 lg:grid-cols-[1fr_0.65fr]")
+
+      // APPOINTMENT INFORMATION
+      div(class="space-y-6")
+
+        div(class="rounded-2xl border border-neutral-200 p-6 sm:p-8")
+          div(class="mb-8 flex items-center justify-between gap-4")
+            p(class="font-mono text-[10px] font-bold tracking-[0.2em] text-neutral-400") APPOINTMENT INFORMATION
+            span(class="rounded-full px-4 py-2 font-mono text-[10px] font-bold tracking-wider", style=statusBadgeStyle)= status
+
+          h2(class="mb-2 break-words text-3xl font-bold tracking-tight")= serviceName
+          p(class="mb-8 text-sm text-neutral-500") Your selected service
+
+          div(class="grid gap-6 border-t border-neutral-200 pt-6 sm:grid-cols-2")
+            div
+              p(class="mb-2 font-mono text-[10px] tracking-widest text-neutral-400") DATE
+              p(class="text-sm font-semibold")= formattedDate
+
+            div
+              p(class="mb-2 font-mono text-[10px] tracking-widest text-neutral-400") TIME
+              p(class="text-sm font-semibold")= `${formattedStart} — ${formattedEnd}`
+
+            div
+              p(class="mb-2 font-mono text-[10px] tracking-widest text-neutral-400") BARBER
+              p(class="text-sm font-semibold")= barberName
+
+            div
+              p(class="mb-2 font-mono text-[10px] tracking-widest text-neutral-400") DURATION
+              p(class="text-sm font-semibold")= duration
+
+        // PAYMENT SUMMARY
+        div(class="rounded-2xl border border-neutral-200 p-6 sm:p-8")
+          p(class="mb-6 font-mono text-[10px] font-bold tracking-[0.2em] text-neutral-400") PAYMENT SUMMARY
+
+          div(class="mb-4 flex items-center justify-between")
+            span(class="text-sm text-neutral-500") Service price
+            span(class="text-right text-sm font-semibold")= servicePrice
+
+          div(class="mb-6 flex items-center justify-between border-b border-neutral-200 pb-6")
+            span(class="text-sm text-neutral-500") Advance amount
+            span(class="text-right text-sm font-semibold")= advanceAmount
+
+          div(class="mb-6 flex items-center justify-between border-b border-neutral-200 pb-6")
+            span(class="text-sm text-neutral-500") Remaining balance
+            span(class="text-right text-sm font-semibold")= remainingBalance
+
+          div(class="flex items-center justify-between")
+            span(class="font-mono text-xs font-bold tracking-widest") TOTAL SERVICE PRICE
+            span(class="text-2xl font-bold tracking-tight")= servicePrice
+
+      // BOOKING REFERENCE
+      div(class="h-fit rounded-2xl bg-[#080808] p-7 text-white sm:p-8")
+        p(class="mb-8 font-mono text-[10px] tracking-[0.3em] text-[#00D06C]") SCISS’ BARBER
+
+        p(class="mb-3 font-mono text-[10px] tracking-widest text-neutral-500") BOOKING REFERENCE
+        p(class="mb-8 break-all text-sm font-semibold")= bookingReference
+
+        div(class="mb-8 border-t border-white/10 pt-6")
+          p(class="mb-3 font-mono text-[10px] tracking-widest text-neutral-500") APPOINTMENT STATUS
+          p(class="break-words text-2xl font-bold tracking-tight", style=`color:${statusColors.darkForeground}`)= status
+
+        p(class="text-sm leading-relaxed text-neutral-400") Thank you for choosing SCISS BARBER. We look forward to seeing you.
+
+        a(href="/", class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-[#00D06C] px-6 py-4 font-mono text-xs font-bold tracking-widest text-black transition hover:bg-[#00B85F]") BACK HOME →

@@ -1,7 +1,9 @@
 import { getCustomerAvailableSlotsService,
         createBookingService,
         getMyBookingsService,
-        getBookingDetailsService
+        getBookingDetailsService,
+        getBookingHistoryService,
+        cancelBookingService
     } from "../services/BookingService.js";
 
 const getAvailableSlotsController = async (req, res) => {
@@ -82,7 +84,7 @@ const getBookingDetailsController = async(req,res)=>{
         );
 
         if(!booking){
-            return res.status(400).json({
+            return res.status(404).json({
                 success:false,
                 message:"Booking Not Found"
             });
@@ -102,12 +104,47 @@ const getBookingDetailsController = async(req,res)=>{
 
 
 
+const getBookingHistoryController = async(req,res)=>{
+    try{
+        const history = await getBookingHistoryService(req.user._id);
 
+        if(history){
+            return res.status(200).json({
+                success:true,
+                bookings:history
+            })
+        }
+
+    }catch(error){
+            nextTick(error)
+        }
+};
+
+
+const cancelBookingController = async (req, res, next) => {
+    try {
+        const booking = await cancelBookingService(
+            req.params.bookingId,
+            req.user._id
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Booking cancelled successfully",
+            booking
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
 
 
 
 export { getAvailableSlotsController,
          createBookingController,
          getMyBookingsController,
-         getBookingDetailsController
+         getBookingDetailsController,
+         getBookingHistoryController,
+         cancelBookingController
 };

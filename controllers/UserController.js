@@ -11,9 +11,11 @@ import { UsersignUp,
 import { getAllServices,
          getAllServiceCategories
 } from '../services/ServiceService.js';
+import { getBookingDetailsService } from '../services/BookingService.js';
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 import jwt from 'jsonwebtoken'
 import { setUserSessionCookie, clearUserSessionCookie } from '../utils/session.js';
+import ShopRules from '../models/ShopRules.js';
 import passport from 'passport';
 
 const renderHomePageController = (req, res) => {
@@ -66,9 +68,10 @@ const renderSignupPageController = (req, res) => res.render('user/signup', { tit
 const renderAboutPageController = (req, res) => res.render('user/about', { title: 'About' });
 const renderBookingPageController = async (req, res) => {
     try {
-        const [categories, services] = await Promise.all([
+        const [categories, services, shopRules] = await Promise.all([
             getAllServiceCategories(),
-            getAllServices()
+            getAllServices(),
+            ShopRules.findOne().select('weeklyOff').lean()
         ]);
 
         const serviceGroups = categories
@@ -83,6 +86,7 @@ const renderBookingPageController = async (req, res) => {
         return res.render('user/booking', {
             title: 'Book an appointment',
             serviceGroups,
+            weeklyOff: shopRules?.weeklyOff || '',
             user:req.user
         });
 
@@ -91,9 +95,42 @@ const renderBookingPageController = async (req, res) => {
         return res.status(500).send('Unable to load booking page');
     }
 };
+
+const renderBookingDetailsPageController = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.redirect('/login');
+        }
+
+        const booking = await getBookingDetailsService(
+            req.params.bookingId,
+            req.user._id
+        );
+
+        if (!booking) {
+            return res.status(404).send('Booking not found');
+        }
+
+        return res.render('user/booking-details', {
+            title: 'Booking Details',
+            booking,
+            user: req.user
+        });
+
+    } catch (error) {
+        console.error('Error rendering booking details:', error);
+        return res.status(500).send('Unable to load booking details');
+    }
+};
+
 const renderProfilePageController = (req, res) => {
     if (!req.user) return res.redirect('/login');
     res.render('user/profile', { title: 'Your Profile', user: req.user });
+};
+
+const renderBookingHistoryPageController = (req, res) => {
+    if (!req.user) return res.redirect('/login');
+    res.render('user/booking-history', { title: 'Booking History', user: req.user });
 };
 
 const renderProfileEditPageController = (req, res) => {
@@ -277,4 +314,6 @@ export {
     sendEmailChangeOtpController,
     verifyEmailChangeOtpController,
     googleCallbackController,
+    renderBookingDetailsPageController,
+    renderBookingHistoryPageController
 }

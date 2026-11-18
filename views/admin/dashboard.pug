@@ -3,7 +3,7 @@ doctype html
 - const appointmentRows = Array.isArray(dashboardData.appointments) ? dashboardData.appointments : []
 - const dailyGross = dashboardData.dailyGross ?? '—'
 - const bookedSessions = dashboardData.bookedSessions ?? '—'
-- const adminNavigation = [{ label: 'Dashboard', icon: 'overview', active: true }, { label: 'Booking', icon: 'booking' }, { label: 'Calendar', icon: 'calendar' }, { label: 'Customers', icon: 'customers', href: '/admin/users' }, { label: 'Services', icon: 'services' }, { label: 'Payments', icon: 'payments' }, { label: 'Revenue', icon: 'revenue' }, { label: 'Profile', icon: 'profile' }]
+- const adminNavigation = [{ label: 'Dashboard', icon: 'overview', active: true }, { label: 'Booking', icon: 'booking', href: '/admin/booking' }, { label: 'Calendar', icon: 'calendar' }, { label: 'Customers', icon: 'customers', href: '/admin/users' }, { label: 'Services', icon: 'services', href: '/admin/services' }, { label: 'Payments', icon: 'payments' }, { label: 'Revenue', icon: 'revenue' }, { label: 'Profile', icon: 'profile' }]
 html(lang="en")
   head
     meta(charset="UTF-8")

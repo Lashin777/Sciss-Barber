@@ -2,20 +2,41 @@ import mongoose from "mongoose";
 
 
 const bookingSchema = new mongoose.Schema({
+        bookingType: {
+        type: String,
+        enum: ["ONLINE", "WALK_IN"],
+        default: "ONLINE"
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: function () {
+        return this.bookingType !== "WALK_IN";
+        }
+    },
+    walkInCustomerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'walkInCustomer',
+        required: function () {
+        return this.bookingType === "WALK_IN";
+        }
     },
     serviceId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Service',
         required: true
     },
+    bookingToken: {
+        type: String,
+        required: true,
+        unique: true
+    },
     barberId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Barber',
-        required: true
+        required:function(){
+            return this.bookingType !== "WALK_IN"
+        }
     },
     appointmentDate: {
         type: Date,

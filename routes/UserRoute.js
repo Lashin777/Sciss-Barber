@@ -20,6 +20,8 @@ import {
     renderProfilePageController,
     renderProfileEditPageController,
     renderBookingPageController,
+    renderBookingDetailsPageController,
+    renderBookingHistoryPageController
 } from '../controllers/UserController.js';
 import { validationSignup, validationLogin, validationProfileUpdate, validationPasswordChange, validationResetPassword,validationEmailChangeVerify,validationEmailChangeRequest} from '../middlewares/validation.js';
 import passport from 'passport';
@@ -54,6 +56,8 @@ router.get('/services', renderServicesPageController);
 router.get('/profile', preventCache, optionalAuth, renderProfilePageController);
 router.get('/profile/edit', preventCache, optionalAuth, renderProfileEditPageController);
 router.get('/booking', preventCache,optionalAuth, renderBookingPageController);
+router.get('/bookings/history', preventCache, optionalAuth, renderBookingHistoryPageController);
+router.get('/bookings/:bookingId', preventCache, protect, customerOnly, renderBookingDetailsPageController);
 
 
 
