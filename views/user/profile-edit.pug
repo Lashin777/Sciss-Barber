@@ -19,7 +19,7 @@ block content
       p(class="mt-4 max-w-xl text-sm leading-relaxed text-neutral-500 sm:text-base") A few details help us keep your visits easy. Verify a new email address before it replaces your current one.
 
     div(class="mx-auto w-full max-w-3xl")
-      form#profile-edit-form(class="space-y-5")
+      form#profile-edit-form(class="space-y-5", novalidate)
         section#personal(class="scroll-mt-6 rounded-[1.75rem] border border-neutral-200 p-6 sm:p-8")
           div(class="mb-7 flex flex-wrap items-center justify-between gap-5")
             div
@@ -30,20 +30,23 @@ block content
                 img#profile-preview(src=user.profileImage || "", alt="Profile picture", class="absolute inset-0 z-10 hidden h-full w-full rounded-full object-cover object-center")
                 span#profile-initials(class="relative z-0")= user.name.split(' ').map(part => part[0]).join('').toUpperCase()
               label(for="photo", class="cursor-pointer font-mono text-[9px] font-bold tracking-[0.1em] transition hover:text-[#00D06C]") CHANGE PHOTO
-              input#photo(type="file", accept="image/*", class="sr-only")
+              input#photo(type="file", accept="image/jpeg,image/png,image/webp,image/gif", class="sr-only")
           div(class="grid gap-5 sm:grid-cols-2")
             div
               label(for="name", class=label) FULL NAME
-              input#name(type="text", value=user.name, autocomplete="name", required, class=field)
+              input#name(type="text", value=user.name, autocomplete="name", minlength="2", maxlength="80", pattern="[A-Za-z]+([ '-][A-Za-z]+)*", title="Use letters, spaces, apostrophes, or hyphens", required, class=field)
+              p#name-error(class="mt-1 hidden text-xs text-red-600", role="alert")
             div
               label(for="phone", class=label) PHONE NUMBER
-              input#phone(type="tel", value=user.phone, autocomplete="tel", required, class=field)
+              input#phone(type="tel", value=user.phone, autocomplete="tel", inputmode="numeric", maxlength="10", pattern="[6-9][0-9]{9}", title="Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9", required, aria-describedby="phone-error", class=field)
+              p#phone-error(class="mt-1 hidden text-xs text-red-600", role="alert")
             div(class="sm:col-span-2")
               //- Worked by Codex: send and verify an OTP before updating the customer's email address.
               label(for="email", class=label) EMAIL ADDRESS
               div(class="flex flex-col gap-3 sm:flex-row")
                 input#email(type="email", value=user.email, autocomplete="email", required, class=field)
                 button#verify-email(type="button", class="h-12 shrink-0 rounded-xl border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:bg-[#00D06C] hover:text-black") VERIFY EMAIL
+              p#email-error(class="mt-1 hidden text-xs text-red-600", role="alert")
               p(class="mt-2 flex items-center gap-2 text-xs text-neutral-400")
                 span(class="size-1.5 rounded-full bg-[#00D06C]")
                 | Current email verified · New email requires a one-time code
@@ -123,6 +126,56 @@ block content
     const emailChangeFeedback = document.getElementById('email-change-feedback');
     const otpFeedback = document.getElementById('otp-feedback');
     const profileSaveNote = document.getElementById('profile-save-note');
+    const profileValidationFields = [
+      { input: document.getElementById('name'), message: document.getElementById('name-error') },
+      { input: document.getElementById('phone'), message: document.getElementById('phone-error') },
+      { input: emailInput, message: document.getElementById('email-error') }
+    ];
+    const validateProfileFields = () => {
+      let valid = true;
+      profileValidationFields.forEach(({ input, message }) => {
+        if (input.id === 'phone') {
+          const phone = input.value.trim();
+          input.setCustomValidity(/^[6-9]\d{9}$/.test(phone) && !/^(\d)\1{9}$/.test(phone)
+            ? ''
+            : 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+        }
+        const fieldValid = input.checkValidity();
+        input.setAttribute('aria-invalid', String(!fieldValid));
+        message.textContent = fieldValid ? '' : input.validationMessage;
+        message.classList.toggle('hidden', fieldValid);
+        valid = fieldValid && valid;
+      });
+      return valid;
+    };
+    profileValidationFields.forEach(({ input, message }) => {
+      input.addEventListener('input', () => {
+        if (input.id === 'phone') {
+          const phone = input.value.trim();
+          input.setCustomValidity(/^[6-9]\d{9}$/.test(phone) && !/^(\d)\1{9}$/.test(phone)
+            ? ''
+            : 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+        }
+        if (!input.checkValidity()) return;
+        input.setAttribute('aria-invalid', 'false');
+        message.textContent = '';
+        message.classList.add('hidden');
+      });
+      input.addEventListener('blur', () => {
+        if (input.id === 'phone') {
+          input.value = input.value.trim();
+          const phone = input.value;
+          input.setCustomValidity(/^[6-9]\d{9}$/.test(phone) && !/^(\d)\1{9}$/.test(phone)
+            ? ''
+            : 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+        }
+        if ((input.value || input.required) && !input.checkValidity()) {
+          input.setAttribute('aria-invalid', 'true');
+          message.textContent = input.validationMessage;
+          message.classList.remove('hidden');
+        }
+      });
+    });
     let profileToastTimer;
     let profileToastHideTimer;
 
@@ -326,9 +379,9 @@ block content
       const file = photoInput.files[0];
       if (!file) return;
 
-      if (!file.type.startsWith('image/')) {
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
         photoInput.value = '';
-        showProfileToast('Choose an image file for your profile photo.', true);
+        showProfileToast('Choose a JPEG, PNG, WebP, or GIF profile photo.', true);
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
@@ -348,6 +401,11 @@ block content
 
     document.getElementById('profile-edit-form').addEventListener('submit', async (event) => {
       event.preventDefault();
+      document.getElementById('phone').value = document.getElementById('phone').value.trim();
+      if (!validateProfileFields()) {
+        profileValidationFields.find(({ input }) => !input.checkValidity())?.input.focus();
+        return;
+      }
       const form = event.currentTarget;
       const saveButton = form.querySelector('button[type="submit"]');
       const formData = new FormData();

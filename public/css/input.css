@@ -350,6 +350,24 @@ html.theme-dark .home-logo-mark[data-color-step="3"] {
     box-shadow: 0 0 0 1px #00D06C;
 }
 
+/* Worked by Codex: make the multi-service selection state legible at every breakpoint. */
+.booking-service-selection-state {
+    flex: 0 0 auto;
+    border: 1px solid #d4d4d4;
+    border-radius: 999px;
+    padding: 0.4rem 0.6rem;
+    color: #737373;
+    font: 700 0.6rem/1 var(--font-mono);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.booking-service-card.is-selected .booking-service-selection-state {
+    border-color: #00D06C;
+    background: #00D06C;
+    color: #111;
+}
+
 .booking-date-chip {
     display: flex;
     min-height: 82px;
@@ -400,6 +418,17 @@ html.theme-dark .booking-service-card.is-selected {
     border-color: #00D06C;
     background-color: #10271a;
     color: #f5f5f5;
+}
+
+html.theme-dark .booking-service-selection-state {
+    border-color: #525252;
+    color: #d4d4d4;
+}
+
+html.theme-dark .booking-service-card.is-selected .booking-service-selection-state {
+    border-color: #00D06C;
+    background: #00D06C;
+    color: #111;
 }
 
 html.theme-dark .booking-date-chip.is-selected {

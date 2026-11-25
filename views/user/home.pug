@@ -49,8 +49,9 @@ block content
         a(href="/", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") HOME
         a(href="#about", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") ABOUT
         a(href="/services", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") SERVICES & PRICES
-        a(href="/bookings/history", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") MY BOOKINGS
-        a(href="/profile", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") PROFILE
+        a(href=isLoggedIn ? "/bookings/history" : "/login?returnTo=%2Fbookings%2Fhistory", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") MY BOOKINGS
+        a(href=isLoggedIn ? "/wallet" : "/login?returnTo=%2Fwallet", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") WALLET
+        a(href=isLoggedIn ? "/profile" : "/login?returnTo=%2Fprofile", class="rounded-xl px-4 py-3 hover:bg-neutral-100 hover:text-[#00D06C]") PROFILE
         if isLoggedIn
           //- Worked by Codex: expose a real POST logout action only to signed-in customers.
           form(action="/api/user/logout", method="POST", class="mt-1 border-t border-neutral-100 pt-1")
@@ -174,9 +175,9 @@ block content
         nav(class="flex flex-wrap items-center gap-4 font-mono text-xs font-bold tracking-wide sm:gap-5 sm:text-sm")
           a(href="#services", class="transition hover:text-[#00D06C]") SERVICES
           span(class="text-neutral-300") /
-          a(href="/bookings/history", class="transition hover:text-[#00D06C]") MY BOOKINGS
+          a(href=isLoggedIn ? "/bookings/history" : "/login?returnTo=%2Fbookings%2Fhistory", class="transition hover:text-[#00D06C]") MY BOOKINGS
           span(class="text-neutral-300") /
-          a(href="/profile", class="transition hover:text-[#00D06C]") PROFILE
+          a(href=isLoggedIn ? "/profile" : "/login?returnTo=%2Fprofile", class="transition hover:text-[#00D06C]") PROFILE
           span(class="text-neutral-300") /
           a(href="#about", class="transition hover:text-[#00D06C]") ABOUT
 

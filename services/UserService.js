@@ -2,24 +2,91 @@ import { hashPassword, comparePassword } from '../utils/passwordUtils.js';
 import User from '../models/userModel.js';
 import { generateOtp, verifyOtp, resendOtp, consumeOtp } from './otpService.js';
 import jwt from 'jsonwebtoken';
+import { generateReferralCode } from '../utils/referralCode.js';
 
 
 
-const UsersignUp = async (email, name, password, phone) => {
-    const existingUser = await User.findOne({ email });
+const UsersignUp = async (email, name, password, phone, otpSender = generateOtp, referralCode = '') => {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedPhone = String(phone).trim();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
         throw new Error("User Already Exists");
-    } else {
-        const hashedPassword = await hashPassword(password);
-        const newUser = await User.create({ name, email, password: hashedPassword, phone });
-        await generateOtp(email, 'EMAIL_VERIFICATION')
-        return newUser;
     }
+
+    const normalizedReferralCode = String(referralCode || '').trim().toUpperCase();
+    let referrerId;
+    if (normalizedReferralCode) {
+        const referrer = await User.findOne({
+            referralCode: { $regex: `^${normalizedReferralCode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+            role: 'CUSTOMER',
+            status: 'ACTIVE',
+            isEmailVerified: true
+        }).select('_id email phone');
+
+        if (!referrer) throw new Error('Referral code is invalid or unavailable');
+        if (
+            referrer.email.toLowerCase() === normalizedEmail ||
+            (referrer.phone && referrer.phone.trim() === normalizedPhone)
+        ) {
+            throw new Error('You cannot use your own referral code');
+        }
+        referrerId = referrer._id;
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    await otpSender(normalizedEmail,'EMAIL_VERIFICATION',{
+        name:name.trim(),
+        password:hashedPassword,
+        phone: normalizedPhone,
+        ...(normalizedReferralCode ? {
+            referralCode: normalizedReferralCode,
+            referrerId
+        } : {})
+    });
+
+    return {email:normalizedEmail}
 
 }
 
+const ensureUserReferralCode = async (userId) => {
+    const user = await User.findById(userId).select('referralCode').lean();
+    if (!user) throw new Error('User not found');
+    if (user.referralCode) return String(user.referralCode).trim().toUpperCase();
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+        const referralCode = generateReferralCode();
+        try {
+            const updatedUser = await User.findOneAndUpdate(
+                {
+                    _id: userId,
+                    $or: [
+                        { referralCode: { $exists: false } },
+                        { referralCode: null },
+                        { referralCode: '' }
+                    ]
+                },
+                { $set: { referralCode } },
+                { new: true, runValidators: true }
+            ).select('referralCode');
+
+            if (updatedUser?.referralCode) return updatedUser.referralCode;
+            const currentUser = await User.findById(userId).select('referralCode').lean();
+            if (currentUser?.referralCode) return currentUser.referralCode;
+            if (!currentUser) throw new Error('User not found');
+        } catch (error) {
+            if (error.code !== 11000) throw error;
+        }
+    }
+
+    throw new Error('Could not generate a unique referral code');
+};
+
 const getPasswordLoginAccount = async (email) => {
-    const user = await User.findOne({ email });
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user || user.role !== 'CUSTOMER') {
         throw new Error('No Account With This EMAIL');
     }
@@ -36,12 +103,12 @@ const forgetPassword = async (email) => {
 }
 
 const resetPassword = async (email, otp, newpassword) => {
-    await getPasswordLoginAccount(email);
-    await verifyOtp(email, otp, 'PASSWORD_RESET');
+    const user = await getPasswordLoginAccount(email);
+    await verifyOtp(user.email, otp, 'PASSWORD_RESET');
     const hashedPassword = await hashPassword(newpassword);
 
     await User.updateOne(
-        { email },
+        { _id: user._id },
         {
             $set: { password: hashedPassword },
             $inc: { tokenVersion: 1 }
@@ -51,7 +118,8 @@ const resetPassword = async (email, otp, newpassword) => {
 
 
 const userLogin = async (email, password) => {
-    const user = await User.findOne({ email });
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
 
     if (!user || user.role !== 'CUSTOMER') {
@@ -192,5 +260,6 @@ export {
     UpdateUserProfile,
     changeUserPassword,
     sendEmailChangeOtp,
-    verifyEmailChangeOtp
+    verifyEmailChangeOtp,
+    ensureUserReferralCode
 }

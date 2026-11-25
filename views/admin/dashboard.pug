@@ -1,11 +1,14 @@
 doctype html
 - const dashboardData = typeof dashboard !== 'undefined' && dashboard && typeof dashboard === 'object' ? dashboard : {}
 - const appointmentRows = Array.isArray(dashboardData.appointments) ? dashboardData.appointments : []
-- const dailyGross = dashboardData.dailyGross ?? '—'
+- const dailyRevenue = dashboardData.dailyRevenue ?? '—'
+- const dailyRazorpay = dashboardData.dailyRazorpay ?? '—'
+- const dailyWallet = dashboardData.dailyWallet ?? '—'
+- const pendingBookings = dashboardData.pendingBookings ?? '—'
 - const totalBookings = dashboardData.totalBookings ?? '—'
 - const completedBookings = dashboardData.completedBookings ?? '—'
 - const cancelledBookings = dashboardData.cancelledBookings ?? '—'
-- const adminNavigation = [{ label: 'Dashboard', icon: 'overview', active: true }, { label: 'Booking', icon: 'booking', href: '/admin/booking' }, { label: 'Calendar', icon: 'calendar' }, { label: 'Customers', icon: 'customers', href: '/admin/users' }, { label: 'Services', icon: 'services', href: '/admin/services' }, { label: 'Payments', icon: 'payments' }, { label: 'Revenue', icon: 'revenue' }, { label: 'Profile', icon: 'profile' }]
+- const adminNavigation = [{ label: 'Dashboard', icon: 'overview', active: true }, { label: 'Booking', icon: 'booking', href: '/admin/booking' }, { label: 'Calendar', icon: 'calendar', href: '/admin/calendar' }, { label: 'Customers', icon: 'customers', href: '/admin/users' }, { label: 'Referrals', icon: 'customers', href: '/admin/referrals' }, { label: 'Services', icon: 'services', href: '/admin/services' }, { label: 'Payments', icon: 'payments', href: '/admin/payments' }, { label: 'Revenue', icon: 'revenue', href: '/admin/revenue' }, { label: 'Profile', icon: 'profile' }]
 html(lang="en")
   head
     meta(charset="UTF-8")
@@ -196,12 +199,14 @@ html(lang="en")
               p(class="mb-1 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / DASHBOARD
               h1#overview-heading(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-5xl") Dashboard
               p(class="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-500") Today’s bookings and completed service gross.
-            a(href="/admin/booking?walkin=1", class="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-[#00D06C] px-5 font-mono text-[10px] font-bold tracking-[0.1em] text-black transition hover:bg-[#00bd61]") ADD WALK-IN CUSTOMER
+            form(action="/admin/booking", method="GET")
+              input(type="hidden", name="walkin", value="1")
+              button(type="submit", class="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-[#00D06C] px-5 font-mono text-[10px] font-bold tracking-[0.1em] text-black transition hover:bg-[#00bd61]") ADD WALK-IN CUSTOMER
 
           if dashboardError
             p(class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700", role="alert")= dashboardError
 
-          section(class="grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-4", aria-label="Today’s booking metrics")
+          section(class="grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-5", aria-label="Today’s booking metrics")
             article(class="rounded-lg border border-neutral-200 bg-white px-3 py-3 sm:px-4")
               div(class="flex items-center justify-between gap-4")
                 h2(class="font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-400") TOTAL TODAY
@@ -216,15 +221,20 @@ html(lang="en")
               p(class="mt-1 text-2xl font-bold tracking-[-0.06em] text-red-700 sm:text-3xl")= cancelledBookings
             article(class="rounded-lg border border-neutral-200 bg-white px-3 py-3 sm:px-4")
               div(class="flex items-center justify-between gap-4")
-                h2(class="font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-400") DAILY GROSS
-              p(class="mt-1 text-2xl font-bold tracking-[-0.06em] sm:text-3xl")= dailyGross
+                h2(class="font-mono text-[9px] font-bold tracking-[0.12em] text-amber-700") PENDING
+              p(class="mt-1 text-2xl font-bold tracking-[-0.06em] text-amber-700 sm:text-3xl")= pendingBookings
+            article(class="rounded-lg border border-neutral-200 bg-white px-3 py-3 sm:px-4")
+              div(class="flex items-center justify-between gap-4")
+                h2(class="font-mono text-[9px] font-bold tracking-[0.12em] text-neutral-400") COLLECTED TODAY
+              p(class="mt-1 text-2xl font-bold tracking-[-0.06em] sm:text-3xl")= dailyRevenue
+              p(class="mt-1 text-[10px] text-neutral-500")= 'Razorpay ' + dailyRazorpay + ' · Wallet ' + dailyWallet
 
           section(class="mt-5 flex min-h-[380px] flex-1 flex-col", aria-labelledby="schedule-heading")
             div(class="mb-3 flex flex-col gap-2 border-b-2 border-[#00D06C] pb-3 sm:flex-row sm:items-end sm:justify-between")
               div
                 p(class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#008f49]") APPOINTMENTS
                 h2#schedule-heading(class="mt-1 text-3xl font-bold tracking-[-0.06em]") Today’s schedule
-              p(class="w-fit rounded-full bg-neutral-100 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500")= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase() + ' · KOZHIKODE'
+              p(class="w-fit rounded-full bg-neutral-100 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-500")= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' }).toUpperCase() + ' · KOZHIKODE'
             div(class="min-h-0 flex-1 overflow-auto rounded-xl border border-neutral-300 bg-white shadow-sm")
               table(class="w-full min-w-[760px] border-collapse text-left")
                 thead(class="sticky top-0 z-10")
@@ -234,6 +244,7 @@ html(lang="en")
                     th(scope="col", class="px-4 py-3 text-left font-normal sm:px-5") SERVICE
                     th(scope="col", class="px-4 py-3 text-right font-normal sm:px-5") AMOUNT
                     th(scope="col", class="px-4 py-3 text-center font-normal sm:px-5") STATUS
+                    th(scope="col", class="px-4 py-3 text-center font-normal sm:px-5") ACTION
                 tbody
                   if appointmentRows.length
                     each appointment in appointmentRows
@@ -257,9 +268,17 @@ html(lang="en")
                             span(class=`inline-flex whitespace-nowrap items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.04em] ${statusStyle}`)
                               span(class="size-1.5 rounded-full bg-current", aria-hidden="true")
                               = appointmentStatus || 'UNKNOWN'
+                        td(class="px-4 py-3 text-center sm:px-5")
+                          if ['PENDING', 'ACCEPTED'].includes(appointmentStatus)
+                            button(type="button", data-dashboard-booking-action, data-booking-id=appointment.bookingId, data-next-status="CONFIRMED", class="whitespace-nowrap rounded-full bg-[#00D06C] px-3 py-2 font-mono text-[9px] font-bold tracking-[0.08em] text-black transition hover:bg-[#00bd61] disabled:opacity-50") CONFIRM
+                          else if appointmentStatus === 'CONFIRMED'
+                            button(type="button", data-dashboard-booking-action, data-booking-id=appointment.bookingId, data-next-status="COMPLETED", class="whitespace-nowrap rounded-full bg-neutral-950 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.08em] text-white transition hover:bg-[#00D06C] hover:text-black disabled:opacity-50") MARK COMPLETE
+                          else
+                            span(class="text-neutral-300") —
                   else
                     tr
-                      td(colspan="5", class="px-4 py-12 text-center text-sm text-[#77787d]") No appointment data available.
+                      td(colspan="6", class="px-4 py-12 text-center text-sm text-[#77787d]") No appointment data available.
+            p#dashboard-action-feedback(class="mt-3 hidden text-sm", role="status", aria-live="polite")
 
     script.
       const adminShell = document.getElementById('admin-shell');
@@ -284,5 +303,30 @@ html(lang="en")
           setSidebarOpen(false);
           sidebarToggle.focus();
         }
+      });
+      const dashboardActionFeedback = document.getElementById('dashboard-action-feedback');
+      document.querySelectorAll('[data-dashboard-booking-action]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          if (button.disabled) return;
+          const nextStatus = button.dataset.nextStatus;
+          const originalText = nextStatus === 'COMPLETED' ? 'MARK COMPLETE' : 'CONFIRM';
+          button.disabled = true;
+          button.textContent = nextStatus === 'COMPLETED' ? 'COMPLETING…' : 'CONFIRMING…';
+          dashboardActionFeedback.classList.remove('hidden', 'text-red-700', 'text-green-700');
+          dashboardActionFeedback.textContent = nextStatus === 'COMPLETED' ? 'Completing booking…' : 'Confirming booking…';
+          try {
+            const response = await fetch(`/api/admin/bookings/${encodeURIComponent(button.dataset.bookingId)}/status`, { method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ status: nextStatus }) });
+            const result = await response.json();
+            if (!response.ok || result.success !== true) throw new Error(result.message || (nextStatus === 'COMPLETED' ? 'Could not complete booking.' : 'Could not confirm booking.'));
+            dashboardActionFeedback.classList.add('text-green-700');
+            dashboardActionFeedback.textContent = result.message || (nextStatus === 'COMPLETED' ? 'Booking marked complete.' : 'Booking confirmed.');
+            window.setTimeout(() => window.location.reload(), 700);
+          } catch (error) {
+            dashboardActionFeedback.classList.add('text-red-700');
+            dashboardActionFeedback.textContent = error.message || (nextStatus === 'COMPLETED' ? 'Could not complete booking.' : 'Could not confirm booking.');
+            button.disabled = false;
+            button.textContent = originalText;
+          }
+        });
       });
 

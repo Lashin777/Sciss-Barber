@@ -40,11 +40,22 @@ block content
     const formattedDate = formatDate(appointmentDate);
     const formattedStart = formatTime(booking?.appointmentStart);
     const formattedEnd = formatTime(booking?.appointmentEnd);
-    const serviceName = booking?.serviceId?.name || 'Service unavailable';
+    // Worked by Codex: show the selected service list while keeping old single-service bookings readable.
+    const serviceName = booking?.serviceSnapshots?.length
+      ? booking.serviceSnapshots.map(service => service?.name).filter(Boolean).join(', ')
+      : booking?.serviceIds?.length
+      ? booking.serviceIds.map(service => service?.name).filter(Boolean).join(', ')
+      : booking?.serviceId?.name || 'Service unavailable';
     const barberName = booking?.barberId?.name || 'Barber to be confirmed';
-    const status = booking?.status || 'Status unavailable';
+    const status = String(booking?.status || '').toUpperCase() === 'FAILED'
+      || (String(booking?.status || '').toUpperCase() === 'PENDING'
+      && String(booking?.payment?.status || '').toUpperCase() === 'FAILED')
+      ? 'PAYMENT FAILED'
+      : booking?.status || 'Status unavailable';
     const statusPalette = {
       PENDING: { background: '#ffedd5', foreground: '#9a3412', darkForeground: '#fb923c' },
+      FAILED: { background: '#fee2e2', foreground: '#b91c1c', darkForeground: '#f87171' },
+      'PAYMENT FAILED': { background: '#fee2e2', foreground: '#b91c1c', darkForeground: '#f87171' },
       CONFIRMED: { background: '#dcfce7', foreground: '#166534', darkForeground: '#00D06C' },
       ACCEPTED: { background: '#dcfce7', foreground: '#166534', darkForeground: '#00D06C' },
       COMPLETED: { background: '#dcfce7', foreground: '#166534', darkForeground: '#00D06C' },
@@ -67,13 +78,18 @@ block content
     const advanceAmountValue = Number(booking?.advanceAmount);
     const hasPaymentAmounts = booking?.servicePrice !== null && booking?.servicePrice !== undefined && booking?.servicePrice !== ''
       && booking?.advanceAmount !== null && booking?.advanceAmount !== undefined && booking?.advanceAmount !== '';
-    const remainingBalance = hasPaymentAmounts && Number.isFinite(servicePriceValue) && Number.isFinite(advanceAmountValue)
-      ? formatAmount(Math.max(0, servicePriceValue - advanceAmountValue))
+    const amountPaidValue = String(booking?.payment?.status || '').toUpperCase() === 'SUCCESS' ? Number(booking.payment.amount) : 0;
+    const amountPaid = formatAmount(amountPaidValue);
+    const paymentStatus = booking?.payment?.status || 'NOT PAID';
+    const remainingBalance = hasPaymentAmounts && Number.isFinite(servicePriceValue) && Number.isFinite(amountPaidValue)
+      ? formatAmount(Math.max(0, servicePriceValue - amountPaidValue))
       : '—';
 
   div(class="mx-auto flex w-full max-w-6xl flex-1 flex-col py-8 sm:py-12")
 
-    a(href="/profile", class="mb-10 w-fit font-mono text-xs font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK TO PROFILE
+    div(class="mb-10 flex flex-wrap items-center justify-between gap-4")
+      a(href="/profile", class="w-fit font-mono text-xs font-bold tracking-[0.15em] text-neutral-500 transition hover:text-[#00D06C]") ← BACK TO PROFILE
+      a(href=`/bookings/${booking._id}/invoice`, class="inline-flex min-h-10 items-center justify-center rounded-full border border-neutral-300 px-5 font-mono text-[10px] font-bold tracking-[0.1em] transition hover:border-[#00D06C]") VIEW INVOICE
 
     div(class="mb-10 border-b border-neutral-200 pb-8 sm:mb-12")
       p(class="mb-4 font-mono text-[10px] tracking-[0.3em] text-neutral-400") SCISS’ BARBER · KOZHIKODE
@@ -119,8 +135,16 @@ block content
             span(class="text-right text-sm font-semibold")= servicePrice
 
           div(class="mb-6 flex items-center justify-between border-b border-neutral-200 pb-6")
-            span(class="text-sm text-neutral-500") Advance amount
+            span(class="text-sm text-neutral-500") Advance amount due
             span(class="text-right text-sm font-semibold")= advanceAmount
+
+          div(class="mb-4 flex items-center justify-between")
+            span(class="text-sm text-neutral-500") Payment status
+            span(class="text-right text-sm font-semibold")= paymentStatus
+
+          div(class="mb-6 flex items-center justify-between border-b border-neutral-200 pb-6")
+            span(class="text-sm text-neutral-500") Amount paid
+            span(class="text-right text-sm font-semibold")= amountPaid
 
           div(class="mb-6 flex items-center justify-between border-b border-neutral-200 pb-6")
             span(class="text-sm text-neutral-500") Remaining balance

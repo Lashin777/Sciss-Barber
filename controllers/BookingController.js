@@ -2,6 +2,7 @@ import { getCustomerAvailableSlotsService,
         createBookingService,
         getMyBookingsService,
         getBookingDetailsService,
+        getBookingInvoiceService,
         getBookingHistoryService,
         cancelBookingService
     } from "../services/BookingService.js";
@@ -9,15 +10,18 @@ import { getCustomerAvailableSlotsService,
 const getAvailableSlotsController = async (req, res) => {
     try {
         const { serviceId, date } = req.query;
+        const serviceIds = typeof req.query.serviceIds === 'string'
+            ? req.query.serviceIds.split(',').filter(Boolean)
+            : Array.isArray(req.query.serviceIds) ? req.query.serviceIds : serviceId;
 
-        if (!serviceId || !date) {
+        if (!serviceIds || !date) {
             return res.status(400).json({
                 success: false,
                 message: "service id and date are required"
             });
         }
 
-        const customerSlots = await getCustomerAvailableSlotsService(serviceId, date);
+        const customerSlots = await getCustomerAvailableSlotsService(serviceIds, date);
 
         return res.status(200).json({
             success: true,
@@ -25,7 +29,7 @@ const getAvailableSlotsController = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(error.statusCode || 400).json({
             success: false,
             message: error.message || "Failed to fetch available slots"
         });
@@ -36,10 +40,11 @@ const getAvailableSlotsController = async (req, res) => {
 
 const createBookingController = async (req, res) => {
     try {
-        const { serviceId, date, startTime } = req.body;
+        const { serviceIds, serviceId, date, startTime } = req.body;
 
         const booking = await createBookingService({
             userId: req.user._id,
+            serviceIds,
             serviceId,
             date,
             startTime
@@ -78,6 +83,9 @@ const getMyBookingsController = async (req, res) => {
 
 const getBookingDetailsController = async(req,res)=>{
     try{
+        if (!/^[a-f\d]{24}$/i.test(String(req.params.bookingId || ''))) {
+            return res.status(400).json({ success: false, message: 'Invalid booking ID' });
+        }
         const  booking = await getBookingDetailsService(
             req.params.bookingId,
             req.user._id
@@ -102,9 +110,22 @@ const getBookingDetailsController = async(req,res)=>{
     }
 };
 
+const renderBookingInvoiceController = async (req, res, next) => {
+    try {
+        if (!/^[a-f\d]{24}$/i.test(String(req.params.bookingId || ''))) {
+            return res.status(400).render('errors/404', { title: 'Invalid booking ID' });
+        }
+        const booking = await getBookingInvoiceService(req.params.bookingId, req.user._id);
+        if (!booking) return res.status(404).render('errors/404', { title: 'Booking not found' });
+        return res.render('user/booking-invoice', { title: 'Booking Invoice', booking });
+    } catch (error) {
+        next(error);
+    }
+};
 
 
-const getBookingHistoryController = async(req,res)=>{
+
+const getBookingHistoryController = async(req,res,next)=>{
     try{
         const history = await getBookingHistoryService(req.user._id);
 
@@ -116,7 +137,7 @@ const getBookingHistoryController = async(req,res)=>{
         }
 
     }catch(error){
-            nextTick(error)
+            next(error)
         }
 };
 
@@ -145,6 +166,7 @@ export { getAvailableSlotsController,
          createBookingController,
          getMyBookingsController,
          getBookingDetailsController,
+         renderBookingInvoiceController,
          getBookingHistoryController,
          cancelBookingController
 };

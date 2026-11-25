@@ -1,0 +1,303 @@
+extends ./admin-layout.pug
+
+block page_header
+  header(class="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+    div
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / FINANCE
+      h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Payments
+      p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Review payment records and their associated bookings.
+
+block page_content
+  section(class="flex min-h-0 flex-1 flex-col gap-5", aria-labelledby="payment-summary-heading")
+    p#payments-loading(class="hidden text-sm text-neutral-500", role="status", aria-live="polite") Loading payment data…
+    p#payments-error(class="hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700", role="alert")
+    p(class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-relaxed text-neutral-600") Summary counts and amounts use the selected payment creation date range. Method and status filters apply to the records table. Only the fields needed for reporting are returned; payment signatures and Razorpay credentials are never included.
+
+    section(class="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6", aria-label="Payment date range")
+      div(class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") DATE RANGE
+          p#payments-range-label(class="mt-1 text-sm text-neutral-600") All recorded dates · Asia/Kolkata
+        div(class="grid grid-cols-2 gap-2 sm:w-auto")
+          div
+            label(for="payment-date-from", class="mb-1 block font-mono text-[8px] font-bold tracking-[0.12em] text-neutral-400") FROM
+            input#payment-date-from(type="date", class="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm")
+          div
+            label(for="payment-date-to", class="mb-1 block font-mono text-[8px] font-bold tracking-[0.12em] text-neutral-400") TO
+            input#payment-date-to(type="date", class="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm")
+          button#payments-clear-dates(type="button", class="col-span-2 h-9 justify-self-end rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:text-[#00D06C]") CLEAR DATES
+
+    div
+      h2#payment-summary-heading(class="sr-only") Payment summary
+      div(class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5")
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") TOTAL PAYMENTS
+          p#payments-count-total(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") All recorded statuses
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-green-700") SUCCESSFUL
+          p#payments-count-success(class="mt-3 text-3xl font-bold tracking-[-0.06em] text-green-700") —
+          p(class="mt-1 text-xs text-neutral-500") Successful records
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-amber-700") PENDING
+          p#payments-count-pending(class="mt-3 text-3xl font-bold tracking-[-0.06em] text-amber-700") —
+          p(class="mt-1 text-xs text-neutral-500") Awaiting resolution
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-red-700") FAILED
+          p#payments-count-failed(class="mt-3 text-3xl font-bold tracking-[-0.06em] text-red-700") —
+          p(class="mt-1 text-xs text-neutral-500") Failed records
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") CREATING
+          p#payments-count-creating(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Order creation in progress
+
+    section(class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]", aria-label="Payment summaries")
+      article(class="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6")
+        p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") PAYMENT AMOUNT
+        h2(class="mt-1 text-xl font-bold tracking-[-0.04em]") Amount summary
+        p#payments-amount-total(class="mt-5 text-4xl font-bold tracking-[-0.06em]") —
+        p(class="mt-1 text-sm text-neutral-500") Recorded amount across all statuses
+        p#payments-amount-success(class="mt-3 text-xs font-semibold text-green-700") Successful amount: —
+      article(class="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6")
+        p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") PAYMENT METHOD
+        h2(class="mt-1 text-xl font-bold tracking-[-0.04em]") Method breakdown
+        div(class="mt-5 grid gap-3 sm:grid-cols-2")
+          div(class="rounded-lg bg-neutral-50 p-4")
+            p(class="text-sm font-semibold") Razorpay
+            p#payments-razorpay-count(class="mt-2 text-2xl font-bold") —
+            p#payments-razorpay-amount(class="text-xs text-neutral-500") —
+          div(class="rounded-lg bg-neutral-50 p-4")
+            p(class="text-sm font-semibold") Wallet
+            p#payments-wallet-count(class="mt-2 text-2xl font-bold") —
+            p#payments-wallet-amount(class="text-xs text-neutral-500") —
+
+    section(class="min-w-0 rounded-xl border border-neutral-200 bg-white", aria-labelledby="payment-history-heading")
+      div(class="flex flex-col gap-4 border-b border-neutral-100 p-5 sm:p-6")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") PAYMENT DIRECTORY
+          h2#payment-history-heading(class="mt-1 text-xl font-bold tracking-[-0.04em]") Payment history
+        div(class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4")
+          label.sr-only(for="payment-search") Search payments
+          input#payment-search(type="search", maxlength="100", placeholder="Search booking, customer or ID", class="h-10 rounded-full border border-neutral-200 px-4 text-sm", aria-label="Search by payment, booking or customer")
+          label.sr-only(for="payment-status-filter") Filter by payment status
+          select#payment-status-filter(class="h-10 rounded-full border border-neutral-200 bg-white px-4 text-sm")
+            option(value="") All statuses
+            option(value="SUCCESS") Successful
+            option(value="PENDING") Pending
+            option(value="FAILED") Failed
+            option(value="CREATING") Creating
+          label.sr-only(for="payment-method-filter") Filter by payment method
+          select#payment-method-filter(class="h-10 rounded-full border border-neutral-200 bg-white px-4 text-sm")
+            option(value="") All methods
+            option(value="RAZORPAY") Razorpay
+            option(value="WALLET") Wallet
+          p(class="self-center text-xs text-neutral-500") Sorted by creation date, newest first
+      div(class="overflow-x-auto")
+        table(class="w-full min-w-[1040px] border-collapse text-left")
+          thead
+            tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[9px] tracking-[0.13em] text-neutral-500")
+              th(scope="col", class="px-5 py-4 font-normal") CREATED
+              th(scope="col", class="px-5 py-4 font-normal") BOOKING
+              th(scope="col", class="px-5 py-4 font-normal") CUSTOMER
+              th(scope="col", class="px-5 py-4 font-normal") METHOD
+              th(scope="col", class="px-5 py-4 font-normal") STATUS
+              th(scope="col", class="px-5 py-4 text-right font-normal") AMOUNT
+          tbody#payment-record-rows
+      div(class="flex flex-col items-center justify-between gap-3 border-t border-neutral-100 px-5 py-4 text-xs text-neutral-500 sm:flex-row")
+        p#payment-pagination-label(role="status", aria-live="polite") Loading payment records…
+        div(class="flex gap-2")
+          button#payment-previous(type="button", disabled, class="h-9 rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] disabled:opacity-40") PREVIOUS
+          button#payment-next(type="button", disabled, class="h-9 rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] disabled:opacity-40") NEXT
+
+  script.
+    (() => {
+      const fromInput = document.getElementById('payment-date-from');
+      const toInput = document.getElementById('payment-date-to');
+      const searchInput = document.getElementById('payment-search');
+      const statusInput = document.getElementById('payment-status-filter');
+      const methodInput = document.getElementById('payment-method-filter');
+      const loadingMessage = document.getElementById('payments-loading');
+      const errorMessage = document.getElementById('payments-error');
+      const rows = document.getElementById('payment-record-rows');
+      const previousButton = document.getElementById('payment-previous');
+      const nextButton = document.getElementById('payment-next');
+      const pageLabel = document.getElementById('payment-pagination-label');
+      const pageSize = 10;
+      let page = 1;
+      let activeRequest;
+      let requestSequence = 0;
+      let searchTimer;
+
+      const formatMoney = (amount, currency = 'INR') => new Intl.NumberFormat('en-IN', {
+        style: 'currency', currency, maximumFractionDigits: 2
+      }).format(Number(amount) || 0);
+      const setText = (id, value) => { document.getElementById(id).textContent = value; };
+      const formatDate = (value) => new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata'
+      }).format(new Date(value));
+      const formatDateOnly = (value) => new Intl.DateTimeFormat('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+      }).format(new Date(value));
+
+      const showEmpty = () => {
+        rows.replaceChildren();
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 6;
+        cell.className = 'px-5 py-12 text-center text-sm text-neutral-500';
+        cell.textContent = 'No payment records match the selected filters.';
+        row.append(cell);
+        rows.append(row);
+      };
+
+      const renderPayments = (payments) => {
+        rows.replaceChildren();
+        if (!payments.length) return showEmpty();
+        const statusStyles = {
+          SUCCESS: 'bg-green-50 text-green-700',
+          PENDING: 'bg-amber-50 text-amber-700',
+          FAILED: 'bg-red-50 text-red-700',
+          CREATING: 'bg-neutral-100 text-neutral-600'
+        };
+
+        payments.forEach((payment) => {
+          const row = document.createElement('tr');
+          row.className = 'border-b border-neutral-100 last:border-0';
+          const dateCell = document.createElement('td');
+          dateCell.className = 'px-5 py-4 text-sm text-neutral-600';
+          dateCell.textContent = formatDate(payment.createdAt);
+          row.append(dateCell);
+
+          const bookingCell = document.createElement('td');
+          bookingCell.className = 'px-5 py-4 text-sm';
+          if (payment.booking?.id) {
+            const link = document.createElement('a');
+            link.href = `/admin/booking/${encodeURIComponent(payment.booking.id)}`;
+            link.className = 'font-semibold text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:text-[#00D06C]';
+            link.textContent = payment.booking.token || String(payment.booking.id).slice(-8);
+            bookingCell.append(link);
+            const details = document.createElement('span');
+            details.className = 'mt-1 block text-xs text-neutral-500';
+            const bookingDate = payment.booking.appointmentStart || payment.booking.appointmentDate;
+            const serviceNames = Array.isArray(payment.booking.services) ? payment.booking.services.join(', ') : '';
+            details.textContent = [bookingDate ? formatDateOnly(bookingDate) : '', serviceNames, payment.booking.status || ''].filter(Boolean).join(' · ');
+            bookingCell.append(details);
+          } else {
+            bookingCell.textContent = 'Booking unavailable';
+          }
+          row.append(bookingCell);
+
+          const customerCell = document.createElement('td');
+          customerCell.className = 'px-5 py-4 text-sm text-neutral-700';
+          const customerName = document.createElement('span');
+          customerName.className = 'block font-semibold';
+          customerName.textContent = payment.customer?.name || 'Customer unavailable';
+          customerCell.append(customerName);
+          const customerDetails = document.createElement('span');
+          customerDetails.className = 'mt-1 block text-xs text-neutral-500';
+          customerDetails.textContent = [payment.customer?.email, payment.customer?.phone].filter(Boolean).join(' · ');
+          customerCell.append(customerDetails);
+          row.append(customerCell);
+
+          const methodCell = document.createElement('td');
+          methodCell.className = 'px-5 py-4 text-sm text-neutral-600';
+          methodCell.textContent = payment.method || '—';
+          row.append(methodCell);
+
+          const statusCell = document.createElement('td');
+          statusCell.className = 'px-5 py-4 text-sm';
+          const statusBadge = document.createElement('span');
+          statusBadge.className = `inline-flex rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.08em] ${statusStyles[payment.status] || 'bg-neutral-100 text-neutral-600'}`;
+          statusBadge.textContent = payment.status || 'UNKNOWN';
+          statusCell.append(statusBadge);
+          row.append(statusCell);
+
+          const amountCell = document.createElement('td');
+          amountCell.className = 'px-5 py-4 text-right font-mono text-sm font-bold text-neutral-900';
+          amountCell.textContent = formatMoney(payment.amount, payment.currency || 'INR');
+          row.append(amountCell);
+          rows.append(row);
+        });
+      };
+
+      const renderSummary = (summary, range) => {
+        setText('payments-count-total', Number(summary.totalPayments || 0).toLocaleString('en-IN'));
+        setText('payments-count-success', Number(summary.successfulPayments || 0).toLocaleString('en-IN'));
+        setText('payments-count-pending', Number(summary.pendingPayments || 0).toLocaleString('en-IN'));
+        setText('payments-count-failed', Number(summary.failedPayments || 0).toLocaleString('en-IN'));
+        setText('payments-count-creating', Number(summary.creatingPayments || 0).toLocaleString('en-IN'));
+        setText('payments-amount-total', formatMoney(summary.totalAmount));
+        setText('payments-amount-success', `Successful amount: ${formatMoney(summary.successfulAmount)}`);
+        const methodSummary = summary.methods || {};
+        for (const [key, prefix] of [['RAZORPAY', 'razorpay'], ['WALLET', 'wallet']]) {
+          const method = methodSummary[key] || {};
+          setText(`payments-${prefix}-count`, `${Number(method.payments || 0).toLocaleString('en-IN')} records`);
+          setText(`payments-${prefix}-amount`, `${formatMoney(method.amount)} recorded · ${formatMoney(method.successfulAmount)} successful`);
+        }
+        setText('payments-range-label', range.from || range.to
+          ? `${range.from ? formatDateOnly(`${range.from}T00:00:00+05:30`) : 'Beginning'} – ${range.to ? formatDateOnly(`${range.to}T00:00:00+05:30`) : 'No end date'} · Asia/Kolkata`
+          : 'All recorded dates · Asia/Kolkata');
+      };
+
+      const loadPayments = async () => {
+        if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
+          errorMessage.textContent = 'The start date must be on or before the end date.';
+          errorMessage.classList.remove('hidden');
+          return;
+        }
+        activeRequest?.abort();
+        activeRequest = new AbortController();
+        const currentRequest = ++requestSequence;
+        const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
+        if (fromInput.value) params.set('from', fromInput.value);
+        if (toInput.value) params.set('to', toInput.value);
+        if (searchInput.value.trim()) params.set('search', searchInput.value.trim());
+        if (methodInput.value) params.set('method', methodInput.value);
+        if (statusInput.value) params.set('status', statusInput.value);
+
+        loadingMessage.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+        try {
+          const response = await fetch(`/api/admin/payments?${params.toString()}`, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            signal: activeRequest.signal
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.message || 'Payment records could not be loaded.');
+          renderSummary(result.summary, result.range);
+          renderPayments(result.payments || []);
+          const pagination = result.pagination;
+          const totalPages = Math.max(pagination.totalPages, 1);
+          setText('payment-pagination-label', `Page ${pagination.page} of ${totalPages} · ${pagination.total} records`);
+          previousButton.disabled = pagination.page <= 1;
+          nextButton.disabled = pagination.page >= pagination.totalPages;
+          page = pagination.page;
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            errorMessage.textContent = error.message || 'Payment records could not be loaded. Please try again.';
+            errorMessage.classList.remove('hidden');
+          }
+        } finally {
+          if (currentRequest === requestSequence) loadingMessage.classList.add('hidden');
+        }
+      };
+
+      fromInput.addEventListener('change', () => { page = 1; loadPayments(); });
+      toInput.addEventListener('change', () => { page = 1; loadPayments(); });
+      methodInput.addEventListener('change', () => { page = 1; loadPayments(); });
+      statusInput.addEventListener('change', () => { page = 1; loadPayments(); });
+      searchInput.addEventListener('input', () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => { page = 1; loadPayments(); }, 250);
+      });
+      document.getElementById('payments-clear-dates').addEventListener('click', () => {
+        fromInput.value = '';
+        toInput.value = '';
+        page = 1;
+        loadPayments();
+      });
+      previousButton.addEventListener('click', () => { if (page > 1) { page -= 1; loadPayments(); } });
+      nextButton.addEventListener('click', () => { page += 1; loadPayments(); });
+      loadPayments();
+    })();

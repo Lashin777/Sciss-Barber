@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generateReferralCode } from '../utils/referralCode.js';
 
 
 const userSchema = new mongoose.Schema({
@@ -36,7 +37,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-
     // Worked by Codex: customer addresses are no longer part of the profile model.
     profileImage: {
         type: String,
@@ -55,6 +55,19 @@ const userSchema = new mongoose.Schema({
     isEmailVerified: {
         type: Boolean,
         default: false
+    },
+    referralCode: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        unique: true,
+        sparse: true,
+        default: generateReferralCode
+    },
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
     }
 }, { timestamps: true });
 

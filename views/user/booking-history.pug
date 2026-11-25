@@ -155,14 +155,25 @@ block content
 
       const service = document.createElement('h3');
       service.className = 'min-w-0 break-words text-xl font-bold tracking-[-0.04em]';
-      service.textContent = booking.serviceId?.name || 'Service unavailable';
+      const serviceName = booking.serviceSnapshots?.length
+        ? booking.serviceSnapshots.map((service) => service?.name).filter(Boolean).join(', ')
+        : booking.serviceIds?.length
+        ? booking.serviceIds.map((service) => service?.name).filter(Boolean).join(', ')
+        : booking.serviceId?.name;
+      service.textContent = serviceName || 'Service unavailable';
 
       const status = document.createElement('span');
       status.className = 'shrink-0 rounded-full px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em]';
-      status.textContent = booking.status || 'STATUS UNAVAILABLE';
-      const statusKey = String(booking.status || '').toUpperCase();
+      const statusKey = String(booking.status || '').toUpperCase() === 'FAILED'
+        || (String(booking.status || '').toUpperCase() === 'PENDING'
+        && String(booking.payment?.status || '').toUpperCase() === 'FAILED')
+        ? 'PAYMENT FAILED'
+        : String(booking.status || '').toUpperCase();
+      status.textContent = statusKey || 'STATUS UNAVAILABLE';
       const statusColors = {
         PENDING: { backgroundColor: '#ffedd5', color: '#9a3412' },
+        FAILED: { backgroundColor: '#fee2e2', color: '#b91c1c' },
+        'PAYMENT FAILED': { backgroundColor: '#fee2e2', color: '#b91c1c' },
         CONFIRMED: { backgroundColor: '#dcfce7', color: '#166534' },
         ACCEPTED: { backgroundColor: '#dcfce7', color: '#166534' },
         COMPLETED: { backgroundColor: '#dcfce7', color: '#166534' },
@@ -225,7 +236,7 @@ block content
           cancelButtonInProgress = cancelButton;
           cancelBookingError.classList.add('hidden');
           cancelBookingError.textContent = '';
-          cancelBookingMessage.textContent = `Cancel ${booking.serviceId?.name || 'this service'} on ${formatHistoryDate(booking.appointmentStart)} at ${formatHistoryTime(booking.appointmentStart)}? This action can’t be undone.`;
+          cancelBookingMessage.textContent = `Cancel ${serviceName || 'this service'} on ${formatHistoryDate(booking.appointmentStart)} at ${formatHistoryTime(booking.appointmentStart)}? This action can’t be undone.`;
           cancelBookingDialog.showModal();
         });
         actions.appendChild(cancelButton);

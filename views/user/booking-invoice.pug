@@ -1,0 +1,89 @@
+extends ../layouts/minimal.pug
+
+block content
+  - const valueOr = (value) => value === null || value === undefined || value === '' ? 'Not available' : value;
+  - const formatDate = (value, options = {}) => { const date = value ? new Date(value) : null; return !date || Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', ...options }); };
+  - const formatTime = (value) => { const date = value ? new Date(value) : null; return !date || Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }); };
+  - const money = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(value)) : '—';
+  - const services = Array.isArray(booking.serviceSnapshots) && booking.serviceSnapshots.length ? booking.serviceSnapshots : Array.isArray(booking.serviceIds) && booking.serviceIds.length ? booking.serviceIds : booking.serviceId ? [booking.serviceId] : [];
+  - const payment = booking.payment || null;
+  - const paymentStatusKey = String(payment && payment.status || '').toUpperCase();
+  - const bookingStatus = String(booking.status || 'UNKNOWN').toUpperCase();
+  - const paidAmount = paymentStatusKey === 'SUCCESS' ? Number(payment.amount) || 0 : 0;
+  - const serviceTotal = Number(booking.servicePrice) || 0;
+  - const amountDue = Math.max(0, serviceTotal - paidAmount);
+  - const paymentLabel = paymentStatusKey === 'SUCCESS' ? 'PAID' : payment && payment.status || 'NOT PAID';
+
+  style.
+    @media print {
+      body > header, body > footer, .invoice-actions { display: none !important; }
+      body { background: white !important; }
+      .invoice-sheet { border: 0 !important; box-shadow: none !important; }
+    }
+
+  section(class="mx-auto w-full max-w-3xl py-8 sm:py-12")
+    div.invoice-actions(class="mb-5 flex flex-wrap items-center justify-between gap-3")
+      a(href=`/bookings/${booking._id}`, class="font-mono text-[10px] font-bold tracking-[0.12em] text-neutral-500 hover:text-[#00D06C]") ← BACK TO BOOKING
+      button(type="button", onclick="window.print()", class="rounded-full bg-[#00D06C] px-5 py-3 font-mono text-[10px] font-bold tracking-[0.12em] text-black") PRINT / SAVE PDF
+
+    article.invoice-sheet(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-10")
+      header(class="flex flex-col justify-between gap-6 border-b-2 border-[#00D06C] pb-7 sm:flex-row sm:items-start")
+        div
+          p(class="font-mono text-[10px] font-bold tracking-[0.22em] text-[#008f49]") SCISS’ BARBER · KOZHIKODE
+          h1(class="mt-3 text-4xl font-bold tracking-[-0.06em] sm:text-5xl") BOOKING RECEIPT
+        div(class="sm:text-right")
+          p(class="font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") BOOKING TOKEN
+          p(class="mt-2 font-mono text-xl font-bold")= valueOr(booking.bookingToken)
+          p(class="mt-2 text-xs text-neutral-500")= `Issued ${formatDate(booking.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}`
+
+      section(class="grid gap-7 border-b border-neutral-200 py-7 sm:grid-cols-2")
+        div
+          h2(class="mb-3 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") CUSTOMER
+          p(class="font-bold")= valueOr(booking.userId && booking.userId.name)
+          p(class="mt-1 break-all text-sm text-neutral-500")= valueOr(booking.userId && booking.userId.email)
+          p(class="mt-1 text-sm text-neutral-500")= valueOr(booking.userId && booking.userId.phone)
+        div
+          h2(class="mb-3 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") APPOINTMENT
+          p(class="font-bold")= formatDate(booking.appointmentStart, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+          p(class="mt-1 text-sm text-neutral-500")= `${formatTime(booking.appointmentStart)} – ${formatTime(booking.appointmentEnd)}`
+          p(class="mt-1 text-sm text-neutral-500")= `Barber: ${valueOr(booking.barberId && booking.barberId.name)}`
+
+      section(class="py-7")
+        h2(class="mb-4 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") SERVICES
+        each service in services
+          div(class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 py-3")
+            span(class="text-sm font-semibold")= valueOr(service && service.name)
+            span(class="text-sm text-neutral-600")= service && service.price !== undefined && service.price !== null ? money(service.price) : 'Included in service total'
+        if !services.length
+          p(class="text-sm text-neutral-500") Service information is unavailable.
+
+      section(class="border-t border-neutral-200 pt-6")
+        div(class="flex justify-between gap-4 py-2 text-sm")
+          span(class="text-neutral-500") Booking status
+          strong= bookingStatus
+        div(class="flex justify-between gap-4 py-2 text-sm")
+          span(class="text-neutral-500") Service total
+          strong= money(serviceTotal)
+        div(class="flex justify-between gap-4 py-2 text-sm")
+          span(class="text-neutral-500") Payment status
+          span(class=`rounded-full px-3 py-1 font-mono text-[9px] font-bold tracking-[0.1em] ${paymentStatusKey === 'SUCCESS' ? 'bg-green-50 text-green-800' : paymentStatusKey === 'FAILED' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-800'}`)= paymentLabel
+        if payment && payment.amount !== undefined
+          div(class="flex justify-between gap-4 py-2 text-sm")
+            span(class="text-neutral-500") Payment amount
+            strong= money(payment.amount)
+        div(class="flex justify-between gap-4 py-2 text-sm")
+          span(class="text-neutral-500") Advance required
+          strong= money(booking.advanceAmount)
+        div(class="flex justify-between gap-4 py-2 text-sm")
+          span(class="text-neutral-500") Amount paid
+          strong= money(paidAmount)
+        div(class="mt-3 flex justify-between gap-4 border-t border-neutral-200 pt-4")
+          span(class="font-mono text-[10px] font-bold tracking-[0.12em]") REMAINING SERVICE BALANCE
+          strong(class="text-xl")= money(amountDue)
+        if payment
+          p(class="mt-4 break-all font-mono text-[9px] leading-relaxed text-neutral-400")= `Payment reference: ${valueOr(payment.razorpayPaymentId || payment.razorpayOrderId)}`
+        else
+          p(class="mt-4 text-xs text-neutral-400") No payment record is associated with this booking.
+
+      footer(class="mt-8 border-t border-neutral-100 pt-5 text-xs leading-relaxed text-neutral-400")
+        p This booking receipt reflects the stored booking and payment records. It is not a GST/tax invoice. Only a successful payment record is counted as paid.

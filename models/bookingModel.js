@@ -26,6 +26,15 @@ const bookingSchema = new mongoose.Schema({
         ref: 'Service',
         required: true
     },
+    // Worked by Codex: keep the legacy primary service reference and retain every service in a combined booking.
+    serviceIds: {
+        type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service' }],
+        default: []
+    },
+    serviceSnapshots: {
+        type: [{ serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true }, name: { type: String, required: true }, price: { type: Number, required: true, min: 0 }, duration: { type: Number, required: true, min: 1 } }],
+        default: []
+    },
     bookingToken: {
         type: String,
         required: true,
@@ -57,9 +66,12 @@ const bookingSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
+    paymentDeadline: {
+        type: Date
+    },
     status: {
         type: String,
-        enum: ['PENDING', 'CONFIRMED','ACCEPTED', 'DECLINED', 'COMPLETED', 'CANCELLED'],
+        enum: ['PENDING', 'FAILED', 'CONFIRMED','ACCEPTED', 'DECLINED', 'COMPLETED', 'CANCELLED'],
         default: 'PENDING',
         required: true
     },
@@ -73,6 +85,8 @@ const bookingSchema = new mongoose.Schema({
     },
 
 }, { timestamps: true });
+
+bookingSchema.index({ status: 1, paymentDeadline: 1, createdAt: 1 });
 
 
 const Booking = mongoose.model('Booking', bookingSchema);

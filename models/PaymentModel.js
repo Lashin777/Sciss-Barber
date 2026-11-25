@@ -12,16 +12,29 @@ const paymentSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    method: {
+        type: String,
+        enum: ['RAZORPAY', 'WALLET'],
+        default: 'RAZORPAY',
+        required: true
+    },
     razorpayOrderId: {
         type: String,
-        required: true,
-        unique: true
+        required: function () {
+            // Query updates do not reliably expose the persisted method/status; service transitions enforce those invariants.
+            if (typeof this.getUpdate === 'function') return false;
+            return this.method === 'RAZORPAY' && ['PENDING', 'SUCCESS'].includes(this.status);
+        },
     },
     razorpayPaymentId: {
         type: String,
         default: null
     },
     razorpaySignature: {
+        type: String,
+        default: null
+    },
+    creationToken: {
         type: String,
         default: null
     },
@@ -34,12 +47,26 @@ const paymentSchema = new mongoose.Schema({
         type: String,
         default: 'INR'
     },
+    creationStartedAt: {
+        type: Date,
+        default: null
+    },
+    lastCaptureCheckAt: {
+        type: Date,
+        default: null
+    },
     status: {
         type: String,
-        enum: ['PENDING', 'SUCCESS', 'FAILED'],
+        enum: ['CREATING','PENDING', 'SUCCESS', 'FAILED'],
         default: 'PENDING'
     }
 }, { timestamps: true });
+
+paymentSchema.index(
+    { razorpayOrderId: 1 },
+    { name: 'razorpayOrderId_string_unique_v2', unique: true, partialFilterExpression: { razorpayOrderId: { $type: 'string', $gt: '' } } }
+);
+paymentSchema.index({ status: 1, method: 1, lastCaptureCheckAt: 1 });
 
 const Payment = mongoose.model('Payment', paymentSchema);
 

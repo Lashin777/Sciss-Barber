@@ -6,17 +6,45 @@ import { UsersignUp,
         UpdateUserProfile,
         changeUserPassword,
         sendEmailChangeOtp,
-        verifyEmailChangeOtp
+        verifyEmailChangeOtp,
+        ensureUserReferralCode
 } from '../services/UserService.js';
 import { getAllServices,
          getAllServiceCategories
 } from '../services/ServiceService.js';
 import { getBookingDetailsService } from '../services/BookingService.js';
+import { getUserReferralsService } from '../services/ReferralService.js';
 import { verifyOtp, resendOtp } from '../services/otpService.js';
 import jwt from 'jsonwebtoken'
 import { setUserSessionCookie, clearUserSessionCookie } from '../utils/session.js';
 import ShopRules from '../models/ShopRules.js';
 import passport from 'passport';
+import { uploadImageToCloudinary, deleteCloudinaryProfileImage } from '../services/cloudinaryService.js';
+import { readFile, unlink } from 'node:fs/promises';
+
+// Worked by Codex: retain local uploads as a fallback when Cloudinary is not configured.
+const uploadProfileImage = (file) => file?.path
+    ? `/uploads/${file.filename}`
+    : uploadImageToCloudinary(file);
+
+// Worked by Codex: verify file signatures so a spoofed image MIME type cannot upload arbitrary content.
+const validateUploadedProfileImage = async (file) => {
+    const buffer = file.buffer || (file.path ? await readFile(file.path) : null);
+    const signatures = {
+        'image/jpeg': buffer?.[0] === 0xff && buffer?.[1] === 0xd8 && buffer?.[2] === 0xff,
+        'image/png': buffer?.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+        'image/gif': ['GIF87a', 'GIF89a'].includes(buffer?.subarray(0, 6).toString('ascii')),
+        'image/webp': buffer?.subarray(0, 4).toString('ascii') === 'RIFF'
+            && buffer?.subarray(8, 12).toString('ascii') === 'WEBP'
+    };
+
+    if (!buffer || !signatures[file.mimetype]) {
+        if (file.path) await unlink(file.path).catch(() => {});
+        const error = new Error('The selected file is not a supported JPEG, PNG, WebP, or GIF image');
+        error.statusCode = 400;
+        throw error;
+    }
+};
 
 const renderHomePageController = (req, res) => {
     res.render('user/home', {
@@ -68,6 +96,9 @@ const renderSignupPageController = (req, res) => res.render('user/signup', { tit
 const renderAboutPageController = (req, res) => res.render('user/about', { title: 'About' });
 const renderBookingPageController = async (req, res) => {
     try {
+        if (!req.user) {
+            return res.redirect('/login?returnTo=/booking');
+        }
         const [categories, services, shopRules] = await Promise.all([
             getAllServiceCategories(),
             getAllServices(),
@@ -98,6 +129,10 @@ const renderBookingPageController = async (req, res) => {
 
 const renderBookingDetailsPageController = async (req, res) => {
     try {
+        // Worked by Codex: return a not-found page for malformed IDs instead of surfacing a Mongoose cast error.
+        if (!/^[a-f\d]{24}$/i.test(String(req.params.bookingId || ''))) {
+            return res.status(404).render('errors/404', { title: 'Booking not found' });
+        }
         if (!req.user) {
             return res.redirect('/login');
         }
@@ -123,9 +158,27 @@ const renderBookingDetailsPageController = async (req, res) => {
     }
 };
 
-const renderProfilePageController = (req, res) => {
+const renderProfilePageController = async (req, res, next) => {
     if (!req.user) return res.redirect('/login');
-    res.render('user/profile', { title: 'Your Profile', user: req.user });
+    try {
+        const [referralCode, referrals] = await Promise.all([
+            ensureUserReferralCode(req.user._id),
+            getUserReferralsService(req.user._id)
+        ]);
+        req.user.referralCode = referralCode;
+        return res.render('user/profile', { title: 'Your Profile', user: req.user, referrals });
+    } catch (error) {
+        return next(error);
+    }
+};
+
+const renderWalletPageController = async (req, res, next) => {
+    if (!req.user) return res.redirect('/login?returnTo=%2Fwallet');
+    try {
+        return res.render('user/wallet', { title: 'My Wallet', user: req.user });
+    } catch (error) {
+        return next(error);
+    }
 };
 
 const renderBookingHistoryPageController = (req, res) => {
@@ -140,16 +193,24 @@ const renderProfileEditPageController = (req, res) => {
 
 const UsersignUpController = async (req, res) => {
     try {
-        const newUser = await UsersignUp(req.body.email, req.body.name, req.body.password, req.body.phone)
-        res.status(201).json({
-            message: "signUp succesful",
-            userId: newUser._id
+        const result = await UsersignUp(
+            req.body.email,
+            req.body.name,
+            req.body.password,
+            req.body.phone,
+            undefined,
+            req.body.referralCode
+        );
+
+        res.status(200).json({
+            message: "OTP sent successfully. Please verify your email.",
+            email: result.email
         });
 
     } catch (error) {
-        res.status(400).json({ message: error.message })
+        res.status(400).json({ message: error.message });
     }
-}
+};
 
 const verifyOtpController = async (req, res) => {
     try {
@@ -161,6 +222,10 @@ const verifyOtpController = async (req, res) => {
 }
 
 const resendOtpController = async (req, res) => {
+    // Worked by Codex: public OTP resend must not expose authenticated email-change or admin-reset purposes.
+    if (!['EMAIL_VERIFICATION', 'PASSWORD_RESET'].includes(req.body?.purpose)) {
+        return res.status(400).json({ message: 'Unsupported OTP purpose' });
+    }
     try {
         await resendOtp(req.body.email, req.body.purpose);
         res.status(200).json({ message: "OTP have been send" });
@@ -199,6 +264,7 @@ const userLoginController = async (req, res) => {
 }
 
 const updateUserProfileController = async (req, res) => {
+    let uploadedProfileImage;
     try {
         const updatedData = {};
 
@@ -211,13 +277,25 @@ const updateUserProfileController = async (req, res) => {
         }
 
         if (req.file) {
-            updatedData.profileImage = `/uploads/${req.file.filename}`;
+            await validateUploadedProfileImage(req.file);
+            uploadedProfileImage = await uploadProfileImage(req.file);
+            updatedData.profileImage = uploadedProfileImage;
         }
 
-        const updatedUser = await UpdateUserProfile(
-            req.user._id,
-            updatedData
-        );
+        let updatedUser;
+        try {
+            updatedUser = await UpdateUserProfile(req.user._id, updatedData);
+        } catch (error) {
+            if (uploadedProfileImage?.startsWith('https://res.cloudinary.com/')) {
+                await deleteCloudinaryProfileImage(uploadedProfileImage).catch(() => {});
+            }
+            if (req.file?.path) await unlink(req.file.path).catch(() => {});
+            throw error;
+        }
+
+        if (uploadedProfileImage && req.user.profileImage && req.user.profileImage !== uploadedProfileImage) {
+            await deleteCloudinaryProfileImage(req.user.profileImage).catch(() => {});
+        }
 
         res.status(200).json({
             message: 'Profile updated successfully',
@@ -230,7 +308,7 @@ const updateUserProfileController = async (req, res) => {
             });
         }
 
-        res.status(400).json({
+        res.status(error.statusCode || 400).json({
             message: error.message
         });
     }
@@ -300,6 +378,7 @@ export {
     renderAboutPageController,
     renderServicesPageController,
     renderProfilePageController,
+    renderWalletPageController,
     renderProfileEditPageController,
     renderBookingPageController,
     UsersignUpController,

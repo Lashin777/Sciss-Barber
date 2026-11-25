@@ -1,0 +1,200 @@
+extends ./admin-layout.pug
+
+block page_header
+  header(class="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+    div
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / CUSTOMER GROWTH
+      h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Referrals
+      p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Track referral activity and rewards when referral records are available.
+
+block page_content
+  section(class="flex min-h-0 flex-1 flex-col gap-5", aria-labelledby="referral-summary-heading")
+    p#referrals-policy-note(class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900", role="status") Referrers receive ₹50 in their wallet when the referred customer completes their first booking.
+    p#referrals-loading(class="hidden text-sm text-neutral-500", role="status", aria-live="polite") Loading referral data…
+    p#referrals-error(class="hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700", role="alert")
+
+    div
+      h2#referral-summary-heading(class="sr-only") Referral summary
+      div(class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4")
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") TOTAL REFERRALS
+          p#referrals-total(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-green-700") VERIFIED SIGNUPS
+          p#referrals-verified(class="mt-3 text-3xl font-bold tracking-[-0.06em] text-green-700") —
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-amber-700") AWAITING FIRST BOOKING
+          p#referrals-pending(class="mt-3 text-3xl font-bold tracking-[-0.06em] text-amber-700") —
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") REWARDS ISSUED
+          p#referrals-rewarded(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p#referrals-reward-amount(class="mt-1 text-xs text-neutral-500") —
+
+    section(class="min-w-0 rounded-xl border border-neutral-200 bg-white", aria-labelledby="referral-history-heading")
+      div(class="flex flex-col gap-4 border-b border-neutral-100 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") CUSTOMER ACTIVITY
+          h2#referral-history-heading(class="mt-1 text-xl font-bold tracking-[-0.04em]") Verified referral signups
+        div(class="grid gap-2 sm:grid-cols-2")
+          label.sr-only(for="referral-search") Search referrals
+          input#referral-search(type="search", maxlength="100", placeholder="Search customer or code", class="h-10 rounded-full border border-neutral-200 px-4 text-sm", aria-label="Search referrer, referred customer or referral code")
+          label.sr-only(for="referral-status-filter") Filter by referral reward status
+          select#referral-status-filter(class="h-10 rounded-full border border-neutral-200 bg-white px-4 text-sm")
+            option(value="") All reward states
+            option(value="PENDING_POLICY") Awaiting first booking
+            option(value="REWARDED") Rewarded
+      div(class="overflow-x-auto")
+        table(class="w-full min-w-[880px] border-collapse text-left")
+          thead
+            tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[9px] tracking-[0.13em] text-neutral-500")
+              th(scope="col", class="px-5 py-4 font-normal") DATE
+              th(scope="col", class="px-5 py-4 font-normal") REFERRER
+              th(scope="col", class="px-5 py-4 font-normal") REFERRED CUSTOMER
+              th(scope="col", class="px-5 py-4 font-normal") REWARD STATE
+              th(scope="col", class="px-5 py-4 text-right font-normal") REWARD
+          tbody#referral-record-rows
+      div(class="flex flex-col items-center justify-between gap-3 border-t border-neutral-100 px-5 py-4 text-xs text-neutral-500 sm:flex-row")
+        p#referral-pagination-label(role="status", aria-live="polite") Loading referrals…
+        div(class="flex gap-2")
+          button#referral-previous(type="button", disabled, class="h-9 rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] disabled:opacity-40") PREVIOUS
+          button#referral-next(type="button", disabled, class="h-9 rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] disabled:opacity-40") NEXT
+
+  script.
+    (() => {
+      const searchInput = document.getElementById('referral-search');
+      const statusInput = document.getElementById('referral-status-filter');
+      const loading = document.getElementById('referrals-loading');
+      const errorMessage = document.getElementById('referrals-error');
+      const rows = document.getElementById('referral-record-rows');
+      const previousButton = document.getElementById('referral-previous');
+      const nextButton = document.getElementById('referral-next');
+      const pageLabel = document.getElementById('referral-pagination-label');
+      const pageSize = 10;
+      let page = 1;
+      let activeRequest;
+      let requestNumber = 0;
+      let searchTimer;
+
+      const setText = (id, value) => { document.getElementById(id).textContent = value; };
+      const formatMoney = (amount) => new Intl.NumberFormat('en-IN', {
+        style: 'currency', currency: 'INR', maximumFractionDigits: 2
+      }).format(Number(amount) || 0);
+      const formatDate = (value) => new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium', timeZone: 'Asia/Kolkata'
+      }).format(new Date(value));
+
+      const showEmpty = () => {
+        rows.replaceChildren();
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 5;
+        cell.className = 'px-5 py-12 text-center text-sm text-neutral-500';
+        cell.textContent = 'No referral signups match the selected filter.';
+        row.append(cell);
+        rows.append(row);
+      };
+
+      const appendCustomer = (cell, customer) => {
+        const name = document.createElement('span');
+        name.className = 'block font-semibold text-neutral-800';
+        name.textContent = customer?.name || 'Customer unavailable';
+        cell.append(name);
+        const details = document.createElement('span');
+        details.className = 'mt-1 block text-xs text-neutral-500';
+        details.textContent = [customer?.email, customer?.phone].filter(Boolean).join(' · ');
+        cell.append(details);
+      };
+
+      const renderReferrals = (referrals) => {
+        rows.replaceChildren();
+        if (!referrals.length) return showEmpty();
+        referrals.forEach((referral) => {
+          const row = document.createElement('tr');
+          row.className = 'border-b border-neutral-100 last:border-0';
+          const date = document.createElement('td');
+          date.className = 'px-5 py-4 text-sm text-neutral-600';
+          date.textContent = formatDate(referral.createdAt);
+          row.append(date);
+
+          const referrerCell = document.createElement('td');
+          referrerCell.className = 'px-5 py-4 text-sm';
+          appendCustomer(referrerCell, referral.referrerId);
+          const code = document.createElement('span');
+          code.className = 'mt-2 block font-mono text-[10px] text-neutral-400';
+          code.textContent = referral.referralCode || 'Code unavailable';
+          referrerCell.append(code);
+          row.append(referrerCell);
+
+          const referredCell = document.createElement('td');
+          referredCell.className = 'px-5 py-4 text-sm';
+          appendCustomer(referredCell, referral.referredUserId);
+          row.append(referredCell);
+
+          const stateCell = document.createElement('td');
+          stateCell.className = 'px-5 py-4 text-sm';
+          const state = document.createElement('span');
+          state.className = referral.rewardStatus === 'REWARDED'
+            ? 'inline-flex rounded-full bg-green-50 px-3 py-1 text-[10px] font-bold text-green-700'
+            : 'inline-flex rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-700';
+          state.textContent = referral.rewardStatus === 'REWARDED' ? 'REWARDED' : 'AWAITING FIRST BOOKING';
+          stateCell.append(state);
+          row.append(stateCell);
+
+          const rewardCell = document.createElement('td');
+          rewardCell.className = 'px-5 py-4 text-right font-mono text-sm font-bold';
+          rewardCell.textContent = referral.rewardStatus === 'REWARDED' && Number.isFinite(Number(referral.rewardAmount))
+            ? formatMoney(referral.rewardAmount)
+            : '₹50 pending';
+          row.append(rewardCell);
+          rows.append(row);
+        });
+      };
+
+      const loadReferrals = async () => {
+        activeRequest?.abort();
+        activeRequest = new AbortController();
+        const currentRequest = ++requestNumber;
+        const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
+        if (searchInput.value.trim()) params.set('search', searchInput.value.trim());
+        if (statusInput.value) params.set('status', statusInput.value);
+        loading.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+        try {
+          const response = await fetch(`/api/admin/referrals?${params.toString()}`, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            signal: activeRequest.signal
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.message || 'Referral data could not be loaded.');
+          const summary = result.summary;
+          setText('referrals-total', Number(summary.totalReferrals || 0).toLocaleString('en-IN'));
+          setText('referrals-verified', Number(summary.verifiedSignups || 0).toLocaleString('en-IN'));
+          setText('referrals-pending', Number(summary.rewardPolicyPending || 0).toLocaleString('en-IN'));
+          setText('referrals-rewarded', Number(summary.rewardsIssued || 0).toLocaleString('en-IN'));
+          setText('referrals-reward-amount', `Issued amount: ${formatMoney(summary.rewardAmountIssued)}`);
+          renderReferrals(result.referrals || []);
+          const pagination = result.pagination;
+          setText('referral-pagination-label', `Page ${pagination.page} of ${Math.max(pagination.totalPages, 1)} · ${pagination.total} referrals`);
+          previousButton.disabled = pagination.page <= 1;
+          nextButton.disabled = pagination.page >= pagination.totalPages;
+          page = pagination.page;
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            errorMessage.textContent = error.message || 'Referral data could not be loaded. Please try again.';
+            errorMessage.classList.remove('hidden');
+          }
+        } finally {
+          if (currentRequest === requestNumber) loading.classList.add('hidden');
+        }
+      };
+
+      searchInput.addEventListener('input', () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => { page = 1; loadReferrals(); }, 250);
+      });
+      statusInput.addEventListener('change', () => { page = 1; loadReferrals(); });
+      previousButton.addEventListener('click', () => { if (page > 1) { page -= 1; loadReferrals(); } });
+      nextButton.addEventListener('click', () => { page += 1; loadReferrals(); });
+      loadReferrals();
+    })();

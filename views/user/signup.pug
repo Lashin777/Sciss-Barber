@@ -2,7 +2,6 @@ extends ../layouts/minimal
 
 block content
   - const label = "block font-mono text-[11px] tracking-[0.2em] text-neutral-500"
-  - const hint = "text-xs text-neutral-400"
   - const input = "signup-input w-full border-0 border-b border-neutral-300 bg-transparent pb-2 pt-2.5 text-base font-medium outline-none focus:border-neutral-950"
   section(class="mx-auto my-auto w-full max-w-sm py-4")
     p(class="mb-3 font-mono text-[11px] tracking-[0.3em] text-neutral-400") NEW MEMBER
@@ -11,40 +10,44 @@ block content
       br
       | BARBER.
 
-    form#signup-form(method="POST", action="/api/user/signup")
+    form#signup-form(method="POST", action="/api/user/signup", novalidate)
       p#signup-error(class="mb-5 hidden text-sm text-red-600", role="alert", aria-live="polite")
 
       div(class="mb-2")
         label(for="name", class=label) FULL NAME
-        input#name(type="text", name="name", autocomplete="name", required, pattern="[A-Za-z\\s'-]+", class=input)
+        //- Worked by Codex: match the signup name constraints enforced by the server.
+        input#name(type="text", name="name", autocomplete="name", minlength="2", maxlength="80", required, pattern="[A-Za-z]+([ '-][A-Za-z]+)*", title="Use letters with single spaces, apostrophes, or hyphens between names", aria-describedby="name-error", class=input)
         p#name-error(class="mt-1 hidden text-xs text-red-600", role="alert")
 
       div(class="mb-2")
         label(for="email", class=label) EMAIL ADDRESS
-        input#email(type="email", name="email", autocomplete="email", required, class=input)
+        input#email(type="email", name="email", autocomplete="email", required, aria-describedby="email-error", class=input)
+        p#email-error(class="mt-1 hidden text-xs text-red-600", role="alert")
 
       div(class="mb-2")
         label(for="phone", class=label) PHONE NUMBER
-        input#phone(type="tel", name="phone", autocomplete="tel", required, class=input)
+        input#phone(type="tel", name="phone", autocomplete="tel", inputmode="numeric", maxlength="30", title="Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9", required, aria-describedby="phone-error", class=input)
+        p#phone-error(class="mt-1 hidden text-xs text-red-600", role="alert")
 
       div(class="mb-2")
         div(class="flex items-baseline justify-between")
           label(for="referralCode", class=label) REFERRAL CODE
-          span(class=hint) Optional
-        input#referralCode(type="text", name="referralCode", class=input)
+          span(class="text-xs text-neutral-400") Optional
+        input#referralCode(type="text", name="referralCode", autocomplete="off", class=input)
 
       div(class="mb-2")
         div(class="flex items-baseline justify-between")
           label(for="password", class=label) PASSWORD
-          span(class=hint) At least 8 characters
+          span(class="text-xs text-neutral-400") At least 8 characters
 
         div(class="relative")
           input#password(
             type="password"
             name="password"
-            minlength="6"
+            minlength="8"
             autocomplete="new-password"
             required
+            aria-describedby="password-error"
             class=input + " pr-10"
           )
           //- Worked by Codex: Keep the password eye toggle consistent with login.
@@ -58,22 +61,36 @@ block content
             svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
               path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
               circle(cx="12", cy="12", r="2.5")
+        p#password-error(class="mt-1 hidden text-xs text-red-600", role="alert")
+
+      div(class="mb-3")
+        label(for="confirm-password", class=label) CONFIRM PASSWORD
+        div(class="relative")
+          input#confirm-password(type="password", name="confirmPassword", minlength="8", autocomplete="new-password", required, aria-describedby="confirm-password-error", class=input + " pr-10")
+          button#toggle-confirm-password(type="button", aria-label="Show confirm password", data-password-toggle="confirm-password", data-password-label="confirm password", style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:#737373;cursor:pointer")
+            svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
+              path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
+              circle(cx="12", cy="12", r="2.5")
+        p#confirm-password-error(class="mt-1 hidden text-xs text-red-600", role="alert")
 
       label(class="mb-4 flex items-start gap-2.5 text-[13px] leading-snug text-neutral-400")
-        input(type="checkbox", name="consent", required, class="mt-0.5 accent-neutral-950")
+        input(type="checkbox", name="consent", required, aria-describedby="consent-error", class="mt-0.5 accent-neutral-950")
         span I agree to the Terms of Service and to receive SMS appointment updates.
+      p#consent-error(class="-mt-3 mb-3 hidden text-xs text-red-600", role="alert") Accept the terms and appointment updates to continue.
 
     form#verify-form(class="hidden", action="/api/user/verify-otp")
       p(class="mb-2 text-sm text-neutral-500") Enter the 6-digit code we sent to your email.
+      p#signup-success(class="mb-3 hidden text-sm text-green-700", role="status", aria-live="polite")
+      div#signup-customer-summary(class="mb-4 rounded-xl bg-neutral-100 px-4 py-3 text-xs leading-relaxed text-neutral-600", aria-live="polite")
       p#verify-error(class="mb-3 hidden text-sm text-red-600", role="alert", aria-live="polite")
       label(for="otp", class=label) EMAIL VERIFICATION CODE
       input#otp(type="text", name="otp", inputmode="numeric", pattern="[0-9]{6}", maxlength="6", autocomplete="one-time-code", required, class=input)
       button#verify-submit(type="submit", class="mt-6 h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white transition-colors hover:bg-neutral-800") VERIFY EMAIL →
-      button#resend-otp(type="button", class="mt-4 w-full text-center text-sm font-bold text-neutral-500 hover:text-neutral-950") Resend code
+      button#resend-otp(type="button", disabled, class="mt-4 w-full text-center text-sm font-bold text-neutral-500 hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50") RESEND IN 60s
 
 block auth_actions
   div(class="auth-action-area")
-    button#signup-submit(type="submit", form="signup-form", class="h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white transition-colors hover:bg-neutral-800") CREATE ACCOUNT →
+    button#signup-submit(type="submit", form="signup-form", class="h-[50px] w-full cursor-pointer rounded-full bg-neutral-950 text-[13px] font-bold tracking-[0.15em] text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50") CREATE ACCOUNT →
     div(class="my-2 flex items-center gap-3")
       span(class="h-px flex-1 bg-neutral-200")
       span(class="font-mono text-[10px] tracking-[0.2em] text-neutral-400") OR
@@ -83,15 +100,42 @@ block auth_actions
       span CONTINUE WITH GOOGLE
     div(class="mt-3 flex justify-between border-t border-neutral-100 pt-3 text-sm text-neutral-400")
       span Already a member?
-      a(href="/login", class="font-bold text-neutral-950 transition-colors hover:text-green-600") Log in
+      a#signup-login-link(href="/login", class="font-bold text-neutral-950 transition-colors hover:text-green-600") Log in
 
   script.
     const signupForm = document.getElementById('signup-form');
     const signupError = document.getElementById('signup-error');
     const signupSubmit = document.getElementById('signup-submit');
     const verifyForm = document.getElementById('verify-form');
+    const signupSuccess = document.getElementById('signup-success');
     const verifyError = document.getElementById('verify-error');
+    const signupCustomerSummary = document.getElementById('signup-customer-summary');
+    const signupFieldDefinitions = [
+      ['name', 'name-error'],
+      ['email', 'email-error'],
+      ['phone', 'phone-error'],
+      ['password', 'password-error'],
+      ['confirmPassword', 'confirm-password-error']
+    ];
+    const signupFields = signupFieldDefinitions.map(([name, errorId]) => ({
+      input: signupForm?.elements?.namedItem(name),
+      error: document.getElementById(errorId)
+    })).filter(({ input, error }) => input && error);
+    const resendButton = document.getElementById('resend-otp');
+    const verifyButton = document.getElementById('verify-submit');
+    const signupFormReady = Boolean(signupForm && signupSubmit && signupFields.length === signupFieldDefinitions.length && signupForm.elements.namedItem('consent'));
     let signupEmail = '';
+    let signupSubmitting = false;
+    let verificationInProgress = false;
+    let resendInProgress = false;
+    const requestedReturnTo = new URLSearchParams(window.location.search).get('returnTo');
+    const signupReturnTo = requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')
+      ? requestedReturnTo
+      : null;
+    if (signupReturnTo) {
+      const signupLoginLink = document.getElementById('signup-login-link');
+      if (signupLoginLink) signupLoginLink.href = `/login?returnTo=${encodeURIComponent(signupReturnTo)}`;
+    }
 
     // Worked by Codex: Keep password visibility consistent with the login page.
     document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
@@ -111,54 +155,128 @@ block auth_actions
       });
     });
 
-    signupForm.addEventListener('submit', async (event) => {
+    function validateSignupField(field) {
+      const { input, error } = field;
+      const passwordInput = signupForm?.elements?.namedItem('password');
+      const confirmPasswordInput = signupForm?.elements?.namedItem('confirmPassword');
+      const phoneInput = signupForm?.elements?.namedItem('phone');
+      if (input === confirmPasswordInput && passwordInput) {
+        input.setCustomValidity(input.value && input.value !== passwordInput.value ? 'Passwords do not match.' : '');
+      }
+      if (input === phoneInput) {
+        const phone = input.value.trim();
+        input.setCustomValidity(/^[6-9]\d{9}$/.test(phone) && !/^(\d)\1{9}$/.test(phone)
+          ? ''
+          : 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+      }
+      const valid = input.checkValidity();
+      error.textContent = valid ? '' : input.validationMessage;
+      error.classList.toggle('hidden', valid);
+      input.setAttribute('aria-invalid', String(!valid));
+      return valid;
+    }
+
+    signupFields.forEach((field) => {
+      field.input.addEventListener('input', () => {
+        field.input.dataset.touched = 'true';
+        validateSignupField(field);
+        if (field.input.name === 'password') {
+          const confirmation = signupFields.find(({ input }) => input.name === 'confirmPassword');
+          if (confirmation && (confirmation.input.dataset.touched === 'true' || confirmation.input.value)) validateSignupField(confirmation);
+        }
+      });
+      field.input.addEventListener('blur', () => {
+        field.input.dataset.touched = 'true';
+        if (field.input.name === 'phone') field.input.value = field.input.value.trim();
+        if (field.input.value || field.input.required) validateSignupField(field);
+      });
+    });
+
+    signupForm?.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (signupSubmitting) return;
+      if (!signupFormReady) {
+        signupError.textContent = 'The signup form is incomplete. Refresh the page and try again.';
+        signupError.classList.remove('hidden');
+        return;
+      }
       signupError.textContent = '';
       signupError.classList.add('hidden');
+      const phoneInput = signupForm.elements.namedItem('phone');
+      phoneInput.value = phoneInput.value.trim();
+      signupFields.forEach((field) => { field.input.dataset.touched = 'true'; });
+      const fieldsValid = signupFields.map(validateSignupField).every(Boolean);
+      const consent = signupForm.elements.namedItem('consent');
+      const consentError = document.getElementById('consent-error');
+      consentError.classList.toggle('hidden', consent.checked);
+      if (!fieldsValid || !consent.checked) {
+        if (!fieldsValid) signupFields.find((field) => !field.input.checkValidity())?.input.focus();
+        else consent.focus();
+        return;
+      }
+
+      signupSubmitting = true;
       signupSubmit.disabled = true;
       signupSubmit.textContent = 'CREATING ACCOUNT…';
-
       try {
+        const referralCode = signupForm.elements.namedItem('referralCode')?.value.trim() || '';
         const response = await fetch(signupForm.action, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: signupForm.elements.name.value,
-            email: signupForm.elements.email.value,
+            name: signupForm.elements.name.value.trim(),
+            email: signupForm.elements.email.value.trim(),
             password: signupForm.elements.password.value,
-            phone: signupForm.elements.phone.value,
-            referralCode: signupForm.elements.referralCode.value
+            phone: signupForm.elements.phone.value.trim(),
+            referralCode
           })
         });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.message || 'Unable to create your account. Please try again.');
+        let result;
+        try {
+          result = await response.json();
+        } catch (error) {
+          throw new Error('We could not read the signup response. Please try again.');
         }
+        if (!response.ok) throw new Error(result?.message || 'Unable to create your account. Please try again.');
 
-        signupEmail = signupForm.elements.email.value;
+        signupEmail = typeof result?.email === 'string' ? result.email.trim().toLowerCase() : '';
+        if (!signupEmail) throw new Error('The signup response did not include the email address for verification. Please try again.');
+        if (signupSuccess) {
+          signupSuccess.textContent = result?.message || `A verification code was sent to ${signupEmail}.`;
+          signupSuccess.classList.remove('hidden');
+        }
+        signupCustomerSummary.textContent = `Account details: ${signupForm.elements.name.value.trim()} · ${signupEmail} · ${signupForm.elements.phone.value.trim()}`;
         signupForm.classList.add('hidden');
         verifyForm.classList.remove('hidden');
         document.querySelector('.auth-action-area').classList.add('hidden');
+        startResendCountdown();
         document.getElementById('otp').focus();
       } catch (error) {
         signupError.textContent = error.message || 'Unable to create your account. Please try again.';
         signupError.classList.remove('hidden');
       } finally {
+        signupSubmitting = false;
         signupSubmit.disabled = false;
         signupSubmit.textContent = 'CREATE ACCOUNT →';
       }
     });
-
-    verifyForm.addEventListener('submit', async (event) => {
+    verifyForm?.addEventListener('submit', async (event) => {
       event.preventDefault();
+      const otpInput = verifyForm.elements.namedItem('otp');
+      if (verificationInProgress || !otpInput || !verifyButton || !signupEmail) {
+        if (!signupEmail) {
+          verifyError.textContent = 'Submit your signup details again to request an email verification code.';
+          verifyError.classList.remove('hidden');
+        }
+        return;
+      }
       verifyError.textContent = '';
       verifyError.classList.add('hidden');
 
-      const button = document.getElementById('verify-submit');
-      button.disabled = true;
-      button.textContent = 'VERIFYING…';
+      if (!verifyForm.reportValidity()) return;
+      verificationInProgress = true;
+      verifyButton.disabled = true;
+      verifyButton.textContent = 'VERIFYING…';
 
       try {
         const response = await fetch(verifyForm.action, {
@@ -171,34 +289,42 @@ block auth_actions
           })
         });
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.message || 'That code could not be verified.');
+        let result;
+        try {
+          result = await response.json();
+        } catch (error) {
+          throw new Error('We could not read the verification response. Please try again.');
         }
 
-        window.location.assign('/login');
+        if (!response.ok) {
+          throw new Error(result?.message || 'That code could not be verified.');
+        }
+
+        const loginUrl = new URL('/login', window.location.origin);
+        if (signupReturnTo) loginUrl.searchParams.set('returnTo', signupReturnTo);
+        window.location.assign(loginUrl.href);
       } catch (error) {
         verifyError.textContent = error.message || 'That code could not be verified.';
         verifyError.classList.remove('hidden');
       } finally {
-        button.disabled = false;
-        button.textContent = 'VERIFY EMAIL →';
+        verificationInProgress = false;
+        verifyButton.disabled = false;
+        verifyButton.textContent = 'VERIFY EMAIL →';
       }
     });
 
     let resendCountdown;
 
     function startResendCountdown(seconds = 60) {
-      const resendButton = document.getElementById('resend-otp');
-      let remaining = seconds;
+      if (!resendButton) return;
+      let remaining = Math.max(0, Math.ceil(seconds));
 
       clearInterval(resendCountdown);
       resendButton.disabled = true;
       resendButton.textContent = `RESEND IN ${remaining}s`;
 
       resendCountdown = setInterval(() => {
-        remaining--;
+        remaining = Math.max(0, remaining - 1);
 
         if (remaining <= 0) {
           clearInterval(resendCountdown);
@@ -211,8 +337,9 @@ block auth_actions
       }, 1000);
     }
 
-    document.getElementById('resend-otp').addEventListener('click', async () => {
-      const resendButton = document.getElementById('resend-otp');
+    resendButton?.addEventListener('click', async () => {
+      if (resendInProgress || resendButton.disabled || !signupEmail) return;
+      resendInProgress = true;
       verifyError.textContent = '';
       verifyError.classList.add('hidden');
       resendButton.disabled = true;
@@ -228,18 +355,28 @@ block auth_actions
           })
         });
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.message || 'Could not resend the code.');
+        let result;
+        try {
+          result = await response.json();
+        } catch (error) {
+          throw new Error('We could not read the resend response. Please try again.');
         }
 
-        resendButton.textContent = 'CODE SENT';
+        if (!response.ok) {
+          throw new Error(result?.message || 'Could not resend the code.');
+        }
+
+        if (signupSuccess) {
+          signupSuccess.textContent = result?.message || `A new verification code was sent to ${signupEmail}.`;
+          signupSuccess.classList.remove('hidden');
+        }
         startResendCountdown();
       } catch (error) {
         verifyError.textContent = error.message || 'Could not resend the code.';
         verifyError.classList.remove('hidden');
         resendButton.textContent = 'RESEND CODE';
         resendButton.disabled = false;
+      } finally {
+        resendInProgress = false;
       }
     });

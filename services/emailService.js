@@ -34,7 +34,7 @@ const escapeHtml = (value) => {
     })[char]);
 };
 
-const sendBookingNotification = async (booking) => {
+const sendBookingNotification = async (booking, emailSender = sendEmail) => {
 
     if (
     !booking?.adminEmail ||
@@ -164,7 +164,7 @@ Status: ${booking.status}
 </html>
 `;
 
-    return await sendEmail({
+    return await emailSender({
         to: booking.adminEmail,
         subject: 'New Booking Received - SCISS BARBER',
         text,

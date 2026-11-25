@@ -7,7 +7,7 @@ import  {getAllServicesController,
     getServicesByCategoryController,
     getAdminServicesPageController
 } from '../controllers/ServiceController.js';
-import { adminProtect } from '../middlewares/authMiddleware.js';
+import { adminProtect, adminPageProtect, preventCache } from '../middlewares/authMiddleware.js';
 
 
 const router = express.Router()
@@ -20,7 +20,8 @@ router.get('/api/services/:id',getServiceByIdController);
 router.put('/api/admin/services/:id', adminProtect, updateServiceController);
 router.delete('/api/admin/services/:id',adminProtect,deleteServiceController);
 router.get('/api/services/category/:categoryId',getServicesByCategoryController);
-router.get('/admin/services',adminProtect,getAdminServicesPageController)
+// Worked by Codex: redirect expired admin page sessions and prevent cached private content.
+router.get('/admin/services', adminPageProtect, preventCache, getAdminServicesPageController)
 
 
 

@@ -38,7 +38,7 @@ block content
 
     div(class="mt-4 flex justify-between border-t border-neutral-100 pt-3 text-sm text-neutral-400")
       span New to Sciss Barber?
-      a(href="/signup", class="font-bold text-neutral-950 transition-colors hover:text-green-600") Create account
+      a#create-account-link(href="/signup", class="font-bold text-neutral-950 transition-colors hover:text-green-600") Create account
 
     div(class="my-3 flex items-center gap-3")
       span(class="h-px flex-1 bg-neutral-200")
@@ -70,7 +70,7 @@ block content
       div#reset-password-step(class="hidden")
         div(class="mb-3")
           label(for="reset-otp", class=label) VERIFICATION CODE
-          input#reset-otp(type="text", inputmode="numeric", autocomplete="one-time-code", required, class=input)
+          input#reset-otp(type="text", inputmode="numeric", pattern="[0-9]{6}", maxlength="6", autocomplete="one-time-code", required, title="Enter the 6-digit code", class=input)
         div
           label(for="new-password", class=label) NEW PASSWORD
           //- Worked by Codex: allow checking the new password before saving the reset.
@@ -80,6 +80,7 @@ block content
               svg(aria-hidden="true", xmlns="http://www.w3.org/2000/svg", viewBox="0 0 24 24", width="16", height="16", fill="none", stroke="currentColor", stroke-width="1.5", style="display:block;flex:none")
                 path(d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z")
                 circle(cx="12", cy="12", r="2.5")
+          p(class="mt-2 text-xs text-neutral-400") Use at least 8 characters.
         button#save-new-password(type="button", class="mt-5 h-11 w-full cursor-pointer rounded-full bg-neutral-950 text-[12px] font-bold tracking-[0.15em] text-white hover:bg-neutral-800") UPDATE PASSWORD
       button#reset-modal-close(type="button", class="mt-3 w-full py-2 text-sm font-bold text-neutral-500 hover:text-neutral-950") CLOSE
 
@@ -102,6 +103,9 @@ block content
     }
     const resetReturnTo = requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//') ? requestedReturnTo : null;
     let passwordResetComplete = false;
+    if (resetReturnTo) {
+      document.getElementById('create-account-link').href = `/signup?returnTo=${encodeURIComponent(resetReturnTo)}`;
+    }
 
     document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
       const password = document.getElementById(toggle.dataset.passwordToggle);
@@ -226,7 +230,7 @@ block content
           }
           throw new Error(message);
         }
-        window.location.replace('/');
+        window.location.replace(resetReturnTo || '/');
       } catch (error) {
         loginError.textContent = error.message || 'Unable to log in. Please try again.';
         loginError.classList.remove('hidden');

@@ -45,10 +45,11 @@ block page_content
       div(class="grid gap-4 sm:grid-cols-2")
         div(class="sm:col-span-2")
           label(for="walkin-customer-name", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") CUSTOMER NAME
-          input#walkin-customer-name(name="name", type="text", required, minlength="2", maxlength="100", autocomplete="name", class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950", placeholder="Enter customer name")
+          //- Worked by Codex: align walk-in name and phone input constraints with backend validation.
+          input#walkin-customer-name(name="name", type="text", required, minlength="2", maxlength="100", pattern="[A-Za-z]+([ '-][A-Za-z]+)*", title="Use letters with single spaces, apostrophes, or hyphens between names", autocomplete="name", class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950", placeholder="Enter customer name")
         div
           label(for="walkin-phone", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") PHONE NUMBER
-          input#walkin-phone(name="phone", type="tel", required, maxlength="20", autocomplete="tel", class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950", placeholder="Enter phone number")
+          input#walkin-phone(name="phone", type="tel", required, minlength="10", maxlength="10", pattern="[6-9][0-9]{9}", inputmode="numeric", title="Enter a valid 10-digit Indian phone number", autocomplete="tel", class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950", placeholder="Enter phone number")
         div
           label(for="walkin-service", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") SERVICE
           select#walkin-service(name="serviceId", required, class="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none transition focus:border-neutral-950")
@@ -143,7 +144,7 @@ block page_content
                   strong(class="block truncate text-sm font-semibold")= customerName
                   span(class="mt-1 block truncate text-xs text-neutral-500")= booking.userId && booking.userId.email ? booking.userId.email : 'No email available'
                 td(class="max-w-56 px-4 py-4")
-                  strong(class="block truncate text-sm font-semibold")= booking.serviceId && booking.serviceId.name ? booking.serviceId.name : 'Service unavailable'
+                  strong(class="block truncate text-sm font-semibold")= booking.serviceIds && booking.serviceIds.length ? booking.serviceIds.map(service => service.name).join(', ') : booking.serviceId && booking.serviceId.name ? booking.serviceId.name : 'Service unavailable'
                   span(class="mt-1 block truncate text-xs text-neutral-500")= booking.barberId && booking.barberId.name ? `with ${booking.barberId.name}` : 'Barber unavailable'
                 td(class="whitespace-nowrap px-4 py-4 text-right")
                   strong(class="block text-sm font-semibold")= booking.servicePrice !== null && booking.servicePrice !== undefined ? `₹${Number(booking.servicePrice).toLocaleString('en-IN')}` : '—'
@@ -152,6 +153,7 @@ block page_content
                   span(class=`inline-flex whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] ${statusClass}`)= bookingStatus
                 td(class="sticky right-0 whitespace-nowrap bg-white px-4 py-4 text-right shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]")
                   div(class="inline-flex items-center gap-2")
+                    a(href=`/admin/booking/${booking._id}`, class="border border-neutral-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.08em] transition hover:border-neutral-950") DETAILS
                     if bookingStatus === 'CONFIRMED'
                       button(type="button", data-complete-booking=booking._id, class="border border-neutral-200 px-3 py-2 font-mono text-[9px] font-bold tracking-[0.08em] transition hover:border-neutral-950") MARK COMPLETE
           else

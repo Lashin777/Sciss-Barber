@@ -13,7 +13,8 @@ const otpSchema = new mongoose.Schema({
     },
     purpose: {
         type: String,
-        enum: ['EMAIL_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_CHANGE'],
+        // Worked by Codex: allow the separate admin recovery flow to persist its OTP purpose.
+        enum: ['EMAIL_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_CHANGE', 'ADMIN_PASSWORD_RESET'],
         required: true
     },
     expiresAt: {
@@ -25,9 +26,23 @@ const otpSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    lockedUntil: {
+        type: Date,
+        default: null
+    },
     isUsed: {
         type: Boolean,
         default: false
+    },
+    signupData: {
+        type: {
+            name: String,
+            password: String,
+            phone: String,
+            referralCode: String,
+            referrerId: mongoose.Schema.Types.ObjectId
+        },
+        default: undefined
     },
 
 }, { timestamps: true })

@@ -1,0 +1,393 @@
+extends ./admin-layout.pug
+
+block page_header
+  header(class="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+    div
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / FINANCE
+      h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Revenue
+      p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Separate external collections from wallet-funded booking sales and wallet refunds.
+
+block page_content
+  section(class="flex min-h-0 flex-1 flex-col gap-5", aria-labelledby="revenue-summary-heading")
+    p#revenue-loading(class="hidden text-sm text-neutral-500", role="status", aria-live="polite") Loading revenue data…
+    p#revenue-error(class="hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700", role="alert")
+    p(class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-relaxed text-neutral-600") External collections are gross successful Razorpay payments only. Wallet-funded booking sales and wallet refund credits are shown separately and are not new external collections. A wallet refund does not change the original Razorpay payment status. Date filtering uses record creation dates in Asia/Kolkata; booking status counts show each booking's current status.
+
+    section(class="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6", aria-label="Revenue date range")
+      div(class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") REPORT PERIOD
+          p(class="mt-1 text-sm text-neutral-600") Select a date range or clear both dates to include all records.
+        div(class="grid grid-cols-2 gap-2 sm:w-auto")
+          div
+            label(for="revenue-from", class="mb-1 block font-mono text-[8px] font-bold tracking-[0.12em] text-neutral-400") FROM
+            input#revenue-from(type="date", class="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm")
+          div
+            label(for="revenue-to", class="mb-1 block font-mono text-[8px] font-bold tracking-[0.12em] text-neutral-400") TO
+            input#revenue-to(type="date", class="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm")
+          button#revenue-clear(type="button", class="col-span-2 h-9 justify-self-end rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C] hover:text-[#00D06C]") CLEAR DATES
+
+    div
+      h2#revenue-summary-heading(class="sr-only") Revenue summary
+      div(class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4")
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") EXTERNAL COLLECTIONS
+          p#revenue-total(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p#revenue-range-label(class="mt-1 text-xs text-neutral-500") Successful Razorpay collections · selected period
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") TOTAL BOOKING SALES
+          p#revenue-booking-sales(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Successful Razorpay + Wallet booking payments
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") TODAY
+          p#revenue-today(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Successful Razorpay collections today
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") THIS WEEK
+          p#revenue-week(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Successful Razorpay collections week to date
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") THIS MONTH
+          p#revenue-month(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Successful Razorpay collections month to date
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") BOOKINGS
+          p#revenue-bookings(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Created in selected period
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") COMPLETED
+          p#revenue-completed(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Current status, selected period
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") CANCELLED
+          p#revenue-cancelled(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p(class="mt-1 text-xs text-neutral-500") Current status, selected period
+        article(class="rounded-xl border border-neutral-200 bg-white p-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") REFUNDED TO WALLET
+          p#revenue-refunded(class="mt-3 text-3xl font-bold tracking-[-0.06em]") —
+          p#revenue-refund-count(class="mt-1 text-xs text-neutral-500") Wallet refund credits; not new revenue
+
+    section(class="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(16rem,0.8fr)]", aria-label="Revenue analysis")
+      article(class="min-w-0 rounded-xl border border-neutral-200 bg-white p-5 sm:p-6")
+        div(class="mb-5")
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") REVENUE OVER TIME
+          h2(class="mt-1 text-xl font-bold tracking-[-0.04em]") Gross Razorpay collections
+          div(class="mt-4 flex flex-wrap items-center gap-2", role="group", aria-label="Revenue chart period")
+            button(type="button", data-chart-view="weekly", aria-pressed="false", class="rounded-full border border-neutral-200 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C]") Weekly
+            button(type="button", data-chart-view="monthly", aria-pressed="true", class="rounded-full border border-neutral-200 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C]") Monthly
+            button(type="button", data-chart-view="yearly", aria-pressed="false", class="rounded-full border border-neutral-200 px-4 py-2 font-mono text-[9px] font-bold tracking-[0.1em] transition hover:border-[#00D06C]") Yearly
+          p#revenue-chart-period(class="mt-2 text-xs text-neutral-500", aria-live="polite") Monthly view
+          p(class="mt-1 text-[10px] leading-relaxed text-neutral-400") Period follows the selected end date (or start date); date filters limit included payments.
+        div#revenue-chart(class="flex min-h-64 items-end gap-1 overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-50 px-4 pb-4 pt-8", role="img", aria-label="Daily successful Razorpay collections chart")
+        p#revenue-chart-empty(class="mt-3 hidden text-center text-sm text-neutral-500", role="status") No successful Razorpay collections in this period.
+
+      article(class="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6")
+        p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") PAYMENT METHOD
+        h2(class="mt-1 text-xl font-bold tracking-[-0.04em]") Payment breakdown
+        div(class="mt-5 space-y-3")
+          div(class="flex items-center justify-between gap-3 rounded-lg bg-neutral-50 p-4")
+            div
+              p(class="text-sm font-semibold") Razorpay
+              p(class="mt-1 text-xs text-neutral-500") External money collected
+            p#revenue-razorpay(class="font-mono text-sm font-bold") —
+          div(class="flex items-center justify-between gap-3 rounded-lg bg-neutral-50 p-4")
+            div
+              p(class="text-sm font-semibold") Wallet
+              p(class="mt-1 text-xs text-neutral-500") Wallet-funded booking sales; no new collection
+            p#revenue-wallet(class="font-mono text-sm font-bold") —
+
+    section(class="min-w-0 rounded-xl border border-neutral-200 bg-white", aria-labelledby="revenue-transactions-heading")
+      div(class="flex flex-col gap-4 border-b border-neutral-100 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") PAYMENT LEDGER
+          h2#revenue-transactions-heading(class="mt-1 text-xl font-bold tracking-[-0.04em]") Payment records
+        div(class="flex flex-col gap-2 sm:flex-row")
+          label.sr-only(for="revenue-search") Search payment records
+          input#revenue-search(type="search", maxlength="100", placeholder="Search booking or customer", class="h-10 w-full rounded-full border border-neutral-200 px-4 text-sm sm:w-56", aria-label="Search by booking, customer or phone")
+          label.sr-only(for="revenue-method") Filter by payment method
+          select#revenue-method(class="h-10 rounded-full border border-neutral-200 bg-white px-4 text-sm", aria-label="Filter by payment method")
+            option(value="") All methods
+            option(value="RAZORPAY") Razorpay
+            option(value="WALLET") Wallet
+      div(class="overflow-x-auto")
+        table(class="w-full min-w-[760px] border-collapse text-left")
+          thead
+            tr(class="border-b border-neutral-200 bg-neutral-50 font-mono text-[9px] tracking-[0.13em] text-neutral-500")
+              th(scope="col", class="px-5 py-4 font-normal") DATE
+              th(scope="col", class="px-5 py-4 font-normal") BOOKING
+              th(scope="col", class="px-5 py-4 font-normal") CUSTOMER
+              th(scope="col", class="px-5 py-4 font-normal") METHOD
+              th(scope="col", class="px-5 py-4 font-normal") STATUS
+              th(scope="col", class="px-5 py-4 text-right font-normal") AMOUNT
+          tbody#revenue-transaction-rows
+      div(class="flex flex-col items-center justify-between gap-3 border-t border-neutral-100 px-5 py-4 text-xs text-neutral-500 sm:flex-row")
+        p#revenue-pagination-label(role="status", aria-live="polite") Loading transactions…
+        div(class="flex gap-2")
+          button#revenue-previous(type="button", disabled, class="h-9 rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] disabled:opacity-40") PREVIOUS
+          button#revenue-next(type="button", disabled, class="h-9 rounded-full border border-neutral-200 px-4 font-mono text-[9px] font-bold tracking-[0.1em] disabled:opacity-40") NEXT
+
+  script.
+    (() => {
+      const fromInput = document.getElementById('revenue-from');
+      const toInput = document.getElementById('revenue-to');
+      const searchInput = document.getElementById('revenue-search');
+      const methodInput = document.getElementById('revenue-method');
+      const chartViewButtons = [...document.querySelectorAll('[data-chart-view]')];
+      const errorMessage = document.getElementById('revenue-error');
+      const loadingMessage = document.getElementById('revenue-loading');
+      const rows = document.getElementById('revenue-transaction-rows');
+      const previousButton = document.getElementById('revenue-previous');
+      const nextButton = document.getElementById('revenue-next');
+      const paginationLabel = document.getElementById('revenue-pagination-label');
+      const limit = 10;
+      let page = 1;
+      let activeRequest;
+      let searchTimer;
+      let requestSequence = 0;
+      let chartView = 'monthly';
+
+      const formatMoney = (amount, currency = 'INR') => new Intl.NumberFormat('en-IN', {
+        style: 'currency', currency, maximumFractionDigits: 2
+      }).format(Number(amount) || 0);
+      const setText = (id, value) => { document.getElementById(id).textContent = value; };
+      const dateLabel = (value) => new Intl.DateTimeFormat('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+      }).format(new Date(`${value}T00:00:00+05:30`));
+
+      const setDefaultRange = () => {
+        const todayParts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        const datePart = (type) => todayParts.find((part) => part.type === type).value;
+        const today = `${datePart('year')}-${datePart('month')}-${datePart('day')}`;
+        fromInput.value = `${today.slice(0, 7)}-01`;
+        toInput.value = today;
+      };
+
+      const showEmptyRow = (message) => {
+        rows.replaceChildren();
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 6;
+        cell.className = 'px-5 py-12 text-center text-sm text-neutral-500';
+        cell.textContent = message;
+        row.append(cell);
+        rows.append(row);
+      };
+
+      const renderTransactions = (transactions) => {
+        rows.replaceChildren();
+        if (!transactions.length) {
+          showEmptyRow('No payment records match this period and filter.');
+          return;
+        }
+        transactions.forEach((payment) => {
+          const row = document.createElement('tr');
+          row.className = 'border-b border-neutral-100 last:border-0';
+          const values = [
+            new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }).format(new Date(payment.createdAt)),
+            payment.booking?.bookingToken || 'Booking unavailable',
+            payment.customer?.name || payment.customer?.email || 'Customer unavailable',
+            payment.method || '—',
+            payment.status || 'UNKNOWN',
+            formatMoney(payment.amount, payment.currency || 'INR')
+          ];
+          values.forEach((value, index) => {
+            const cell = document.createElement('td');
+            cell.className = `px-5 py-4 text-sm ${index === 5 ? 'text-right font-mono font-bold' : 'text-neutral-600'}`;
+            if (index === 1 && payment.booking?.bookingId) {
+              const link = document.createElement('a');
+              link.href = `/admin/booking/${encodeURIComponent(payment.booking.bookingId)}`;
+              link.className = 'font-semibold text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:text-[#00D06C]';
+              link.textContent = value;
+              cell.append(link);
+            } else {
+              cell.textContent = value;
+            }
+            row.append(cell);
+          });
+          rows.append(row);
+        });
+      };
+
+      const chartPointLabel = (key, view) => {
+        if (view === 'yearly') {
+          return new Intl.DateTimeFormat('en-IN', {
+            month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata'
+          }).format(new Date(`${key}-01T00:00:00+05:30`));
+        }
+        return dateLabel(key);
+      };
+
+      const chartAxisLabel = (key, view) => {
+        if (view === 'yearly') {
+          return new Intl.DateTimeFormat('en-IN', {
+            month: 'short', timeZone: 'Asia/Kolkata'
+          }).format(new Date(`${key}-01T00:00:00+05:30`));
+        }
+        if (view === 'weekly') {
+          return new Intl.DateTimeFormat('en-IN', {
+            weekday: 'short', day: '2-digit', timeZone: 'Asia/Kolkata'
+          }).format(new Date(`${key}T00:00:00+05:30`));
+        }
+        return key.slice(-2);
+      };
+
+      const renderChart = (chartData) => {
+        const chart = document.getElementById('revenue-chart');
+        const empty = document.getElementById('revenue-chart-empty');
+        const period = document.getElementById('revenue-chart-period');
+        chart.replaceChildren();
+        if (!chartData || !Array.isArray(chartData.points)) {
+          throw new Error('Revenue chart data has an unexpected format. Please reload the report.');
+        }
+        const chartPoints = chartData.points
+          .filter((point) => point && typeof point.key === 'string' && Number.isFinite(Number(point.amount)) && Number(point.amount) >= 0);
+        if (chartPoints.length !== chartData.points.length) {
+          throw new Error('Some revenue chart values could not be displayed. Please reload the report.');
+        }
+        period.textContent = `${chartData.view[0].toUpperCase()}${chartData.view.slice(1)} · ${chartData.periodLabel}`;
+        const hasPayments = chartData.hasPayments && chartPoints.some((point) => Number(point.payments) > 0);
+        empty.classList.toggle('hidden', hasPayments);
+        empty.textContent = `No successful Razorpay collections for ${chartData.periodLabel}.`;
+        chart.setAttribute('aria-label', `${chartData.view} gross successful Razorpay collections for ${chartData.periodLabel}`);
+        if (!hasPayments) return;
+
+        const peak = Math.max(chartPoints.reduce((max, point) => Math.max(max, Number(point.amount)), 0), 1);
+        chartPoints.forEach((point) => {
+          const column = document.createElement('div');
+          // Inline dimensions keep chart bars visible even though runtime-created Tailwind classes are not compiled.
+          Object.assign(column.style, {
+            display: 'flex',
+            flex: '0 0 2rem',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '0.5rem',
+            height: '13rem',
+            width: '2rem'
+          });
+          const bar = document.createElement('div');
+          const amount = Number(point.amount);
+          const ratio = amount === 0 ? 0 : amount / peak;
+          Object.assign(bar.style, {
+            display: 'block',
+            flex: '0 0 auto',
+            width: '1.25rem',
+            height: `${Math.max(ratio * 11.5, 0.25)}rem`,
+            borderRadius: '0.25rem 0.25rem 0 0',
+            backgroundColor: '#00D06C'
+          });
+          bar.setAttribute('aria-hidden', 'true');
+          const label = document.createElement('span');
+          Object.assign(label.style, {
+            flex: '0 0 auto',
+            color: '#737373',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.5rem'
+          });
+          label.textContent = chartAxisLabel(point.key, chartData.view);
+          const tooltip = `${chartPointLabel(point.key, chartData.view)} · ${formatMoney(amount)}`;
+          column.title = tooltip;
+          column.setAttribute('aria-label', tooltip);
+          column.append(bar, label);
+          chart.append(column);
+        });
+      };
+
+      const loadReport = async () => {
+        if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
+          errorMessage.textContent = 'The start date must be on or before the end date.';
+          errorMessage.classList.remove('hidden');
+          return;
+        }
+        activeRequest?.abort();
+        activeRequest = new AbortController();
+        const currentRequest = ++requestSequence;
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (fromInput.value) params.set('from', fromInput.value);
+        if (toInput.value) params.set('to', toInput.value);
+        if (searchInput.value.trim()) params.set('search', searchInput.value.trim());
+        if (methodInput.value) params.set('method', methodInput.value);
+        params.set('chartView', chartView);
+
+        loadingMessage.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+        try {
+          const response = await fetch(`/api/admin/revenue?${params.toString()}`, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            signal: activeRequest.signal
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.message || 'Revenue data could not be loaded.');
+          if (!result.chartData || !Array.isArray(result.chartData.points)) {
+            throw new Error('Revenue chart data has an unexpected format. Please reload the report.');
+          }
+
+          const summary = result.summary;
+          setText('revenue-total', formatMoney(summary.totalRevenue));
+          setText('revenue-booking-sales', formatMoney(summary.totalBookingSales));
+          setText('revenue-today', formatMoney(summary.todayRevenue));
+          setText('revenue-week', formatMoney(summary.thisWeekRevenue));
+          setText('revenue-month', formatMoney(summary.thisMonthRevenue));
+          setText('revenue-bookings', Number(summary.totalBookings || 0).toLocaleString('en-IN'));
+          setText('revenue-completed', Number(summary.completedBookings || 0).toLocaleString('en-IN'));
+          setText('revenue-cancelled', Number(summary.cancelledBookings || 0).toLocaleString('en-IN'));
+          setText('revenue-refunded', formatMoney(summary.totalRefundedAmount));
+          setText('revenue-refund-count', `${Number(summary.refundCount || 0).toLocaleString('en-IN')} wallet refund credits`);
+          setText('revenue-razorpay', formatMoney(summary.onlinePaymentRevenue));
+          setText('revenue-wallet', formatMoney(summary.walletPaymentRevenue));
+          const range = result.range;
+          setText('revenue-range-label', range.from || range.to
+            ? `${range.from ? dateLabel(range.from) : 'Beginning'} – ${range.to ? dateLabel(range.to) : 'Today'} · ${summary.successfulPayments} successful booking payments`
+            : `All recorded dates · ${summary.successfulPayments} successful booking payments`);
+
+          renderChart(result.chartData);
+          renderTransactions(result.transactions || []);
+          const pagination = result.pagination;
+          const pageCount = Math.max(pagination.totalPages, 1);
+          setText('revenue-pagination-label', `Page ${pagination.page} of ${pageCount} · ${pagination.total} payment records`);
+          previousButton.disabled = pagination.page <= 1;
+          nextButton.disabled = pagination.page >= pagination.totalPages;
+          page = pagination.page;
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            errorMessage.textContent = error.message || 'Revenue data could not be loaded. Please try again.';
+            errorMessage.classList.remove('hidden');
+          }
+        } finally {
+          if (currentRequest === requestSequence) loadingMessage.classList.add('hidden');
+        }
+      };
+
+      setDefaultRange();
+      chartViewButtons.forEach((button) => button.addEventListener('click', () => {
+        chartView = button.dataset.chartView;
+        chartViewButtons.forEach((option) => {
+          const selected = option === button;
+          option.setAttribute('aria-pressed', String(selected));
+          option.style.backgroundColor = selected ? '#00D06C' : 'transparent';
+          option.style.color = selected ? '#000000' : '';
+          option.style.borderColor = selected ? '#00D06C' : '';
+        });
+        page = 1;
+        loadReport();
+      }));
+      fromInput.addEventListener('change', () => { page = 1; loadReport(); });
+      toInput.addEventListener('change', () => { page = 1; loadReport(); });
+      methodInput.addEventListener('change', () => { page = 1; loadReport(); });
+      searchInput.addEventListener('input', () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => { page = 1; loadReport(); }, 250);
+      });
+      document.getElementById('revenue-clear').addEventListener('click', () => {
+        fromInput.value = '';
+        toInput.value = '';
+        page = 1;
+        loadReport();
+      });
+      previousButton.addEventListener('click', () => { if (page > 1) { page -= 1; loadReport(); } });
+      nextButton.addEventListener('click', () => { page += 1; loadReport(); });
+      loadReport();
+    })();

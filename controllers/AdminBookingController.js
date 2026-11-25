@@ -1,4 +1,9 @@
-import { getAdminBookingsService, updateBookingStatusService, getAdminBookingDetailsService, cancelAdminBookingService } from "../services/AdminBookingService.js";
+import { getAdminBookingsService,
+         updateBookingStatusService,
+         getAdminBookingDetailsService,
+         cancelAdminBookingService,
+         rescheduleAdminBookingService
+} from "../services/AdminBookingService.js";
 import {createWalkInBookingService} from "../services/BookingService.js";
 
 const renderAdminBookingsPageController = async (req, res) => {
@@ -75,6 +80,15 @@ const cancelAdminBookingController = async (req, res, next) => {
     }
 };
 
+const rescheduleAdminBookingController = async (req, res, next) => {
+    try {
+        const booking = await rescheduleAdminBookingService(req.params.bookingId, req.body.date, req.body.startTime);
+        return res.status(200).json({ success: true, message: 'Booking rescheduled successfully', booking });
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 const renderAdminBookingDetailsPageController = async (req, res, next) => {
     try {
@@ -110,9 +124,10 @@ const createWalkInBookingController = async(req,res,next)=>{
     }
 }
 export { renderAdminBookingsPageController,
-        updateBookingStatusController,
-        getAdminBookingDetailsController,
-        renderAdminBookingDetailsPageController,
-        cancelAdminBookingController,
-        createWalkInBookingController
+         updateBookingStatusController,
+         getAdminBookingDetailsController,
+         renderAdminBookingDetailsPageController,
+         cancelAdminBookingController,
+         rescheduleAdminBookingController,
+         createWalkInBookingController
 };

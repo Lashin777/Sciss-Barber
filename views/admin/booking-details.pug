@@ -68,6 +68,12 @@ block content
     };
     const paymentStatusClass = paymentStatusStyles[paymentStatus] || 'bg-neutral-100 text-neutral-600';
     const appointmentDate = booking?.appointmentDate || booking?.appointmentStart;
+    // Worked by Codex: display all services for new multi-service bookings and the legacy service for older bookings.
+    const bookingServices = Array.isArray(booking?.serviceSnapshots) && booking.serviceSnapshots.length
+      ? booking.serviceSnapshots
+      : Array.isArray(booking?.serviceIds) && booking.serviceIds.length
+      ? booking.serviceIds
+      : booking?.serviceId ? [booking.serviceId] : [];
 
   section(class="mx-auto flex w-full max-w-7xl flex-1 flex-col py-8 sm:py-12")
     nav(class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4", aria-label="Admin navigation")
@@ -88,6 +94,21 @@ block content
 
       if booking
         section(class="space-y-5", aria-label="Booking details")
+          p#admin-booking-feedback(class="hidden rounded-xl border px-4 py-3 text-sm", role="status", aria-live="polite")
+          if ['PENDING', 'CONFIRMED', 'ACCEPTED'].includes(bookingStatus)
+            article(class="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6", aria-labelledby="booking-actions-title")
+              h2#booking-actions-title(class="mb-4 text-lg font-bold tracking-tight") Manage appointment
+              div(class="flex flex-wrap gap-3")
+                button#toggle-reschedule(type="button", aria-expanded="false", class="h-11 rounded-full border border-neutral-300 px-5 font-mono text-[9px] font-bold tracking-[0.1em] text-neutral-800") RESCHEDULE
+                button#cancel-admin-booking(type="button", data-booking-id=booking._id, class="h-11 rounded-full border border-red-200 px-5 font-mono text-[9px] font-bold tracking-[0.1em] text-red-700 disabled:opacity-50") CANCEL BOOKING
+              form#admin-reschedule-form(class="mt-5 hidden gap-3 border-t border-neutral-100 pt-5 sm:grid-cols-[1fr_1fr_auto]")
+                div
+                  label(for="reschedule-date", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") NEW DATE
+                  input#reschedule-date(type="date", required, class="h-11 w-full rounded-lg border border-neutral-200 px-3 text-sm")
+                div
+                  label(for="reschedule-time", class="mb-2 block font-mono text-[9px] font-bold tracking-[0.14em] text-neutral-500") NEW START TIME
+                  input#reschedule-time(type="time", required, class="h-11 w-full rounded-lg border border-neutral-200 px-3 text-sm")
+                button#save-reschedule(type="submit", class="h-11 self-end rounded-full bg-neutral-950 px-5 font-mono text-[9px] font-bold tracking-[0.1em] text-white disabled:opacity-50") SAVE TIME
           article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
             div(class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between")
               div(class="min-w-0")
@@ -121,13 +142,13 @@ block content
               dl(class="grid gap-5")
                 div(class="min-w-0")
                   dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") NAME
-                  dd(class="break-words text-sm text-neutral-700")= displayValue(booking.userId?.name)
+                  dd(class="break-words text-sm text-neutral-700")= displayValue(booking.userId && booking.userId.name)
                 div(class="min-w-0")
                   dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") EMAIL
-                  dd(class="break-all text-sm text-neutral-700")= displayValue(booking.userId?.email)
+                  dd(class="break-all text-sm text-neutral-700")= displayValue(booking.userId && booking.userId.email)
                 div
                   dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") PHONE
-                  dd(class="text-sm text-neutral-700")= displayValue(booking.userId?.phone)
+                  dd(class="text-sm text-neutral-700")= displayValue(booking.userId && booking.userId.phone)
 
             article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
               div(class="mb-6 border-b border-neutral-100 pb-4")
@@ -136,7 +157,7 @@ block content
               dl(class="grid gap-5 sm:grid-cols-2")
                 div(class="min-w-0 sm:col-span-2")
                   dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") SERVICE NAME
-                  dd(class="break-words text-sm font-semibold text-neutral-900")= displayValue(booking.serviceId?.name)
+                  dd(class="break-words text-sm font-semibold text-neutral-900")= bookingServices.length ? bookingServices.map(service => service && service.name).filter(Boolean).join(', ') : 'Not available'
                 div
                   dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") SERVICE PRICE
                   dd(class="text-sm text-neutral-700")= formatAmount(booking.servicePrice)
@@ -145,7 +166,7 @@ block content
                   dd(class="text-sm text-neutral-700")= booking.serviceDuration === null || booking.serviceDuration === undefined || booking.serviceDuration === '' ? 'Not available' : `${booking.serviceDuration} minutes`
                 div(class="sm:col-span-2")
                   dt(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") BARBER
-                  dd(class="text-sm text-neutral-700")= displayValue(booking.barberId?.name)
+                  dd(class="text-sm text-neutral-700")= displayValue(booking.barberId && booking.barberId.name)
 
             article(class="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8")
               div(class="mb-6 border-b border-neutral-100 pb-4")
@@ -183,3 +204,50 @@ block content
           span(class="mx-auto grid size-14 place-items-center rounded-full bg-white font-mono text-xl text-neutral-400", aria-hidden="true") —
           h2(class="mt-5 text-xl font-bold tracking-tight") Booking unavailable
           p(class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-neutral-500") Booking information could not be found.
+
+  if booking
+    script.
+      const bookingId = document.getElementById('cancel-admin-booking')?.dataset.bookingId;
+      const actionFeedback = document.getElementById('admin-booking-feedback');
+      const showActionFeedback = (message, isError = false) => {
+        actionFeedback.textContent = message;
+        actionFeedback.classList.remove('hidden', 'border-red-200', 'bg-red-50', 'text-red-700', 'border-green-200', 'bg-green-50', 'text-green-800');
+        actionFeedback.classList.add(...(isError ? ['border-red-200', 'bg-red-50', 'text-red-700'] : ['border-green-200', 'bg-green-50', 'text-green-800']));
+      };
+      const sendBookingAction = async (url, method, body, button, loadingText) => {
+        if (button.disabled) return;
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = loadingText;
+        try {
+          const response = await fetch(url, { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
+          const result = await response.json();
+          if (!response.ok || result.success !== true) throw new Error(result.message || 'Could not update this booking.');
+          showActionFeedback(result.message || 'Booking updated successfully.');
+          window.setTimeout(() => window.location.reload(), 700);
+        } catch (error) {
+          showActionFeedback(error.message || 'Could not update this booking. Please try again.', true);
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      };
+      const cancelBookingButton = document.getElementById('cancel-admin-booking');
+      cancelBookingButton?.addEventListener('click', () => {
+        if (window.confirm('Cancel this appointment? This action cannot be undone.')) sendBookingAction(`/api/admin/bookings/${encodeURIComponent(bookingId)}/cancel`, 'PATCH', null, cancelBookingButton, 'CANCELLING…');
+      });
+      const rescheduleToggle = document.getElementById('toggle-reschedule');
+      const rescheduleForm = document.getElementById('admin-reschedule-form');
+      rescheduleToggle?.addEventListener('click', () => {
+        const opening = rescheduleForm.classList.contains('hidden');
+        rescheduleForm.classList.toggle('hidden', !opening);
+        rescheduleForm.classList.toggle('grid', opening);
+        rescheduleToggle.setAttribute('aria-expanded', String(opening));
+      });
+      rescheduleForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!rescheduleForm.reportValidity()) return;
+        const date = document.getElementById('reschedule-date').value;
+        const time = document.getElementById('reschedule-time').value;
+        const startTime = new Date(`${date}T${time}:00+05:30`).toISOString();
+        sendBookingAction(`/api/admin/bookings/${encodeURIComponent(bookingId)}/reschedule`, 'PATCH', { date, startTime }, document.getElementById('save-reschedule'), 'SAVING…');
+      });

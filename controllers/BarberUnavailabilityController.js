@@ -3,7 +3,7 @@ import { addBarberUnavailabilityService,
  } from "../services/BarberUnavailabilityService.js";
 
 
- const addBarberUnavailabilityController = async(req,res)=>{
+ const addBarberUnavailabilityController = async(req,res,next)=>{
     try{
         const {barberId,startTime,endTime,reason}= req.body;
 
@@ -22,14 +22,11 @@ import { addBarberUnavailabilityService,
         });
 
     }catch(error){
-        return res.status(400).json({
-            success:false,
-            message:error.message
-        })
+        return next(error);
     }
  }
 
- const getBarberUnavailabilityController = async (req, res) => {
+ const getBarberUnavailabilityController = async (req, res, next) => {
     try{
         const {startTime,endTime} = req.query;
 
@@ -44,10 +41,7 @@ import { addBarberUnavailabilityService,
             data:unavailability
         })
     }catch(error){
-         return res.status(400).json({
-            success:false,
-            message:error.message,
-        })
+        return next(error);
     }
 };
 

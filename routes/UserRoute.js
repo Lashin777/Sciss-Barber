@@ -18,6 +18,7 @@ import {
     renderAboutPageController,
     renderServicesPageController,
     renderProfilePageController,
+    renderWalletPageController,
     renderProfileEditPageController,
     renderBookingPageController,
     renderBookingDetailsPageController,
@@ -54,6 +55,7 @@ router.get('/signup', renderSignupPageController);
 router.get('/about', renderAboutPageController);
 router.get('/services', renderServicesPageController);
 router.get('/profile', preventCache, optionalAuth, renderProfilePageController);
+router.get('/wallet', preventCache, protect, customerOnly, renderWalletPageController);
 router.get('/profile/edit', preventCache, optionalAuth, renderProfileEditPageController);
 router.get('/booking', preventCache,optionalAuth, renderBookingPageController);
 router.get('/bookings/history', preventCache, optionalAuth, renderBookingHistoryPageController);

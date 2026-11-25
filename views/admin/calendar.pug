@@ -1,0 +1,534 @@
+extends ./admin-layout.pug
+
+block page_header
+  style.
+    .calendar-shell { border: 1px solid #e8e8e5; background: #fff; overflow: hidden; }
+    .calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; border-bottom: 1px solid #e8e8e5; }
+    .calendar-shop-rules { padding: .65rem 1.15rem; border-bottom: 1px solid #e8e8e5; color: #777971; font-size: 11px; }
+    .calendar-nav { display: flex; align-items: center; gap: .6rem; }
+    .calendar-nav button { width: 34px; height: 34px; border: 1px solid #e8e8e5; background: #fff; color: #22231f; transition: background .16s, border-color .16s; }
+    .calendar-nav button:hover { border-color: #00b85d; background: #f3fff7; }
+    .calendar-weekdays, #calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .calendar-weekdays { background: #fff; }
+    .calendar-weekdays > div { padding: .7rem .35rem; color: #777971; font: 600 10px/1 'Space Mono', monospace; text-align: center; }
+    #calendar-grid > section { min-height: 132px; border-top: 1px solid #eeefec; border-right: 1px solid #eeefec; background: #fff; }
+    #calendar-grid > section:nth-child(7n) { border-right: 0; }
+    #calendar-grid > section.is-outside { background: #fbfbfa; }
+    #calendar-grid > section.is-today { background: #f5fff8; }
+    .calendar-day { display: block; width: 100%; height: 100%; min-height: 132px; padding: .65rem; border: 0; background: transparent; color: #454740; text-align: left; font: 600 12px/1 'Space Mono', monospace; cursor: pointer; }
+    .calendar-day:hover { background: #f7f8f6; }
+    .calendar-day.has-bookings { position: relative; }
+    .calendar-day.has-bookings::after { position: absolute; bottom: 12px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #00b85d; content: ''; transform: translateX(-50%); }
+    .calendar-day:focus-visible { outline: 2px solid #00b85d; outline-offset: -3px; }
+    .is-today .calendar-day { color: #008840; font-weight: 700; }
+    .calendar-day-dialog { width: min(620px, calc(100% - 2rem)); max-height: min(80vh, 760px); margin: auto; padding: 0; border: 1px solid #e6e8e3; background: #fff; color: #22231f; box-shadow: 0 24px 80px rgb(0 0 0 / 22%); }
+    .calendar-day-dialog::backdrop { background: rgb(15 16 14 / 48%); }
+    .shop-hours { padding: .8rem 1.25rem; border-top: 1px solid #eceee9; background: #fafbf9; color: #62655d; font-size: 11px; }
+    .day-booking-row { padding: 1rem 1.25rem; border-top: 1px solid #eceee9; }
+    .day-booking-row.period-open { border-left: 3px solid #c9cec5; background: #fbfcfa; }
+    .day-booking-row.period-closed { border-left: 3px solid #d96a66; background: #fffafa; }
+    .day-booking-row.period-unavailable { border-left: 3px solid #d99932; background: #fffdf7; }
+    .day-booking-row.status-pending { border-left: 3px solid #d99932; }
+    .day-booking-row.status-confirmed, .day-booking-row.status-accepted { border-left: 3px solid #00b85d; }
+    .day-booking-row.status-cancelled, .day-booking-row.status-declined { border-left: 3px solid #d96a66; }
+    .calendar-day.has-closure { color: #a33c35; background: #fff7f5; }
+    .calendar-day.has-unavailability { box-shadow: inset 0 -3px #d99932; }
+    .day-closure-row { border-left: 3px solid #d96a66; background: #fffafa; }
+    .day-booking-row .event-actions button { padding: .45rem .65rem; border: 1px solid #e2e4df; background: #fff; font-size: 9px; }
+    .closure-dialog { width: min(540px, calc(100% - 2rem)); margin: auto; padding: 0; border: 1px solid #e6e8e3; background: #fff; color: #22231f; box-shadow: 0 24px 80px rgb(0 0 0 / 22%); }
+    .closure-dialog::backdrop { background: rgb(15 16 14 / 54%); }
+    #calendar-loading { min-height: 2.5rem; padding: .8rem 1.1rem; color: #777971; font-size: 11px; }
+    @media (max-width: 700px) {
+      .calendar-toolbar { align-items: flex-start; flex-direction: column; padding: 1rem; }
+      #calendar-grid { min-width: 700px; }
+      #calendar-grid > section, .calendar-day { min-height: 100px; }
+    }
+  header(class="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between")
+    div
+      p(class="mb-2 font-mono text-[10px] tracking-[0.25em] text-neutral-400") ADMIN / BOOKINGS
+      h1(class="text-4xl font-bold leading-none tracking-[-0.06em] sm:text-6xl") Booking calendar
+      p(class="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500") Your month at a glance. Select an appointment to manage its status or time.
+
+block page_content
+  section(class="min-w-0", aria-labelledby="calendar-title")
+    p#calendar-error(class="mb-4 hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700", role="alert")
+    div(class="calendar-shell")
+      div(class="calendar-toolbar")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") MONTHLY SCHEDULE
+        div(class="calendar-nav")
+          button#calendar-prev(type="button", aria-label="Previous month") ←
+          p#calendar-month(class="min-w-36 text-center font-mono text-xs font-bold tracking-[0.08em]", aria-live="polite") Loading…
+          button#calendar-next(type="button", aria-label="Next month") →
+      p#calendar-shop-rules.calendar-shop-rules(role="status") Loading shop hours…
+      div(class="overflow-x-auto")
+        div.calendar-weekdays(aria-hidden="true")
+          each day in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+            div= day
+        div#calendar-grid
+      p#calendar-loading(role="status", aria-live="polite")
+
+  dialog#day-bookings-dialog(class="calendar-day-dialog rounded-xl", aria-labelledby="day-bookings-title")
+    div(class="flex items-start justify-between gap-4 p-5")
+      div
+        p(class="font-mono text-[9px] font-bold tracking-[0.15em] text-neutral-400") DAILY SCHEDULE
+        h2#day-bookings-title(class="mt-1 text-xl font-semibold tracking-tight") Appointments
+      button#day-bookings-close(type="button", class="grid size-9 place-items-center border border-neutral-200 text-xl text-neutral-500 hover:text-neutral-950", aria-label="Close daily schedule") ×
+    p#day-shop-hours.shop-hours(role="status")
+    div(class="flex flex-wrap gap-2 border-b border-neutral-200 p-4")
+      button#close-shop-day(type="button", class="rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50") Close full day
+      button#close-shop-range(type="button", class="rounded-full border border-neutral-300 px-3 py-2 text-xs font-semibold hover:bg-neutral-50") Block time range
+    div#day-closures-list(class="max-h-36 overflow-y-auto")
+    div#day-bookings-list(class="max-h-[60vh] overflow-y-auto")
+    p#day-bookings-empty(class="hidden px-5 py-4 text-sm text-neutral-500") No appointments scheduled for this day.
+
+  dialog#closure-dialog.closure-dialog.rounded-2xl(aria-labelledby="closure-dialog-title")
+    form#closure-form
+      div(class="flex items-start justify-between gap-4 border-b border-neutral-200 p-5 sm:p-6")
+        div
+          p(class="font-mono text-[9px] font-bold tracking-[0.18em] text-neutral-400") SHOP AVAILABILITY
+          h2#closure-dialog-title(class="mt-2 text-2xl font-semibold tracking-tight") Close shop
+          p#closure-date(class="mt-1 text-sm text-neutral-500") Selected date
+        button#closure-dialog-close(type="button", class="grid size-9 place-items-center border border-neutral-200 text-xl text-neutral-500 hover:text-neutral-950", aria-label="Close availability dialog") ×
+      div(class="space-y-5 p-5 sm:p-6")
+        fieldset
+          legend(class="mb-2 text-xs font-semibold text-neutral-700") What would you like to block?
+          div(class="grid gap-2 sm:grid-cols-2")
+            label(class="flex cursor-pointer gap-3 rounded-xl border border-neutral-200 p-3 has-[:checked]:border-red-400 has-[:checked]:bg-red-50")
+              input(type="radio", name="closureType", value="FULL_DAY", class="mt-1 accent-red-600")
+              span
+                strong(class="block text-sm") Close full day
+                span(class="mt-1 block text-xs leading-relaxed text-neutral-500") Stop all appointments during shop hours.
+            label(class="flex cursor-pointer gap-3 rounded-xl border border-neutral-200 p-3 has-[:checked]:border-neutral-900 has-[:checked]:bg-neutral-50")
+              input(type="radio", name="closureType", value="TIME_RANGE", class="mt-1 accent-neutral-900")
+              span
+                strong(class="block text-sm") Block time range
+                span(class="mt-1 block text-xs leading-relaxed text-neutral-500") Stop appointments for a specific period.
+        div#closure-time-fields(class="grid gap-3 sm:grid-cols-2")
+          label(class="space-y-1.5 text-xs font-semibold text-neutral-700")
+            span Start time
+            input#closure-start(type="time", class="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm font-normal", required)
+          label(class="space-y-1.5 text-xs font-semibold text-neutral-700")
+            span End time
+            input#closure-end(type="time", class="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm font-normal", required)
+        p#closure-hours-note(class="-mt-3 text-xs leading-relaxed text-neutral-500") Times must fit the shop's working hours.
+        label(class="block space-y-1.5 text-xs font-semibold text-neutral-700")
+          span Reason (optional)
+          textarea#closure-reason(rows="2", maxlength="300", placeholder="For example, private event or maintenance", class="w-full resize-y rounded-lg border border-neutral-300 px-3 py-2.5 text-sm font-normal placeholder:text-neutral-400")
+        p#closure-form-error(class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700", role="alert")
+      div(class="flex flex-col-reverse gap-2 border-t border-neutral-200 bg-neutral-50 p-4 sm:flex-row sm:justify-end sm:px-6")
+        button#closure-cancel(type="button", class="rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-semibold hover:bg-white") Cancel
+        button#closure-submit(type="submit", class="rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-neutral-700") Save closure
+
+  script.
+    const calendarGrid = document.getElementById('calendar-grid');
+    const calendarMonthLabel = document.getElementById('calendar-month');
+    const calendarError = document.getElementById('calendar-error');
+    const calendarLoading = document.getElementById('calendar-loading');
+    const calendarShopRules = document.getElementById('calendar-shop-rules');
+    const dayBookingsDialog = document.getElementById('day-bookings-dialog');
+    const dayBookingsTitle = document.getElementById('day-bookings-title');
+    const dayBookingsList = document.getElementById('day-bookings-list');
+    const dayBookingsEmpty = document.getElementById('day-bookings-empty');
+    const dayClosuresList = document.getElementById('day-closures-list');
+    const closeShopDayButton = document.getElementById('close-shop-day');
+    const closeShopRangeButton = document.getElementById('close-shop-range');
+    const dayShopHours = document.getElementById('day-shop-hours');
+    const closureDialog = document.getElementById('closure-dialog');
+    const closureForm = document.getElementById('closure-form');
+    const closureTimeFields = document.getElementById('closure-time-fields');
+    const closureStartInput = document.getElementById('closure-start');
+    const closureEndInput = document.getElementById('closure-end');
+    const closureReasonInput = document.getElementById('closure-reason');
+    const closureError = document.getElementById('closure-form-error');
+    const closureSubmit = document.getElementById('closure-submit');
+    const indiaDateParts = (date) => {
+      const parts = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(date);
+      return Object.fromEntries(parts.filter((part) => part.type !== 'literal').map(({ type, value }) => [type, Number(value)]));
+    };
+    const initialIndiaDate = indiaDateParts(new Date());
+    let displayedMonth = new Date(Date.UTC(initialIndiaDate.year, initialIndiaDate.month - 1, 1, 12));
+    let selectedDayDate = '';
+    let calendarRequestId = 0;
+
+    const monthKey = (date) => {
+      const { year, month } = indiaDateParts(date);
+      return `${year}-${String(month).padStart(2, '0')}`;
+    };
+    const monthTitle = (date) => new Intl.DateTimeFormat('en-IN', {
+      month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata'
+    }).format(date);
+
+    function createBookingCard(booking) {
+      const card = document.createElement('article');
+      const status = String(booking.status || '').toUpperCase();
+      card.className = `day-booking-row status-${status.toLowerCase()}`;
+      const heading = document.createElement('div');
+      heading.className = 'flex flex-wrap items-baseline justify-between gap-2';
+      const customer = document.createElement('p');
+      customer.className = 'text-sm font-semibold';
+      customer.textContent = booking.customer;
+      const time = document.createElement('p');
+      time.className = 'font-mono text-xs font-semibold text-neutral-600';
+      time.textContent = `${booking.startTime}–${booking.endTime}`;
+      heading.append(customer, time);
+      const details = document.createElement('p');
+      details.className = 'mt-1 text-xs text-neutral-500';
+      details.textContent = `${booking.service} · ${booking.barber} · ${status.charAt(0) + status.slice(1).toLowerCase()} · ${booking.token}`;
+      card.append(heading, details);
+      if (booking.phone) {
+        const phone = document.createElement('p');
+        phone.className = 'mt-1 text-xs text-neutral-500';
+        phone.textContent = booking.phone;
+        card.appendChild(phone);
+      }
+      const actions = document.createElement('div');
+      actions.className = 'event-actions mt-3 flex flex-wrap gap-2';
+      if (status === 'PENDING') {
+        const confirm = document.createElement('button');
+        confirm.type = 'button';
+        confirm.className = 'font-mono font-bold tracking-wide';
+        confirm.textContent = 'CONFIRM';
+        confirm.addEventListener('click', () => updateBookingStatus(booking, 'CONFIRMED', confirm));
+        actions.appendChild(confirm);
+      }
+      if (['CONFIRMED', 'ACCEPTED'].includes(status)) {
+        const complete = document.createElement('button');
+        complete.type = 'button';
+        complete.className = 'font-mono font-bold tracking-wide';
+        complete.textContent = 'COMPLETE';
+        complete.addEventListener('click', () => updateBookingStatus(booking, 'COMPLETED', complete));
+        actions.appendChild(complete);
+      }
+      if (actions.childElementCount) card.appendChild(actions);
+      return card;
+    }
+
+    let shopRules = null;
+    let shopClosures = [];
+
+    function timeMinutes(value, closing = false) {
+      if (value === '00:00' && closing) return 1440;
+      const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+      if (!match) return null;
+      let hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      if (minutes > 59 || hours > (match[3] ? 12 : 23)) return null;
+      if (match[3]) hours = (hours % 12) + (match[3].toUpperCase() === 'PM' ? 12 : 0);
+      return hours * 60 + minutes;
+    }
+
+    function prettyTime(value, closing = false) {
+      if (value === '00:00' && closing) return '12:00 AM (midnight)';
+      return value || '—';
+    }
+
+    function formatMinutes(value) {
+      if (value === 1440) return '12:00 AM (midnight)';
+      return `${String(Math.floor(value / 60) % 24).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+    }
+
+    function isWeeklyOff(date) {
+      if (!shopRules) return false;
+      const off = shopRules.weeklyOff;
+      const weekday = new Date(`${date}T12:00:00`).getDay();
+      const names = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      return Array.isArray(off) ? off.some((item) => String(item).toLowerCase() === names[weekday] || Number(item) === weekday)
+        : String(off).toLowerCase() === names[weekday] || Number(off) === weekday;
+    }
+
+    function timelineRow(label, time, kind, booking) {
+      if (kind === 'booking') return createBookingCard(booking);
+      const row = document.createElement('article');
+      row.className = `day-booking-row period-${kind}`;
+      const heading = document.createElement('div');
+      heading.className = 'flex flex-wrap items-baseline justify-between gap-2';
+      const text = document.createElement('p');
+      text.className = 'text-sm font-semibold';
+      text.textContent = label;
+      const period = document.createElement('p');
+      period.className = 'font-mono text-xs font-semibold text-neutral-600';
+      period.textContent = time;
+      heading.append(text, period);
+      row.appendChild(heading);
+      if (kind === 'open') {
+        const note = document.createElement('p');
+        note.className = 'mt-1 text-xs text-neutral-500';
+        note.textContent = 'Open period between appointments; availability is not guaranteed.';
+        row.appendChild(note);
+      }
+      return row;
+    }
+
+    function openDayBookings(dateText, bookings, unavailable = []) {
+      selectedDayDate = dateText;
+      const date = new Date(`${dateText}T12:00:00`);
+      dayBookingsTitle.textContent = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+      renderDayClosures(dateText);
+      const rows = [];
+      const dayClosures = shopClosures.filter((closure) => closure.date === dateText);
+      const fullDayClosure = dayClosures.find((closure) => closure.type === 'FULL_DAY');
+      const off = isWeeklyOff(dateText);
+      const open = shopRules && timeMinutes(shopRules.openingTime);
+      const rawClose = shopRules && timeMinutes(shopRules.closingTime, true);
+      const close = open !== null && rawClose !== null && rawClose <= open ? rawClose + 1440 : rawClose;
+      dayShopHours.textContent = fullDayClosure
+        ? `Shop closed all day${fullDayClosure.reason ? ` · ${fullDayClosure.reason}` : ''}`
+        : shopRules
+        ? `Shop hours: ${prettyTime(shopRules.openingTime)}–${prettyTime(shopRules.closingTime, true)}${shopRules.weeklyOff ? ` · Weekly off: ${shopRules.weeklyOff}` : ''}`
+        : 'Shop hours unavailable.';
+      if (fullDayClosure) rows.push(timelineRow('Shop closed', 'All day', 'closed'));
+      else if (off) rows.push(timelineRow('Closed · weekly off', 'All day', 'closed'));
+      else if (open !== null && close !== null) {
+        let cursor = open;
+        const events = [
+          ...bookings.filter((booking) => ['PENDING', 'CONFIRMED', 'ACCEPTED', 'COMPLETED'].includes(String(booking.status).toUpperCase())).map((booking) => ({ kind: 'booking', booking, start: Number(booking.startMinutes), end: Number(booking.endMinutes) })),
+          ...unavailable.map((block) => ({ kind: 'unavailable', block, start: Number(block.startMinutes), end: Number(block.endMinutes) })),
+          ...dayClosures.filter((closure) => closure.type === 'TIME_RANGE').map((closure) => ({ kind: 'closure', closure, start: Number(closure.startMinutes), end: Number(closure.endMinutes) }))
+        ].map((event) => {
+          if (event.start < open) event.start += 1440;
+          if (event.end < event.start) event.end += 1440;
+          return event;
+        }).sort((a, b) => a.start - b.start);
+        events.forEach((event) => {
+          if (event.start > cursor && event.start < close) rows.push(timelineRow('Open period', `${formatMinutes(cursor)}–${formatMinutes(event.start)}`, 'open'));
+          if (event.kind === 'booking') rows.push(timelineRow('', '', 'booking', event.booking));
+          else if (event.kind === 'unavailable') rows.push(timelineRow(`${event.block.barber} unavailable${event.block.reason ? ` · ${event.block.reason}` : ''}`, `${formatMinutes(event.start)}–${formatMinutes(event.end)}`, 'unavailable'));
+          else rows.push(timelineRow(event.closure.reason || 'Shop closure', `${formatMinutes(event.start)}–${formatMinutes(event.end)}`, 'closed'));
+          cursor = Math.max(cursor, event.end);
+        });
+        if (cursor < close) rows.push(timelineRow('Open period', `${formatMinutes(cursor)}–${formatMinutes(close)}`, 'open'));
+        rows.unshift(timelineRow('Outside working hours', `Before ${shopRules.openingTime}`, 'closed'));
+        rows.push(timelineRow('Outside working hours', `After ${prettyTime(shopRules.closingTime, true)}`, 'closed'));
+        bookings.filter((booking) => !['PENDING', 'CONFIRMED', 'ACCEPTED', 'COMPLETED'].includes(String(booking.status).toUpperCase())).forEach((booking) => rows.push(timelineRow('', '', 'booking', booking)));
+      } else bookings.forEach((booking) => rows.push(timelineRow('', '', 'booking', booking)));
+      dayBookingsList.replaceChildren(...rows);
+      dayBookingsEmpty.classList.toggle('hidden', bookings.length > 0 || unavailable.length > 0);
+      if (!bookings.length && !unavailable.length && fullDayClosure) dayBookingsEmpty.textContent = 'No appointments scheduled; the shop is closed all day.';
+      else if (!bookings.length && !unavailable.length && !off && open !== null && close !== null) dayBookingsEmpty.textContent = 'No appointments scheduled. The working period is shown as open; availability is not guaranteed.';
+      else dayBookingsEmpty.textContent = off ? 'No appointments scheduled; this day is closed.' : 'No appointments scheduled for this day.';
+      if (!dayBookingsDialog.open) dayBookingsDialog.showModal();
+    }
+
+    function renderDayClosures(dateText) {
+      const closures = shopClosures.filter((closure) => closure.date === dateText);
+      dayClosuresList.replaceChildren();
+      closures.forEach((closure) => {
+        const row = document.createElement('article');
+        row.className = 'day-closure-row flex flex-wrap items-center justify-between gap-3 border-t border-red-100 px-5 py-3';
+        const label = document.createElement('p');
+        label.className = 'text-xs font-semibold text-red-800';
+        label.textContent = closure.type === 'FULL_DAY' ? `Closed all day${closure.reason ? ` · ${closure.reason}` : ''}` : `Closed ${closure.startTime}–${closure.endTime}${closure.reason ? ` · ${closure.reason}` : ''}`;
+        const reopen = document.createElement('button');
+        reopen.type = 'button';
+        reopen.className = 'rounded-full border border-neutral-300 px-3 py-1.5 text-[10px] font-semibold hover:bg-white';
+        reopen.textContent = 'Reopen';
+        reopen.addEventListener('click', () => reopenShopClosure(closure, reopen));
+        row.append(label, reopen);
+        dayClosuresList.appendChild(row);
+      });
+      const isFullDayClosed = closures.some((closure) => closure.type === 'FULL_DAY');
+      closeShopDayButton.disabled = closures.length > 0;
+      closeShopRangeButton.disabled = isFullDayClosed;
+      closeShopDayButton.classList.toggle('opacity-50', closeShopDayButton.disabled);
+      closeShopRangeButton.classList.toggle('opacity-50', closeShopRangeButton.disabled);
+    }
+
+    function selectedClosureType() {
+      return closureForm.querySelector('input[name="closureType"]:checked')?.value || 'FULL_DAY';
+    }
+
+    function syncClosureForm() {
+      const fullDay = selectedClosureType() === 'FULL_DAY';
+      closureTimeFields.classList.toggle('hidden', fullDay);
+      closureStartInput.required = !fullDay;
+      closureEndInput.required = !fullDay;
+      document.getElementById('closure-dialog-title').textContent = fullDay ? 'Close shop' : 'Block time range';
+      closureSubmit.textContent = fullDay ? 'Close shop for the day' : 'Block this time';
+    }
+
+    function openClosureDialog(type) {
+      if (!selectedDayDate) return;
+      closureForm.reset();
+      closureForm.querySelector(`input[name="closureType"][value="${type}"]`).checked = true;
+      document.getElementById('closure-date').textContent = new Intl.DateTimeFormat('en-IN', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      }).format(new Date(`${selectedDayDate}T12:00:00`));
+      closureStartInput.value = shopRules?.openingTime || '';
+      closureEndInput.value = shopRules?.closingTime || '';
+      closureError.textContent = '';
+      closureError.classList.add('hidden');
+      syncClosureForm();
+      closureDialog.showModal();
+    }
+
+    async function createShopClosure(event) {
+      event.preventDefault();
+      if (!selectedDayDate) return;
+      const type = selectedClosureType();
+      let startTime = null;
+      let endTime = null;
+      if (type === 'TIME_RANGE') {
+        const start = closureStartInput.value;
+        const end = closureEndInput.value;
+        if (!start || !end) return;
+        const startDateTime = new Date(`${selectedDayDate}T${start}:00+05:30`);
+        const endDateTime = new Date(`${selectedDayDate}T${end}:00+05:30`);
+        const openingMinutes = timeMinutes(shopRules?.openingTime);
+        const closingMinutes = timeMinutes(shopRules?.closingTime);
+        const startsAfterMidnight = closingMinutes !== null && openingMinutes !== null && closingMinutes <= openingMinutes && timeMinutes(start) <= closingMinutes && timeMinutes(end) <= closingMinutes;
+        if (startsAfterMidnight) {
+          startDateTime.setTime(startDateTime.getTime() + 86400000);
+          endDateTime.setTime(endDateTime.getTime() + 86400000);
+        }
+        if (endDateTime <= startDateTime) endDateTime.setTime(endDateTime.getTime() + 86400000);
+        startTime = startDateTime.toISOString();
+        endTime = endDateTime.toISOString();
+      }
+      const reason = closureReasonInput.value.trim();
+      closureSubmit.disabled = true;
+      closureSubmit.textContent = 'Saving…';
+      try {
+        const response = await fetch('/api/admin/shop-availability', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ date: selectedDayDate, type, startTime, endTime, reason })
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.success !== true) throw new Error(payload.message || 'Could not create shop closure.');
+        closureDialog.close();
+        await loadCalendar();
+      } catch (error) {
+        closureError.textContent = error.message || 'Could not create shop closure.';
+        closureError.classList.remove('hidden');
+      } finally {
+        closureSubmit.disabled = false;
+        syncClosureForm();
+      }
+    }
+
+    async function reopenShopClosure(closure, button) {
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/admin/shop-availability/${encodeURIComponent(closure.id)}/reopen`, {
+          method: 'PATCH', credentials: 'same-origin', headers: { Accept: 'application/json' }
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.success !== true) throw new Error(payload.message || 'Could not reopen shop closure.');
+        await loadCalendar();
+      } catch (error) {
+        calendarError.textContent = error.message || 'Could not reopen shop closure.';
+        calendarError.classList.remove('hidden');
+        button.disabled = false;
+      }
+    }
+
+    function renderCalendar(bookings, unavailable) {
+      calendarGrid.replaceChildren();
+      const firstWeekday = (displayedMonth.getUTCDay() + 6) % 7;
+      const daysInMonth = new Date(Date.UTC(displayedMonth.getUTCFullYear(), displayedMonth.getUTCMonth() + 1, 0)).getUTCDate();
+      const cellCount = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+      const byDate = new Map();
+      bookings.forEach((booking) => {
+        if (!byDate.has(booking.date)) byDate.set(booking.date, []);
+        byDate.get(booking.date).push(booking);
+      });
+      for (let index = 0; index < cellCount; index += 1) {
+        const dayNumber = index - firstWeekday + 1;
+        const cell = document.createElement('section');
+        cell.className = `min-w-0 ${dayNumber < 1 || dayNumber > daysInMonth ? 'is-outside' : ''}`;
+        if (dayNumber >= 1 && dayNumber <= daysInMonth) {
+          const dateText = `${monthKey(displayedMonth)}-${String(dayNumber).padStart(2, '0')}`;
+          const dateHeading = document.createElement('button');
+          dateHeading.type = 'button';
+          dateHeading.className = 'calendar-day';
+          dateHeading.textContent = String(dayNumber);
+          const dayBookings = byDate.get(dateText) || [];
+          const dayClosures = shopClosures.filter((closure) => closure.date === dateText);
+          const dayUnavailable = unavailable.filter((block) => block.date === dateText);
+          if (dayClosures.length) dateHeading.classList.add('has-closure');
+          if (dayUnavailable.length) dateHeading.classList.add('has-unavailability');
+          const hasActiveBookings = dayBookings.some((booking) => !['CANCELLED', 'DECLINED'].includes(String(booking.status || '').toUpperCase()));
+          if (hasActiveBookings) dateHeading.classList.add('has-bookings');
+          dateHeading.setAttribute('aria-label', `${dateText}${dayClosures.length ? ', shop closure' : ''}${dayUnavailable.length ? ', barber unavailable periods' : ''}${hasActiveBookings ? ', has bookings' : ', no active bookings'}. Show day schedule.`);
+          dateHeading.addEventListener('click', () => openDayBookings(dateText, dayBookings, dayUnavailable));
+          const today = indiaDateParts(new Date());
+          const month = indiaDateParts(displayedMonth);
+          if (today.year === month.year && today.month === month.month && today.day === dayNumber) cell.classList.add('is-today');
+          cell.appendChild(dateHeading);
+        }
+        calendarGrid.appendChild(cell);
+      }
+    }
+
+    async function loadCalendar() {
+      const requestId = ++calendarRequestId;
+      calendarMonthLabel.textContent = monthTitle(displayedMonth).toUpperCase();
+      calendarLoading.textContent = 'Loading appointments…';
+      calendarError.classList.add('hidden');
+      calendarGrid.replaceChildren();
+      try {
+        const response = await fetch(`/api/admin/calendar?month=${encodeURIComponent(monthKey(displayedMonth))}`, {
+          credentials: 'same-origin', headers: { Accept: 'application/json' }
+        });
+        const payload = await response.json();
+        if (requestId !== calendarRequestId) return;
+        if (!response.ok || payload.success !== true || !Array.isArray(payload.bookings) || !payload.shopRules) {
+          throw new Error(payload.message || 'Could not load calendar appointments.');
+        }
+        shopRules = payload.shopRules;
+        shopClosures = Array.isArray(payload.closures) ? payload.closures : [];
+        const unavailable = Array.isArray(payload.unavailabilities) ? payload.unavailabilities : [];
+        calendarShopRules.textContent = `Shop hours: ${prettyTime(shopRules.openingTime)}–${prettyTime(shopRules.closingTime, true)} · Weekly off: ${shopRules.weeklyOff || 'Not specified'}`;
+        renderCalendar(payload.bookings, unavailable);
+        if (dayBookingsDialog.open && selectedDayDate) {
+          openDayBookings(selectedDayDate, payload.bookings.filter((booking) => booking.date === selectedDayDate), unavailable.filter((block) => block.date === selectedDayDate));
+        }
+        calendarLoading.textContent = payload.bookings.length ? `${payload.bookings.length} appointments this month` : 'No appointments this month.';
+      } catch (error) {
+        if (requestId !== calendarRequestId) return;
+        calendarLoading.textContent = '';
+        calendarShopRules.textContent = 'Shop hours unavailable.';
+        calendarError.textContent = error.message || 'Could not load calendar appointments.';
+        calendarError.classList.remove('hidden');
+      }
+    }
+
+    async function updateBookingStatus(booking, status, button) {
+      if (!window.confirm(`Mark ${booking.token} as ${status.toLowerCase()}?`)) return;
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/admin/bookings/${encodeURIComponent(booking.id)}/status`, {
+          method: 'PATCH', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.success !== true) throw new Error(payload.message || 'Could not update booking status.');
+        await loadCalendar();
+      } catch (error) {
+        calendarError.textContent = error.message || 'Could not update booking status.';
+        calendarError.classList.remove('hidden');
+        button.disabled = false;
+      }
+    }
+
+    document.getElementById('day-bookings-close').addEventListener('click', () => dayBookingsDialog.close());
+    closeShopDayButton.addEventListener('click', () => openClosureDialog('FULL_DAY'));
+    closeShopRangeButton.addEventListener('click', () => openClosureDialog('TIME_RANGE'));
+    closureForm.addEventListener('change', syncClosureForm);
+    closureForm.addEventListener('submit', createShopClosure);
+    document.getElementById('closure-dialog-close').addEventListener('click', () => closureDialog.close());
+    document.getElementById('closure-cancel').addEventListener('click', () => closureDialog.close());
+
+    document.getElementById('calendar-prev').addEventListener('click', () => {
+      displayedMonth = new Date(Date.UTC(displayedMonth.getUTCFullYear(), displayedMonth.getUTCMonth() - 1, 1, 12));
+      loadCalendar();
+    });
+    document.getElementById('calendar-next').addEventListener('click', () => {
+      displayedMonth = new Date(Date.UTC(displayedMonth.getUTCFullYear(), displayedMonth.getUTCMonth() + 1, 1, 12));
+      loadCalendar();
+    });
+    loadCalendar();

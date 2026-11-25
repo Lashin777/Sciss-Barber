@@ -1,19 +1,29 @@
-import { createPaymentOrderService ,verifyPaymentService} from "../services/PaymentService.js";
+import { createPaymentOrderService,
+         verifyPaymentService,
+         markPaymentFailedService,
+         payWithWalletService
+} from "../services/PaymentService.js";
 
+const safePaymentResponse = (payment) => ({
+    id: String(payment._id), method: payment.method, status: payment.status,
+    amount: payment.amount, currency: payment.currency,
+    razorpayOrderId: payment.razorpayOrderId || null,
+    razorpayPaymentId: payment.razorpayPaymentId || null
+});
 
-const createPaymentOrderController = async(req,res)=>{
+const createPaymentOrderController = async(req,res,next)=>{
     try{
-        const {bookingId,serviceId} = req.body ;
+        const { bookingId, serviceIds, serviceId } = req.body;
         
-        if(!bookingId||!serviceId){
+        if(!bookingId){
             return res.status(400).json({
                 success:false,
-                message:"Booking ID and Service ID are required"
+                message:"Booking ID is required"
             });
         }
 
 
-            const order = await createPaymentOrderService(bookingId,serviceId,req.user.id);
+            const order = await createPaymentOrderService(bookingId, serviceIds || serviceId, req.user.id);
 
             return res.status(200).json({
                 success:true,
@@ -22,16 +32,12 @@ const createPaymentOrderController = async(req,res)=>{
             })
         
     }catch(error){
-        return res.status(500).json({
-            success:false,
-            message:error.message||"Failed To Create  Payment order",
-            
-        })
+        return next(error);
     }
 }
 
 
-const verifyPaymentController = async (req, res) => {
+const verifyPaymentController = async (req, res, next) => {
     try{
     const{razorpay_order_id,razorpay_payment_id,razorpay_signature}=req.body;
 
@@ -53,17 +59,65 @@ const verifyPaymentController = async (req, res) => {
 
     return res.status(200).json({
         success:true,
-        message:"Payment verified and booking confirmed successfully",
+        message:"Payment verified successfully",
         booking:result.booking,
-        payment:result.payment
+        payment:safePaymentResponse(result.payment)
     });
 
    }catch(error){
-    return res.status(error.statusCode ||500).json({
-        success:false,
-        message:error.message||"payment verification failed "
-    });
+    return next(error);
    }
 };
 
-export{createPaymentOrderController,verifyPaymentController}
+const paymentFailedController = async (req, res, next) => {
+    try {
+        const { razorpay_order_id, razorpay_payment_id } = req.body;
+        if (!razorpay_order_id || !razorpay_payment_id) {
+            return res.status(400).json({ success: false, message: 'Payment failure details are required' });
+        }
+
+        const payment = await markPaymentFailedService(
+            razorpay_order_id,
+            razorpay_payment_id,
+            req.user.id
+        );
+        return res.status(200).json({ success: true, payment: safePaymentResponse(payment) });
+    } catch (error) {
+        return next(error);
+    }
+};
+
+const payWithWalletController = async (req, res, next) => {
+    try {
+        const { bookingId } = req.body;
+
+        if (!bookingId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Booking ID is required'
+            });
+        }
+
+        const result = await payWithWalletService(
+            bookingId,
+            req.user.id
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Wallet payment successful and booking confirmed',
+            booking: result.booking,
+            payment: safePaymentResponse(result.payment)
+        });
+
+    } catch (error) {
+        return next(error);
+    }
+};
+
+
+export { createPaymentOrderController,
+        verifyPaymentController,
+        paymentFailedController,
+        payWithWalletController
+       };

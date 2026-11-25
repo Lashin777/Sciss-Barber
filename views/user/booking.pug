@@ -17,9 +17,11 @@ block content
 
         p(class="mb-9 text-sm leading-relaxed text-neutral-400") Sign in to your account to book your appointment. We'll have the chair ready.
 
-        div(class="flex justify-end gap-3")
+        div(class="flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center")
           button#login-required-cancel(type="button", class="rounded-full border border-white/20 bg-transparent px-6 py-3 font-mono text-xs tracking-widest text-white transition hover:bg-white/10") CANCEL
-          a(href="/login?returnTo=/booking", class="rounded-full px-7 py-3 font-mono text-xs font-bold tracking-widest text-black transition", style="background-color: #00D06C;") LOGIN →
+          div(class="flex flex-col gap-3 sm:flex-row sm:items-center")
+            a(href="/signup?returnTo=%2Fbooking", class="rounded-full border border-white/20 px-6 py-3 text-center font-mono text-xs font-bold tracking-widest text-white transition hover:bg-white/10") CREATE ACCOUNT
+            a(href="/login?returnTo=%2Fbooking", class="rounded-full px-7 py-3 text-center font-mono text-xs font-bold tracking-widest text-black transition", style="background-color: #00D06C;") LOGIN →
   -
     const bookingServiceGroups = typeof serviceGroups !== 'undefined' && Array.isArray(serviceGroups) ? serviceGroups : [];
 
@@ -36,16 +38,18 @@ block content
       div(class="space-y-10")
         fieldset
           legend(class="mb-4 font-mono text-[11px] font-bold tracking-[0.2em]") 01 / CHOOSE YOUR SERVICE
-          p(class="mb-4 text-xs text-neutral-500") Choose the service you need. Select a category to see its services and prices.
+          p(class="mb-4 text-xs text-neutral-500") Choose one or more services. Select a category and tap each service to add or remove it.
           div#service-categories(class="flex flex-wrap gap-2")
             each group, index in bookingServiceGroups
               button(type="button", data-service-category=group.title, aria-pressed=index === 0, class=index === 0 ? "booking-category-chip is-active" : "booking-category-chip")= group.title
+          p#selected-services-status(class="mt-4 rounded-xl bg-neutral-100 px-4 py-3 text-xs font-medium text-neutral-600", role="status", aria-live="polite") No services selected.
           div#service-options(class="mt-4 grid gap-3 sm:grid-cols-2")
             if bookingServiceGroups.length
               p#service-prompt(class="rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2") Choose a service category to view the menu.
             else
               p#service-prompt(class="rounded-2xl border border-dashed border-neutral-300 px-5 py-6 text-sm text-neutral-400 sm:col-span-2") Services are currently unavailable.
-          input#booking-service(type="hidden", name="service")
+          //- Worked by Codex: serialize all chosen services as a comma-separated ID list for availability lookup.
+          input#booking-service(type="hidden", name="serviceIds")
           input#booking-time(type="hidden", name="time")
           input#booking-end-time(type="hidden", name="endTime")
           a(href="/services", class="mt-3 inline-flex text-xs font-semibold text-neutral-500 transition hover:text-[#00D06C]") View the full services & price list →
@@ -69,6 +73,7 @@ block content
             div
               p(class="font-mono text-[9px] tracking-[0.16em] text-neutral-400") SELECTED SERVICE
               p#summary-service(class="mt-2 text-sm font-semibold") Choose a service
+              p#summary-duration(class="mt-1 text-xs text-neutral-400") Choose services to see total duration
             div(class="text-right")
               p(class="font-mono text-[9px] tracking-[0.16em] text-neutral-400") PRICE
               p#summary-price(class="mt-2 text-sm font-bold text-[#00D06C]") —
@@ -99,12 +104,33 @@ block content
           span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") TIME
           span#confirm-time(class="text-right font-semibold text-white") —
         div(class="flex items-center justify-between gap-4")
+          span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") TOTAL DURATION
+          span#confirm-duration(class="text-right font-semibold text-white") —
+        div(class="flex items-center justify-between gap-4")
           span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") PRICE
           span#confirm-price(class="text-right font-bold", style="color: #00D06C;") —
         div#confirm-advance-container(class="hidden items-center justify-between gap-4 border-t border-white/10 pt-3")
           span(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") ADVANCE DUE NOW
           span#confirm-advance(class="text-right font-mono text-xs font-bold", style="color: #00D06C;") —
-      p#confirm-status(class="mb-5 hidden text-sm leading-relaxed text-red-400", role="status", aria-live="polite")
+      fieldset(class="mb-5 space-y-2", aria-labelledby="payment-method-heading")
+        legend#payment-method-heading(class="mb-2 font-mono text-[9px] font-bold tracking-[0.16em] text-neutral-400") PAYMENT METHOD
+        label(class="flex cursor-pointer items-start gap-3 rounded-xl border border-white/15 p-3 transition hover:border-[#00D06C]")
+          input#payment-method-razorpay(type="radio", name="booking-payment-method", value="RAZORPAY", checked, class="mt-1", style="accent-color:#00D06C")
+          span(class="min-w-0")
+            span(class="block text-sm font-semibold text-white") Razorpay
+            span(class="mt-1 block text-xs leading-relaxed text-neutral-400") Pay securely by card, UPI, or other supported methods.
+        label(class="flex cursor-pointer items-start gap-3 rounded-xl border border-white/15 p-3 transition hover:border-[#00D06C]")
+          input#payment-method-wallet(type="radio", name="booking-payment-method", value="WALLET", class="mt-1", style="accent-color:#00D06C")
+          span(class="min-w-0")
+            span(class="block text-sm font-semibold text-white") Wallet
+            span(class="mt-1 block text-xs leading-relaxed text-neutral-400") Use your Sciss Barber wallet balance.
+      div#wallet-payment-panel(class="mb-5 hidden rounded-xl border border-white/15 bg-white/5 p-4")
+        p(class="font-mono text-[9px] tracking-[0.14em] text-neutral-400") AVAILABLE WALLET BALANCE
+        p#wallet-balance-value(class="mt-1 text-lg font-bold text-[#00D06C]", role="status", aria-live="polite") Checking wallet balance…
+        p#wallet-advance-value(class="mt-3 text-xs text-neutral-300") Booking advance: not calculated yet
+        p#wallet-difference(class="mt-2 hidden text-xs font-semibold text-amber-300", role="status", aria-live="polite")
+        p#wallet-payment-status(class="mt-3 text-xs leading-relaxed text-neutral-300", role="status", aria-live="polite") Your wallet will be charged the booking advance after you confirm.
+      p#confirm-status(class="mb-5 hidden rounded-lg border p-3 text-sm leading-relaxed", role="status", aria-live="polite")
       div(class="flex gap-3")
         button#confirm-cancel(type="button", class="flex-1 cursor-pointer rounded-full border border-white/20 bg-transparent py-3 font-mono text-xs tracking-widest text-white transition hover:bg-white/10") GO BACK
         button#confirm-submit(type="button", class="flex-1 cursor-pointer rounded-full py-3 font-mono text-xs font-bold tracking-widest text-black transition", style="background-color: #00D06C;") CONFIRM BOOKING
@@ -138,13 +164,23 @@ block content
     const userData = JSON.parse(document.getElementById('booking-user-data')?.textContent || 'null');
     const serviceCategories = document.getElementById('service-categories');
     const serviceOptions = document.getElementById('service-options');
+    const selectedServicesStatus = document.getElementById('selected-services-status');
     const dateChoices = document.getElementById('date-choices');
     const timeChoices = document.getElementById('time-choices');
     const summaryService = document.getElementById('summary-service');
+    const summaryDuration = document.getElementById('summary-duration');
     const summaryPrice = document.getElementById('summary-price');
     const summaryDateTime = document.getElementById('summary-datetime');
     const confirmAdvanceContainer = document.getElementById('confirm-advance-container');
     const confirmAdvance = document.getElementById('confirm-advance');
+    const confirmAdvanceLabel = confirmAdvanceContainer?.querySelector('span');
+    const walletPaymentPanel = document.getElementById('wallet-payment-panel');
+    const walletBalanceValue = document.getElementById('wallet-balance-value');
+    const walletAdvanceValue = document.getElementById('wallet-advance-value');
+    const walletDifference = document.getElementById('wallet-difference');
+    const walletPaymentStatus = document.getElementById('wallet-payment-status');
+    const razorpayMethodInput = document.getElementById('payment-method-razorpay');
+    const walletMethodInput = document.getElementById('payment-method-wallet');
     const confirmStatus = document.getElementById('confirm-status');
     const confirmCancel = document.getElementById('confirm-cancel');
     const confirmSubmit = document.getElementById('confirm-submit');
@@ -158,7 +194,38 @@ block content
     let activeBooking = null;
     let activeOrder = null;
     let pendingVerification = null;
+    let paymentFailureMessage = '';
+    let paymentFailureSaving = false;
     let currentSelectionKey = '';
+    let selectedPaymentMethod = 'RAZORPAY';
+    let walletBalance = null;
+    let walletBalanceError = '';
+    let walletBalanceLoading = false;
+    let walletBalanceRequest = null;
+    let walletPaymentBlocked = false;
+    // Worked by Codex: preserve service choices while customers switch between categories.
+    const selectedServices = new Map();
+
+    function syncSelectedServices() {
+      const selected = Array.from(selectedServices.values());
+      const durations = selected.map((service) => {
+        const duration = Number(service.duration);
+        return Number.isFinite(duration) && duration > 0 ? duration : null;
+      });
+      const durationIsKnown = selected.length > 0 && durations.every((duration) => duration !== null);
+      const combinedDuration = durationIsKnown ? durations.reduce((total, duration) => total + duration, 0) : null;
+      bookingService.value = selected.map((service) => service.id).join(',');
+      bookingService.dataset.name = selected.map((service) => service.name).join(' + ');
+      bookingService.dataset.price = selected.some((service) => service.price === null || service.price === undefined || service.price === '' || !Number.isFinite(Number(service.price)))
+        ? 'Ask in shop'
+        : String(selected.reduce((total, service) => total + Number(service.price), 0));
+      bookingService.dataset.duration = combinedDuration === null ? '' : String(combinedDuration);
+      bookingService.dataset.durationLabel = combinedDuration === null ? 'Duration unavailable' : `${combinedDuration} min total`;
+      selectedServicesStatus.textContent = selected.length
+        ? `${selected.length} service${selected.length === 1 ? '' : 's'} selected: ${selected.map((service) => service.name).join(', ')} · ${bookingService.dataset.durationLabel}`
+        : 'No services selected.';
+      updateBookingSummary();
+    }
 
     function getSelectionKey() {
       return `${bookingService.value}|${bookingDate.value}|${bookingTime.value}`;
@@ -168,6 +235,7 @@ block content
       activeBooking = null;
       activeOrder = null;
       pendingVerification = null;
+      paymentFailureMessage = '';
       currentSelectionKey = '';
       if (confirmAdvanceContainer) {
         confirmAdvanceContainer.classList.add('hidden');
@@ -176,15 +244,25 @@ block content
       if (confirmAdvance) {
         confirmAdvance.textContent = '—';
       }
+      if (confirmAdvanceLabel) confirmAdvanceLabel.textContent = 'ADVANCE DUE NOW';
+      walletPaymentBlocked = false;
+      walletAdvanceValue.textContent = 'Booking advance: not calculated yet';
+      walletDifference.classList.add('hidden');
+      walletDifference.classList.remove('text-[#00D06C]');
+      walletDifference.classList.add('text-amber-300');
+      walletPaymentStatus.textContent = walletBalance === null
+        ? (walletBalanceError || 'Wallet balance will load here. The booking advance is shown after the booking is created.')
+        : 'Wallet balance is available. The booking advance is shown after the booking is created.';
       if (confirmStatus) {
         confirmStatus.textContent = '';
         confirmStatus.classList.add('hidden');
-        confirmStatus.classList.remove('text-[#00D06C]', 'text-neutral-300', 'text-neutral-400');
-        confirmStatus.classList.add('text-red-400');
+        confirmStatus.classList.remove('text-[#00D06C]', 'text-neutral-300', 'text-neutral-400', 'text-red-400', 'text-red-300', 'border-red-500/40', 'bg-red-500/10');
+        confirmStatus.setAttribute('role', 'status');
+        confirmStatus.setAttribute('aria-live', 'polite');
       }
       if (confirmSubmit) {
         confirmSubmit.disabled = false;
-        confirmSubmit.textContent = 'CONFIRM BOOKING';
+        confirmSubmit.textContent = selectedPaymentMethod === 'WALLET' ? 'CONTINUE WITH WALLET' : 'CONFIRM BOOKING';
       }
       if (confirmCancel) {
         confirmCancel.textContent = 'GO BACK';
@@ -199,6 +277,155 @@ block content
         : String(price);
     }
 
+    function formatServiceDuration(duration) {
+      const minutes = Number(duration);
+      return Number.isFinite(minutes) && minutes > 0 ? `${minutes} min` : 'Duration unavailable';
+    }
+
+    function formatWalletAmount(amount) {
+      const numericAmount = Number(amount);
+      return Number.isFinite(numericAmount)
+        ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(numericAmount)
+        : 'Amount unavailable';
+    }
+
+    function loadWalletBalance() {
+      if (!userData) {
+        walletBalanceError = 'Sign in to view your wallet balance.';
+        walletBalanceValue.textContent = walletBalanceError;
+        return Promise.resolve(null);
+      }
+      if (walletBalanceRequest) return walletBalanceRequest;
+
+      walletBalanceLoading = true;
+      walletBalanceError = '';
+      walletBalanceValue.textContent = 'Loading wallet balance…';
+      walletBalanceRequest = (async () => {
+        try {
+          const response = await fetch('/balance', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' }
+          });
+          const result = await response.json();
+          if (!response.ok || result?.success !== true || !Number.isFinite(Number(result.balance))) {
+            throw new Error(result?.message || 'Could not load your wallet balance.');
+          }
+          walletBalance = Number(result.balance);
+          walletBalanceValue.textContent = formatWalletAmount(walletBalance);
+          return walletBalance;
+        } catch (error) {
+          walletBalance = null;
+          walletBalanceError = error.message || 'Could not load your wallet balance.';
+          walletBalanceValue.textContent = walletBalanceError;
+          return null;
+        } finally {
+          walletBalanceLoading = false;
+          walletBalanceRequest = null;
+          if (selectedPaymentMethod === 'WALLET' && !activeBooking && !walletPaymentBlocked) {
+            walletPaymentStatus.textContent = walletBalance === null
+              ? (walletBalanceError || 'Wallet balance is unavailable. Choose Razorpay to continue.')
+              : 'Wallet balance is available. The booking advance is shown after the booking is created.';
+          }
+        }
+      })();
+      return walletBalanceRequest;
+    }
+
+    function showWalletAdvance(amount) {
+      if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) return;
+      const formattedAmount = formatWalletAmount(amount);
+      walletAdvanceValue.textContent = `Booking advance: ${formattedAmount}`;
+      confirmAdvance.textContent = formattedAmount;
+      if (confirmAdvanceLabel) confirmAdvanceLabel.textContent = 'ADVANCE DUE NOW';
+      confirmAdvanceContainer.classList.remove('hidden');
+      confirmAdvanceContainer.classList.add('flex');
+    }
+
+    function evaluateWalletPayment(paymentInProgress = false) {
+      walletDifference.classList.remove('text-[#00D06C]');
+      walletDifference.classList.add('text-amber-300');
+      const advanceAmount = Number(activeBooking?.advanceAmount);
+      if (!Number.isFinite(advanceAmount) || advanceAmount <= 0) {
+        walletPaymentStatus.textContent = 'The booking advance amount is unavailable, so wallet eligibility cannot be calculated.';
+        walletDifference.classList.add('hidden');
+        walletPaymentBlocked = true;
+        confirmSubmit.disabled = true;
+        confirmSubmit.textContent = 'WALLET UNAVAILABLE';
+        return;
+      }
+      showWalletAdvance(advanceAmount);
+      if (walletBalance === null) {
+        walletPaymentStatus.textContent = walletBalanceError || 'Wallet balance is unavailable. Choose Razorpay to continue.';
+        walletDifference.classList.add('hidden');
+        walletPaymentBlocked = true;
+        confirmSubmit.disabled = true;
+        confirmSubmit.textContent = 'WALLET UNAVAILABLE';
+        return;
+      }
+
+      const difference = advanceAmount - walletBalance;
+      if (difference > 0) {
+        walletDifference.textContent = `You need ${formatWalletAmount(difference)} more to cover the ${formatWalletAmount(advanceAmount)} advance.`;
+        walletDifference.classList.remove('hidden');
+        walletPaymentStatus.textContent = 'Your wallet balance is insufficient. Choose Razorpay or add funds before paying with Wallet.';
+        walletPaymentBlocked = true;
+        confirmSubmit.disabled = true;
+        confirmSubmit.textContent = 'INSUFFICIENT BALANCE';
+      } else {
+        walletDifference.textContent = `Your balance covers the ${formatWalletAmount(advanceAmount)} advance.`;
+        walletDifference.classList.remove('hidden');
+        walletDifference.classList.remove('text-amber-300');
+        walletDifference.classList.add('text-[#00D06C]');
+        walletPaymentStatus.textContent = 'Your balance covers the advance. Confirm to pay from your wallet.';
+        walletPaymentBlocked = false;
+        confirmSubmit.disabled = paymentInProgress;
+        confirmSubmit.textContent = paymentInProgress ? 'PAYING WITH WALLET…' : 'PAY WITH WALLET';
+      }
+    }
+
+    function selectPaymentMethod(method) {
+      if (confirmSubmit.disabled && !walletPaymentBlocked) {
+        if (razorpayMethodInput) razorpayMethodInput.checked = selectedPaymentMethod === 'RAZORPAY';
+        if (walletMethodInput) walletMethodInput.checked = selectedPaymentMethod === 'WALLET';
+        return;
+      }
+      selectedPaymentMethod = method;
+      const isWallet = method === 'WALLET';
+      walletPaymentPanel.classList.toggle('hidden', !isWallet);
+      if (isWallet) {
+        walletPaymentBlocked = false;
+        walletDifference.classList.add('hidden');
+        if (activeBooking) {
+          evaluateWalletPayment();
+        } else {
+          confirmSubmit.disabled = false;
+          confirmSubmit.textContent = 'CONTINUE WITH WALLET';
+          walletPaymentStatus.textContent = walletBalance === null
+            ? (walletBalanceError || 'Wallet balance will load here. The booking advance is shown after the booking is created.')
+            : 'Wallet balance is available. The booking advance is shown after the booking is created.';
+        }
+        if (walletBalance === null && !walletBalanceLoading && userData) loadWalletBalance();
+      } else {
+        walletPaymentBlocked = false;
+        walletDifference.classList.add('hidden');
+        walletDifference.classList.remove('text-[#00D06C]');
+        walletDifference.classList.add('text-amber-300');
+        confirmSubmit.disabled = false;
+        confirmSubmit.textContent = activeOrder ? 'RETRY PAYMENT' : activeBooking ? 'RETRY PAYMENT' : 'CONFIRM BOOKING';
+        if (!confirmStatus.classList.contains('hidden') && (confirmStatus.textContent.includes('Wallet') || confirmStatus.classList.contains('border-red-500/40'))) {
+          confirmStatus.textContent = '';
+          confirmStatus.classList.add('hidden');
+          confirmStatus.classList.remove('text-red-300', 'border-red-500/40', 'bg-red-500/10');
+          confirmStatus.classList.add('text-neutral-300');
+          confirmStatus.setAttribute('role', 'status');
+          confirmStatus.setAttribute('aria-live', 'polite');
+        }
+      }
+    }
+
+    razorpayMethodInput?.addEventListener('change', () => selectPaymentMethod('RAZORPAY'));
+    walletMethodInput?.addEventListener('change', () => selectPaymentMethod('WALLET'));
+
     function updateBookingSummary() {
       const selectedName = bookingService.dataset.name || '';
       const selectedPrice = bookingService.dataset.price || '';
@@ -209,6 +436,9 @@ block content
         ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
       summaryService.textContent = selectedName || 'Choose a service';
+      summaryDuration.textContent = bookingService.value
+        ? (bookingService.dataset.durationLabel || 'Duration unavailable')
+        : 'Choose services to see total duration';
       summaryPrice.textContent = !selectedPrice
         ? '—'
         : selectedPrice === 'Ask in shop'
@@ -228,10 +458,6 @@ block content
 
       const group = serviceGroups.find((item) => item.title === categoryName);
       serviceOptions.replaceChildren();
-      bookingService.value = '';
-      bookingService.dataset.name = '';
-      bookingService.dataset.price = '';
-      bookingService.dataset.duration = '';
       bookingTime.value = '';
       bookingTime.dataset.label = '';
       bookingEndTime.value = '';
@@ -256,25 +482,48 @@ block content
         option.dataset.serviceName = service.name || '';
         option.dataset.price = service.price ?? '';
         option.dataset.duration = service.duration ?? '';
+        option.setAttribute('aria-pressed', String(selectedServices.has(option.dataset.serviceId)));
+        if (selectedServices.has(option.dataset.serviceId)) option.classList.add('is-selected');
 
         const serviceName = document.createElement('span');
         serviceName.className = 'text-sm font-semibold';
         serviceName.textContent = service.name || 'Unnamed service';
 
+        const serviceDuration = document.createElement('span');
+        serviceDuration.className = 'mt-1 block text-xs text-neutral-500';
+        serviceDuration.textContent = formatServiceDuration(service.duration);
+
+        const serviceDetails = document.createElement('span');
+        serviceDetails.className = 'min-w-0 flex-1';
+        serviceDetails.append(serviceName, serviceDuration);
+
         const servicePrice = document.createElement('span');
         servicePrice.className = 'font-mono text-xs font-bold';
         servicePrice.textContent = formatServicePrice(service.price);
 
-        option.append(serviceName, servicePrice);
+        const selectionState = document.createElement('span');
+        selectionState.className = 'booking-service-selection-state';
+        selectionState.textContent = selectedServices.has(option.dataset.serviceId) ? 'ADDED ✓' : 'ADD +';
+
+        option.append(serviceDetails, servicePrice, selectionState);
         option.addEventListener('click', () => {
-          serviceOptions.querySelectorAll('.booking-service-card').forEach((card) => {
-            card.classList.remove('is-selected');
-          });
-          option.classList.add('is-selected');
-          bookingService.value = option.dataset.serviceId;
-          bookingService.dataset.name = option.dataset.serviceName;
-          bookingService.dataset.price = option.dataset.price;
-          bookingService.dataset.duration = option.dataset.duration;
+          if (selectedServices.has(option.dataset.serviceId)) {
+            selectedServices.delete(option.dataset.serviceId);
+            option.classList.remove('is-selected');
+            option.setAttribute('aria-pressed', 'false');
+            selectionState.textContent = 'ADD +';
+          } else {
+            selectedServices.set(option.dataset.serviceId, {
+              id: option.dataset.serviceId,
+              name: option.dataset.serviceName,
+              price: option.dataset.price,
+              duration: option.dataset.duration
+            });
+            option.classList.add('is-selected');
+            option.setAttribute('aria-pressed', 'true');
+            selectionState.textContent = 'ADDED ✓';
+          }
+          syncSelectedServices();
           bookingTime.value = '';
           bookingTime.dataset.label = '';
           bookingEndTime.value = '';
@@ -305,7 +554,7 @@ block content
 
     async function requestAvailableTimeSlots(serviceId, dateValue) {
       const response = await fetch(
-        `/api/bookings/available-slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(dateValue)}`,
+        `/api/bookings/available-slots?serviceIds=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(dateValue)}`,
         {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
@@ -357,7 +606,7 @@ block content
         if (requestId !== timeSlotRequestId) return;
         if (!Array.isArray(slots)) throw new Error('The availability response is not a list of time slots.');
         if (slots.length === 0) {
-          showTimeSlotState('empty', 'No available times for this service and date.');
+        showTimeSlotState('empty', 'No available times for these services and date.');
           return;
         }
 
@@ -377,7 +626,7 @@ block content
         }).filter(Boolean);
 
         if (slotButtons.length === 0) {
-          showTimeSlotState('empty', 'No available times for this service and date.');
+          showTimeSlotState('empty', 'No available times for these services and date.');
           return;
         }
         timeChoices.replaceChildren(...slotButtons);
@@ -465,6 +714,7 @@ block content
     const confirmService = document.getElementById('confirm-service');
     const confirmDate = document.getElementById('confirm-date');
     const confirmTime = document.getElementById('confirm-time');
+    const confirmDuration = document.getElementById('confirm-duration');
     const confirmPrice = document.getElementById('confirm-price');
 
     function openConfirmationModal() {
@@ -494,6 +744,7 @@ block content
       confirmService.textContent = selectedName || '\u2014';
       confirmDate.textContent = prettyDate || '\u2014';
       confirmTime.textContent = startLabel ? startLabel + endLabel : '\u2014';
+      confirmDuration.textContent = bookingService.dataset.durationLabel || 'Duration unavailable';
       confirmPrice.textContent = !selectedPrice
         ? '\u2014'
         : selectedPrice === 'Ask in shop'
@@ -551,8 +802,10 @@ block content
     async function verifyPayment(paymentDetails) {
       confirmSubmit.disabled = true;
       confirmSubmit.textContent = 'VERIFYING...';
-      confirmStatus.classList.remove('hidden', 'text-red-400', 'text-neutral-400');
+      confirmStatus.classList.remove('hidden', 'text-red-400', 'text-red-300', 'border-red-500/40', 'bg-red-500/10', 'text-neutral-400');
       confirmStatus.classList.add('text-neutral-300');
+      confirmStatus.setAttribute('role', 'status');
+      confirmStatus.setAttribute('aria-live', 'polite');
       confirmStatus.textContent = 'Verifying payment with server...';
 
       const verifyResponse = await fetch('/api/payments/verify', {
@@ -582,7 +835,10 @@ block content
 
       pendingVerification = null;
       confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-red-400', 'text-neutral-400');
+      confirmStatus.classList.remove('text-red-300', 'border-red-500/40', 'bg-red-500/10');
       confirmStatus.classList.add('text-[#00D06C]');
+      confirmStatus.setAttribute('role', 'status');
+      confirmStatus.setAttribute('aria-live', 'polite');
       confirmStatus.textContent = 'Payment verified and booking confirmed successfully!';
 
       confirmSubmit.textContent = 'BOOKING CONFIRMED ✓';
@@ -612,10 +868,23 @@ block content
         },
         modal: {
           ondismiss: function () {
+            if (paymentFailureMessage) {
+              confirmSubmit.disabled = paymentFailureSaving;
+              confirmSubmit.textContent = paymentFailureSaving ? 'UPDATING BOOKING...' : 'RETRY PAYMENT';
+              confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-neutral-400', 'text-[#00D06C]');
+              confirmStatus.classList.add('text-red-300', 'border-red-500/40', 'bg-red-500/10');
+              confirmStatus.setAttribute('role', 'alert');
+              confirmStatus.setAttribute('aria-live', 'assertive');
+              confirmStatus.textContent = paymentFailureMessage;
+              return;
+            }
             confirmSubmit.disabled = false;
             confirmSubmit.textContent = 'PAY NOW';
             confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
+            confirmStatus.classList.remove('text-red-300', 'border-red-500/40', 'bg-red-500/10');
             confirmStatus.classList.add('text-neutral-400');
+            confirmStatus.setAttribute('role', 'status');
+            confirmStatus.setAttribute('aria-live', 'polite');
             confirmStatus.textContent = 'Payment window was closed. Click "PAY NOW" to complete payment and confirm your booking.';
           }
         },
@@ -642,24 +911,71 @@ block content
 
       rzpInstance.on('payment.failed', function (failureResponse) {
         const errorDesc = failureResponse.error?.description || failureResponse.error?.reason || 'Payment transaction failed.';
+        paymentFailureMessage = `Payment failed. Your booking is not confirmed. ${errorDesc} Please retry payment.`;
         confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-[#00D06C]');
-        confirmStatus.classList.add('text-red-400');
-        confirmStatus.textContent = `Payment failed: ${errorDesc} You can retry payment.`;
+        confirmStatus.classList.add('text-red-300', 'border-red-500/40', 'bg-red-500/10');
+        confirmStatus.setAttribute('role', 'alert');
+        confirmStatus.setAttribute('aria-live', 'assertive');
+        confirmStatus.textContent = paymentFailureMessage;
         confirmSubmit.disabled = false;
-        confirmSubmit.textContent = 'RETRY PAYMENT';
+
+        const failureMetadata = failureResponse.error?.metadata || {};
+        const orderId = failureMetadata.order_id || activeOrder?.orderId;
+        const paymentId = failureMetadata.payment_id;
+        if (!orderId || !paymentId) {
+          confirmSubmit.textContent = 'RETRY PAYMENT';
+          return;
+        }
+
+        paymentFailureSaving = true;
+        confirmSubmit.disabled = true;
+        confirmSubmit.textContent = 'UPDATING BOOKING...';
+
+        fetch('/api/payments/failed', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ razorpay_order_id: orderId, razorpay_payment_id: paymentId })
+        }).then(async (response) => {
+          const result = await response.json();
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Could not update the booking payment status.');
+          }
+          activeOrder = null;
+          paymentFailureSaving = false;
+          confirmSubmit.disabled = false;
+          confirmSubmit.textContent = 'RETRY PAYMENT';
+        }).catch((error) => {
+          paymentFailureSaving = false;
+          paymentFailureMessage += ` The booking status could not be updated: ${error.message}`;
+          confirmStatus.textContent = paymentFailureMessage;
+          confirmSubmit.disabled = false;
+          confirmSubmit.textContent = 'RETRY PAYMENT';
+        });
       });
 
       rzpInstance.open();
     }
 
+    let checkoutSubmissionInProgress = false;
     confirmSubmit.addEventListener('click', async () => {
+      if (checkoutSubmissionInProgress) return;
+      checkoutSubmissionInProgress = true;
       if (!userData && loginRequiredModal) {
         bookingConfirmation.classList.remove('is-open');
         loginRequiredModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        checkoutSubmissionInProgress = false;
         return;
       }
 
+      paymentFailureMessage = '';
+      confirmStatus.classList.remove('text-red-300', 'border-red-500/40', 'bg-red-500/10');
+      confirmStatus.setAttribute('role', 'status');
+      confirmStatus.setAttribute('aria-live', 'polite');
       confirmSubmit.disabled = true;
 
       if (pendingVerification) {
@@ -671,11 +987,24 @@ block content
           confirmStatus.textContent = error.message || 'Payment verification failed. Please try again.';
           confirmSubmit.disabled = false;
           confirmSubmit.textContent = 'RETRY VERIFICATION';
+        } finally {
+          checkoutSubmissionInProgress = false;
         }
         return;
       }
 
       try {
+        if (selectedPaymentMethod === 'WALLET' && !activeBooking) {
+          await loadWalletBalance();
+          if (walletBalance === null) {
+            walletPaymentStatus.textContent = walletBalanceError || 'Wallet balance is unavailable. Choose Razorpay to continue.';
+            walletPaymentBlocked = true;
+            confirmSubmit.disabled = true;
+            confirmSubmit.textContent = 'WALLET UNAVAILABLE';
+            return;
+          }
+        }
+
         if (!activeBooking) {
           confirmSubmit.textContent = 'CREATING BOOKING...';
           confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
@@ -690,7 +1019,7 @@ block content
               'Accept': 'application/json'
             },
             body: JSON.stringify({
-              serviceId: bookingService.value,
+              serviceIds: bookingService.value.split(',').filter(Boolean),
               date: bookingDate.value,
               startTime: bookingTime.value
             })
@@ -710,6 +1039,67 @@ block content
           activeBooking = bookingData.booking;
         }
 
+        if (selectedPaymentMethod === 'WALLET') {
+          confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
+          confirmStatus.classList.add('text-neutral-300');
+          confirmStatus.textContent = 'Checking wallet balance against the booking advance…';
+          await loadWalletBalance();
+          evaluateWalletPayment(true);
+          confirmStatus.classList.remove('text-neutral-300');
+          if (walletBalance === null || Number(activeBooking.advanceAmount) > walletBalance) {
+            confirmStatus.classList.add('text-red-300', 'border-red-500/40', 'bg-red-500/10');
+            confirmStatus.setAttribute('role', 'alert');
+            confirmStatus.setAttribute('aria-live', 'assertive');
+            confirmStatus.textContent = walletDifference.textContent || walletPaymentStatus.textContent;
+            return;
+          }
+
+          walletPaymentStatus.textContent = 'Processing your wallet payment…';
+          confirmStatus.classList.remove('text-red-300', 'border-red-500/40', 'bg-red-500/10');
+          confirmStatus.classList.add('text-neutral-300');
+          confirmStatus.textContent = 'Processing your wallet payment…';
+
+          const walletResponse = await fetch('/api/payments/wallet', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ bookingId: activeBooking._id })
+          });
+
+          let walletData;
+          try {
+            walletData = await walletResponse.json();
+          } catch (error) {
+            if (walletResponse.status === 404) {
+              throw new Error('Wallet payment is currently unavailable. Please choose Razorpay.');
+            }
+            throw new Error('Could not read the wallet payment response. Please try again.');
+          }
+
+          if (!walletResponse.ok || walletData?.success !== true) {
+            throw new Error(walletData?.message || 'Wallet payment failed. Please try again or choose Razorpay.');
+          }
+
+          activeBooking = walletData.booking || activeBooking;
+          confirmStatus.classList.remove('hidden', 'text-neutral-300', 'text-red-400', 'text-red-300', 'border-red-500/40', 'bg-red-500/10');
+          confirmStatus.classList.add('text-[#00D06C]');
+          confirmStatus.setAttribute('role', 'status');
+          confirmStatus.setAttribute('aria-live', 'polite');
+          confirmStatus.textContent = walletData.message || 'Wallet payment successful and booking confirmed.';
+          walletPaymentStatus.textContent = 'Wallet payment successful.';
+          confirmSubmit.textContent = 'BOOKING CONFIRMED ✓';
+          confirmSubmit.disabled = true;
+          confirmCancel.textContent = 'VIEW PROFILE →';
+          loadWalletBalance();
+          setTimeout(() => {
+            window.location.href = '/profile';
+          }, 2500);
+          return;
+        }
+
         if (!activeOrder) {
           confirmSubmit.textContent = 'INITIALIZING PAYMENT...';
           confirmStatus.classList.remove('hidden', 'text-red-400', 'text-[#00D06C]');
@@ -725,7 +1115,7 @@ block content
             },
             body: JSON.stringify({
               bookingId: activeBooking._id,
-              serviceId: bookingService.value
+              serviceIds: bookingService.value.split(',').filter(Boolean)
             })
           });
 
@@ -764,10 +1154,19 @@ block content
       } catch (error) {
         confirmStatus.classList.remove('text-neutral-300', 'text-[#00D06C]');
         confirmStatus.classList.add('text-red-400');
+        confirmStatus.setAttribute('role', 'alert');
+        confirmStatus.setAttribute('aria-live', 'assertive');
         confirmStatus.textContent = error.message || 'Something went wrong.';
+        if (selectedPaymentMethod === 'WALLET') {
+          walletPaymentStatus.textContent = error.message || 'Wallet payment failed. Please try again or choose Razorpay.';
+        }
 
         confirmSubmit.disabled = false;
-        confirmSubmit.textContent = activeBooking ? 'RETRY PAYMENT' : 'CONFIRM BOOKING';
+        confirmSubmit.textContent = selectedPaymentMethod === 'WALLET'
+          ? (activeBooking ? 'RETRY WALLET PAYMENT' : 'CONTINUE WITH WALLET')
+          : activeBooking ? 'RETRY PAYMENT' : 'CONFIRM BOOKING';
+      } finally {
+        checkoutSubmissionInProgress = false;
       }
     });
 
@@ -791,3 +1190,5 @@ block content
         }
       });
     }
+
+    if (userData) loadWalletBalance();
